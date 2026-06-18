@@ -1,5 +1,10 @@
 # TeachingOS — Handoff
 
+> **▶ NEXT DIRECTION:** TeachingOS is evolving into **SAMAGRA** (rename to `samagra`, company-structured
+> agent org, fold in `mycontentdev` + `munshi`, pre-commit Codex review, CEO prompt-outbox). To plan
+> that fresh, **read [`SAMAGRA-HANDOFF.md`](SAMAGRA-HANDOFF.md) first.** This file below is the
+> slice-1 (built-and-verified) record.
+
 **Repo:** github.com/dbhardwaj86/teachingos · branch `slice-1` (PR #1) · local-first Python+FastAPI.
 **State:** Slice 1 (spine + portal + thin/thick exporter + semi-autonomous loop) is code-complete and verified. 11/11 tests pass.
 
