@@ -160,16 +160,31 @@ async function renderPipelines() {
   main.innerHTML = `<h1 class="page">Pipelines</h1><p class="lede">Loading…</p>`;
   const d = await jget("/api/pipelines");
   const pipes = d.pipelines.map(p => {
-    const phases = Object.entries(p.phases).map(([name, ph]) =>
-      `<div class="phase"><span class="dot ${ph.status}"></span>${esc(name)}
-        ${ph.gate ? '<span class="gate">gate</span>' : ""}
-        <span class="own">${esc(ph.owner || "")}</span></div>`).join("");
+    const phases = Object.entries(p.phases).map(([name, ph]) => {
+      const gateBtns = ph.status === "awaiting_gate"
+        ? `<span class="own"><button class="btn" onclick="gateAction('${p.pipeline}','approve')">Approve</button>
+           <button class="btn" onclick="gateAction('${p.pipeline}','reject')">Reject</button></span>`
+        : `<span class="own">${esc(ph.owner || "")}</span>`;
+      return `<div class="phase"><span class="dot ${ph.status}" title="${esc(ph.status)}"></span>${esc(name)}
+        ${ph.gate ? '<span class="gate">gate</span>' : ""}${gateBtns}</div>`;
+    }).join("");
     return `<div class="pipe"><h3>${esc(p.label)}</h3>
       <div class="src">current: ${esc(p.current)}</div>${phases}</div>`;
   }).join("");
-  main.innerHTML = `<h1 class="page">Pipelines</h1>
-    <p class="lede">Phase state machine · gates pause for human approval (Phase D wires scheduling + notify).</p>
+  main.innerHTML = `<h1 class="page">Pipelines
+      <button class="btn" id="tickBtn" style="float:right">▶ Run tick</button></h1>
+    <p class="lede">Phase state machine · scheduled ticks advance auto-phases; hard gates pause for approval (Telegram + email notify).</p>
     <div class="pipes">${pipes}</div>`;
+  $("#tickBtn").onclick = runTick;
+}
+async function gateAction(pipeline, decision) {
+  await fetch(`/api/gate/${pipeline}/${decision}`, { method: "POST" });
+  renderPipelines();
+}
+async function runTick() {
+  const b = $("#tickBtn"); b.textContent = "▶ …"; b.disabled = true;
+  await fetch("/api/tick", { method: "POST" });
+  renderPipelines();
 }
 
 // ---- global search ----

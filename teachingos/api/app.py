@@ -16,7 +16,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 
 import teachingos
-from .. import catalog, config, state
+from .. import catalog, config, scheduler, state
 from ..adapters import get_adapter
 from ..lectures import render as lecture_render
 
@@ -97,6 +97,16 @@ def api_pipelines():
 def api_refresh():
     totals = catalog.refresh(verbose=False)
     return {"ok": True, "totals": totals}
+
+
+@app.post("/api/tick")
+def api_tick(dry_run: bool = False):
+    return scheduler.tick(dry_run=dry_run)
+
+
+@app.post("/api/gate/{pipeline}/{decision}")
+def api_gate(pipeline: str, decision: str):
+    return scheduler.gate(pipeline, decision)
 
 
 # -- safe local file opener ---------------------------------------------

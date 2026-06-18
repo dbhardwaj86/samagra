@@ -47,11 +47,38 @@ def cmd_serve(args) -> None:
 
 
 def cmd_tick(args) -> None:
-    print("scheduler tick — implemented in Phase D")
+    from . import scheduler
+
+    res = scheduler.tick(dry_run=args.dry_run)
+    if res.get("skipped"):
+        print(f"skipped: {res['skipped']}")
+        return
+    print(f"tick ({'dry-run' if res['dry_run'] else 'live'}):")
+    for line in res["log"]:
+        print(f"  {line}")
 
 
 def cmd_gate(args) -> None:
-    print("gate — implemented in Phase D")
+    from . import scheduler
+
+    print(scheduler.gate(args.pipeline, args.decision))
+
+
+def cmd_notify_test(args) -> None:
+    from . import notify
+
+    res = notify.notify("test", "TeachingOS notification test — channels online.")
+    print(res["logged"])
+    for ch, (ok, msg) in res["results"].items():
+        print(f"  {ch:9} {'OK' if ok else '--'}  {msg}")
+
+
+def cmd_schedule_install(args) -> None:
+    from . import scheduler
+
+    ok, out = scheduler.install_task(args.cadence)
+    print(("installed" if ok else "FAILED") + f" ({scheduler.TASK_NAME}, {args.cadence})")
+    print(out)
 
 
 def cmd_export(args) -> None:
@@ -83,8 +110,21 @@ def main() -> None:
     sv.add_argument("--reload", action="store_true")
     sv.set_defaults(func=cmd_serve)
 
-    sub.add_parser("tick", help="scheduler tick (Phase D)").set_defaults(func=cmd_tick)
-    sub.add_parser("gate", help="gate approval (Phase D)").set_defaults(func=cmd_gate)
+    tk = sub.add_parser("tick", help="run one scheduler tick")
+    tk.add_argument("--dry-run", action="store_true")
+    tk.set_defaults(func=cmd_tick)
+
+    g = sub.add_parser("gate", help="approve/reject a pipeline's hard gate")
+    g.add_argument("pipeline")
+    g.add_argument("decision", choices=["approve", "reject"])
+    g.set_defaults(func=cmd_gate)
+
+    sub.add_parser("notify-test", help="send a test notification").set_defaults(
+        func=cmd_notify_test)
+
+    si = sub.add_parser("schedule-install", help="register the Windows Task Scheduler tick")
+    si.add_argument("--cadence", default="HOURLY")
+    si.set_defaults(func=cmd_schedule_install)
 
     e = sub.add_parser("export", help="export a lecture (Phase C)")
     e.add_argument("--chapter", required=True)
