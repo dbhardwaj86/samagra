@@ -1,0 +1,30 @@
+# --- secrets & local config (PUBLIC REPO: never commit) ---
+.env
+config.local.py
+*.secret
+secrets/
+*token*.json
+credentials*.json
+client_secret*.json
+
+# --- generated data (content/state stay local, never in git) ---
+teachingos.db
+*.db
+state/
+build/
+dist/
+exports/
+lectures_out/
+
+# --- claude local settings ---
+.claude/settings.local.json
+
+# --- python ---
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+.coverage
