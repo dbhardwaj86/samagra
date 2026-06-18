@@ -1,3 +1,3 @@
-"""TeachingOS — agentic content-pipeline control plane."""
+"""SAMAGRA — agentic content-pipeline control plane."""
 
 __version__ = "0.1.0"

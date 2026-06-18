@@ -70,13 +70,13 @@ def _email(subject: str, body: str) -> tuple[bool, str]:
 def notify(event: str, message: str, channels=("telegram", "email")) -> dict:
     line = _log(event, message)
     results: dict[str, tuple[bool, str]] = {}
-    text = f"TeachingOS · {event}\n{message}"
+    text = f"SAMAGRA · {event}\n{message}"
     if "telegram" in channels:
         results["telegram"] = _telegram(text)
     if "email" in channels:
-        results["email"] = _email(f"TeachingOS: {event}", message)
+        results["email"] = _email(f"SAMAGRA: {event}", message)
     return {"logged": line, "results": results}
 
 
 def test() -> dict:
-    return notify("test", "TeachingOS notification test — channels online.")
+    return notify("test", "SAMAGRA notification test — channels online.")

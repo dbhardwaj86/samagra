@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from teachingos import catalog, state
-from teachingos.adapters import ALL_ADAPTERS, get_adapter
+from samagra import catalog, state
+from samagra.adapters import ALL_ADAPTERS, get_adapter
 
 
 def test_adapters_registered():

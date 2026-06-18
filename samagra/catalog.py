@@ -1,4 +1,4 @@
-"""Unified catalog over all source adapters, persisted in teachingos.db."""
+"""Unified catalog over all source adapters, persisted in samagra.db."""
 from __future__ import annotations
 
 import json

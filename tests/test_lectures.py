@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import pytest
 
-from teachingos.adapters import get_adapter
-from teachingos.lectures import render
-from teachingos.lectures.thin import build_thin
+from samagra.adapters import get_adapter
+from samagra.lectures import render
+from samagra.lectures.thin import build_thin
 
 _HAS_TEXTBOOK = get_adapter("textbook").available()
 

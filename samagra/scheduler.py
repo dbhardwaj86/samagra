@@ -3,9 +3,9 @@
 A tick: take the scheduler lock (no concurrent ticks), refresh the catalog, reflect
 the real physics-textbook state into the `textbook` pipeline, raise the `approve`
 hard gate (pause + notify) when drafting/enriching is complete, and export any
-chapters that have been approved through TeachingOS. Hard gates never auto-advance.
+chapters that have been approved through SAMAGRA. Hard gates never auto-advance.
 
-TeachingOS is scheduler-of-record but coexists with physics-textbook's own 2h
+SAMAGRA is scheduler-of-record but coexists with physics-textbook's own 2h
 automations by honoring its `.routine.lock`.
 """
 from __future__ import annotations
@@ -19,7 +19,7 @@ from . import catalog, config, notify, state
 from .lock import LockBusy, file_lock, is_busy
 
 EXPORT_BATCH = 3  # chapters exported per tick once approved (bounded)
-TASK_NAME = "TeachingOS-tick"
+TASK_NAME = "SAMAGRA-tick"
 
 
 def _sched_lock():

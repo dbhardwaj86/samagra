@@ -1,7 +1,7 @@
 """Phase D scheduler/gate tests (use a tmp STATE_DIR; no real state touched)."""
 from __future__ import annotations
 
-from teachingos import scheduler, state
+from samagra import scheduler, state
 
 
 def test_gate_approve_marks_done(tmp_path, monkeypatch):

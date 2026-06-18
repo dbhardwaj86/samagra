@@ -1,4 +1,4 @@
-"""TeachingOS portal — FastAPI app.
+"""SAMAGRA portal — FastAPI app.
 
 Serves the unified portal (UI forked from QX's browser style) plus a small JSON
 API over the catalog, QX live question search, the pipeline state machine, and a
@@ -15,14 +15,14 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 
-import teachingos
+import samagra
 from .. import catalog, config, scheduler, state
 from ..adapters import get_adapter
 from ..lectures import render as lecture_render
 
 PORTAL = Path(__file__).resolve().parent.parent / "portal"
 
-app = FastAPI(title="TeachingOS", version=teachingos.__version__)
+app = FastAPI(title="SAMAGRA", version=samagra.__version__)
 app.mount("/static", StaticFiles(directory=str(PORTAL / "static")), name="static")
 templates = Jinja2Templates(directory=str(PORTAL / "templates"))
 
@@ -47,7 +47,7 @@ def _allowed(p: Path) -> bool:
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
     return templates.TemplateResponse(
-        request, "portal.html", {"version": teachingos.__version__}
+        request, "portal.html", {"version": samagra.__version__}
     )
 
 

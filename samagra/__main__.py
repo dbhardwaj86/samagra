@@ -1,4 +1,4 @@
-"""TeachingOS CLI: refresh | status | search | serve | tick | gate | export."""
+"""SAMAGRA CLI: refresh | status | search | serve | tick | gate | export."""
 from __future__ import annotations
 
 import argparse
@@ -8,7 +8,7 @@ from . import catalog, config, state
 
 
 def cmd_refresh(args) -> None:
-    print(f"Refreshing TeachingOS catalog -> {config.DATA_DB}")
+    print(f"Refreshing SAMAGRA catalog -> {config.DATA_DB}")
     totals = catalog.refresh(verbose=True)
     print(f"Done. {sum(totals.values())} artifacts across {len(totals)} sources.")
 
@@ -17,7 +17,7 @@ def cmd_status(args) -> None:
     ov = catalog.overview()
     print(f"Catalog refreshed_at: {ov['refreshed_at']}")
     if not ov["sources"]:
-        print("  (empty — run `python -m teachingos refresh` first)")
+        print("  (empty — run `python -m samagra refresh` first)")
     for s in ov["sources"]:
         flag = "OK" if s["available"] else "--"
         print(f"  [{flag}] {s['source']:12} {s['n_artifacts']:>6} artifacts  {s['summary']}")
@@ -42,7 +42,7 @@ def cmd_serve(args) -> None:
     except ImportError:
         print("Portal needs deps. Run: pip install -r requirements.txt")
         sys.exit(1)
-    uvicorn.run("teachingos.api.app:app", host=args.host, port=args.port,
+    uvicorn.run("samagra.api.app:app", host=args.host, port=args.port,
                 reload=args.reload)
 
 
@@ -67,7 +67,7 @@ def cmd_gate(args) -> None:
 def cmd_notify_test(args) -> None:
     from . import notify
 
-    res = notify.notify("test", "TeachingOS notification test — channels online.")
+    res = notify.notify("test", "SAMAGRA notification test — channels online.")
     print(res["logged"])
     for ch, (ok, msg) in res["results"].items():
         print(f"  {ch:9} {'OK' if ok else '--'}  {msg}")
@@ -88,8 +88,8 @@ def cmd_export(args) -> None:
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(prog="teachingos",
-                                description="TeachingOS control plane")
+    p = argparse.ArgumentParser(prog="samagra",
+                                description="SAMAGRA control plane")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("refresh", help="rebuild the unified catalog").set_defaults(
