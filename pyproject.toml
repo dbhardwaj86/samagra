@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "teachingos"
+name = "samagra"
 version = "0.1.0"
 description = "Agentic content-pipeline OS for JEE/NEET physics — orchestrates QX, physics-textbook, booklets, INSP and sims behind one portal."
 readme = "README.md"
@@ -11,10 +11,10 @@ requires-python = ">=3.11"
 authors = [{ name = "dbhardwaj86" }]
 
 [project.scripts]
-teachingos = "teachingos.__main__:main"
+samagra = "samagra.__main__:main"
 
 [tool.setuptools.packages.find]
-include = ["teachingos*"]
+include = ["samagra*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
