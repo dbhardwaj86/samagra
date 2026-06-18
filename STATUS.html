@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TeachingOS → SAMAGRA — Status</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f8fafc;--panel:#fff;--fg:#1f2933;--muted:#647084;--accent:#4f46e5;
+  --accent-soft:#eef2ff;--line:#e6e8ec;--ok:#16a34a;--warn:#d97706;--shadow:0 1px 3px rgba(15,23,42,.07);}
+[data-theme="dark"]{--bg:#0f172a;--panel:#1e293b;--fg:#e2e8f0;--muted:#94a3b8;
+  --accent:#818cf8;--accent-soft:#312e81;--line:#334155;--shadow:none;}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  background:var(--bg);color:var(--fg);line-height:1.65;}
+a{color:var(--accent)}
+header.top{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:14px;
+  padding:14px 28px;background:var(--panel);border-bottom:1px solid var(--line);box-shadow:var(--shadow);}
+header.top h1{font-size:17px;margin:0;font-weight:700;}
+header.top .sub{color:var(--muted);font-size:13px;}
+header.top nav{margin-left:auto;display:flex;gap:16px;font-size:13px;}
+header.top nav a{color:var(--muted);text-decoration:none}
+header.top nav a:hover{color:var(--accent)}
+button#theme{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:8px;
+  padding:6px 10px;cursor:pointer;}
+.layout{display:flex;max-width:1180px;margin:0 auto;}
+aside{position:sticky;top:64px;align-self:flex-start;width:210px;flex:none;padding:28px 12px;
+  height:calc(100vh - 64px);overflow:auto;}
+aside .grp{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:10px 10px 6px;}
+aside a{display:block;padding:6px 12px;border-radius:8px;color:var(--fg);text-decoration:none;font-size:14px;}
+aside a:hover{background:var(--accent-soft);color:var(--accent);}
+main{flex:1;padding:32px 32px 96px;max-width:900px;}
+h2{font-size:21px;margin:38px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--line);scroll-margin-top:72px;}
+h2:first-child{margin-top:0}
+p{margin:10px 0}
+.lede{color:var(--muted);font-size:15px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;margin:16px 0;}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow);}
+.card .n{font-size:24px;font-weight:700;}
+.card .l{color:var(--muted);font-size:13px;margin-top:2px;}
+.badge{display:inline-block;border-radius:999px;font-size:11px;padding:2px 9px;border:1px solid var(--line);}
+.badge.ok{color:var(--ok);border-color:var(--ok);background:rgba(22,163,74,.08);}
+.badge.todo{color:var(--warn);border-color:var(--warn);background:rgba(217,119,6,.08);}
+table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px;background:var(--panel);
+  border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+th,td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;}
+th{background:var(--bg);color:var(--muted);font-weight:600;}
+tr:last-child td{border-bottom:none}
+code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-radius:6px;font-size:13px;}
+.diagram{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin:16px 0;box-shadow:var(--shadow);}
+.log{border-left:3px solid var(--accent);padding:4px 16px;margin:12px 0;background:var(--accent-soft);border-radius:0 8px 8px 0;}
+.log .d{color:var(--muted);font-size:12px;}
+@media print{aside,header.top nav,button#theme{display:none}header.top{position:static}main{max-width:none}h2{page-break-after:avoid}}
+@media (max-width:820px){aside{display:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>TeachingOS → SAMAGRA</h1><span class="sub">Slice 1 done · SAMAGRA planned</span>
+  <nav>
+    <a href="#overview">Overview</a><a href="#phases">Phases</a>
+    <a href="#samagra">SAMAGRA</a><a href="#arch">Architecture</a>
+    <a href="#decisions">Decisions</a><a href="#next">Next</a>
+  </nav>
+  <button id="theme">◐</button>
+</header>
+
+<div class="layout">
+<aside>
+  <div class="grp">Contents</div>
+  <a href="#overview">Overview</a>
+  <a href="#phases">Phase status</a>
+  <a href="#samagra">SAMAGRA roadmap</a>
+  <a href="#arch">Architecture</a>
+  <a href="#coverage">Source coverage</a>
+  <a href="#workers">Worker routing</a>
+  <a href="#tests">Tests</a>
+  <a href="#decisions">Decisions</a>
+  <a href="#artifacts">Artifacts</a>
+  <a href="#next">Next actions</a>
+</aside>
+
+<main>
+  <h2 id="overview">Overview</h2>
+  <p class="lede">TeachingOS is an agentic content-pipeline control plane for a JEE/NEET physics
+  teaching operation. It orchestrates several already-working tools — the QX question engine,
+  the physics-textbook lecture engine, booklets, INSP papers and Pratyaksh sims — behind one
+  portal, fills the thin/thick lecture-generation gap, and runs semi-autonomously with hard
+  gates at publish and Telegram + email notifications.</p>
+  <p>Repo: <a href="https://github.com/dbhardwaj86/teachingos">github.com/dbhardwaj86/teachingos</a>
+  · branch <code>slice-1</code> (<a href="https://github.com/dbhardwaj86/teachingos/pull/1">PR #1</a>)
+  · local-first (Python + FastAPI). Slice 1 is <strong>code-complete and verified</strong>.</p>
+  <p><strong>2026-06-19 — SAMAGRA planning milestone.</strong> The slice-1 spine is being evolved into
+  <strong>SAMAGRA</strong> (समग्र — <em>integrated / whole</em>): a company-structured agentic content OS
+  that folds in <code>mycontentdev</code> (editorial seeds) and <code>munshi</code> (phone capture) and
+  governs a worker fleet through a board of three frontier agents. All ten open questions are decided; an
+  approved design spec and a 34-task, four-phase implementation plan are committed and recorded
+  (see <a href="#samagra">SAMAGRA roadmap</a> + <a href="#artifacts">Artifacts</a>).
+  <strong>Nothing built yet</strong> — execution begins at Phase 0 (the <code>teachingos → samagra</code> rename).</p>
+
+  <h2 id="phases">Phase status — Slice 1 (built)</h2>
+  <div class="grid">
+    <div class="card"><div class="n">A <span class="badge ok">done</span></div><div class="l">Spine — adapters, catalog, state machine, CLI</div></div>
+    <div class="card"><div class="n">B <span class="badge ok">done</span></div><div class="l">Portal — FastAPI + forked-QX UI, 7 tabs</div></div>
+    <div class="card"><div class="n">C <span class="badge ok">done</span></div><div class="l">Thin/thick exporter — HTML + DOCX + GDocs</div></div>
+    <div class="card"><div class="n">D <span class="badge ok">done</span></div><div class="l">Autonomous loop — scheduler, gates, notify</div></div>
+  </div>
+
+  <h2 id="samagra">SAMAGRA evolution (planned)</h2>
+  <p class="lede">One phased plan. Each phase ends green before the next. Build order:
+  rename → adapters → governance → loop.</p>
+  <div class="grid">
+    <div class="card"><div class="n">0 <span class="badge todo">planned</span></div><div class="l">Rename <code>teachingos → samagra</code> (repo + package); merge PR #1 first</div></div>
+    <div class="card"><div class="n">1 <span class="badge todo">planned</span></div><div class="l">Read-only adapters — mycontentdev (cloud admin API) + munshi (<code>library()</code>); reflect state</div></div>
+    <div class="card"><div class="n">2 <span class="badge todo">planned</span></div><div class="l">Governance — <code>samagra.db</code> store, Assignments tab, blocking Codex pre-commit hook, agent worktrees, org SVG</div></div>
+    <div class="card"><div class="n">3 <span class="badge todo">planned</span></div><div class="l">Active loop — munshi → proposed seed (w/ pointers) → board approve → capture API</div></div>
+  </div>
+  <p>Governance principle: only the three board agents — <strong>Claude-Deepak (CEO)</strong>,
+  <strong>Claude-Khanak (COO / CCO)</strong>, <strong>Codex (Chief Architect &amp; Code-Review Lead)</strong> —
+  review worker output and approve writes; <strong>Deepak</strong> (human) is Founder &amp; Chairman, the
+  final publish gate. Workers (Gemini+NotebookLM, Grok, Hermes) produce drafts only.
+  Spec: <code>docs/superpowers/specs/2026-06-19-samagra-evolution-design.md</code> ·
+  Plan: <code>docs/superpowers/plans/2026-06-19-samagra-evolution.md</code> (34 tasks).</p>
+
+  <h2 id="arch">Architecture</h2>
+  <div class="diagram">
+  <svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:Inter,sans-serif">
+    <style>
+      .box{fill:var(--panel);stroke:var(--line)} .lbl{fill:var(--fg);font-size:12px}
+      .acc{fill:var(--accent-soft);stroke:var(--accent)} .mut{fill:var(--muted);font-size:11px}
+      .ttl{fill:var(--accent);font-size:12px;font-weight:600}
+    </style>
+    <rect class="acc" x="20" y="14" width="680" height="58" rx="10"/>
+    <text class="ttl" x="34" y="34">③ Portal + API (FastAPI · forked-QX UI)</text>
+    <text class="mut" x="34" y="54">overview · search · lectures · questions · pipeline board · gates · assignments (planned)</text>
+    <rect class="acc" x="20" y="86" width="680" height="58" rx="10"/>
+    <text class="ttl" x="34" y="106">② Catalog + State</text>
+    <text class="mut" x="34" y="126">teachingos.db (FTS5) · phase state machine · scheduler · notify</text>
+    <rect class="acc" x="20" y="158" width="680" height="44" rx="10"/>
+    <text class="ttl" x="34" y="184">① Source adapters (read-only, normalized)</text>
+    <g>
+      <rect class="box" x="20" y="222" width="104" height="54" rx="8"/><text class="lbl" x="34" y="246">QX</text><text class="mut" x="34" y="263">67k Qs</text>
+      <rect class="box" x="134" y="222" width="116" height="54" rx="8"/><text class="lbl" x="148" y="246">textbook</text><text class="mut" x="148" y="263">59 ch</text>
+      <rect class="box" x="260" y="222" width="104" height="54" rx="8"/><text class="lbl" x="274" y="246">booklets</text><text class="mut" x="274" y="263">11</text>
+      <rect class="box" x="374" y="222" width="92" height="54" rx="8"/><text class="lbl" x="388" y="246">INSP</text><text class="mut" x="388" y="263">136</text>
+      <rect class="box" x="476" y="222" width="104" height="54" rx="8"/><text class="lbl" x="490" y="246">sims</text><text class="mut" x="490" y="263">1554</text>
+      <rect class="box" x="590" y="222" width="110" height="54" rx="8"/><text class="lbl" x="604" y="246">QuestionDB</text><text class="mut" x="604" y="263">online↗</text>
+    </g>
+  </svg>
+  </div>
+  <p class="lede">SAMAGRA adds two read-only sources — <strong>mycontentdev</strong> (editorial seeds, cloud
+  admin API) and <strong>munshi</strong> (phone capture, <code>library()</code>) — alongside the six above,
+  plus an <strong>Assignments</strong> tab and a governance store in the same catalog DB.</p>
+
+  <h2 id="coverage">Source coverage</h2>
+  <p class="lede">Unified catalog: <strong>7,044 artifacts</strong> across 6 sources (read-only). SAMAGRA Phase 1 adds 2 more.</p>
+  <table>
+    <tr><th>Source</th><th>Artifacts</th><th>Headline</th></tr>
+    <tr><td>QX (gpt-extract-ques)</td><td>5,284 papers</td><td>67,276 questions, faceted + semantic search</td></tr>
+    <tr><td>physics-textbook</td><td>59 chapters</td><td>all drafted+enriched; lecture tracker = queue.json</td></tr>
+    <tr><td>claude-booklet-proofer</td><td>11 booklets</td><td>theory / workbooks</td></tr>
+    <tr><td>claude-INSP-extract</td><td>136 items</td><td>116 sets · 20 papers</td></tr>
+    <tr><td>pratyaksh-May-deploy</td><td>1,554 sims</td><td>read-only</td></tr>
+    <tr><td>QuestionDB (HF)</td><td>—</td><td>online target (offline/private)</td></tr>
+    <tr><td>mycontentdev <span class="badge todo">Phase 1</span></td><td>seeds</td><td>cloud admin API (read-only); reflects seed status</td></tr>
+    <tr><td>munshi <span class="badge todo">Phase 1</span></td><td>items</td><td><code>library()</code> over the Worker (read-only)</td></tr>
+  </table>
+
+  <h2 id="workers">Worker routing (role-specialized)</h2>
+  <table>
+    <tr><th>Worker</th><th>Title (SAMAGRA)</th><th>Role</th></tr>
+    <tr><td>Claude #1 (Deepak)</td><td>CEO · board</td><td>Orchestrator — routes work, owns gates + the loop</td></tr>
+    <tr><td>Claude #2 (Khanak)</td><td>COO / CCO · board</td><td>Parallel content worker / QA / summarization; approves content</td></tr>
+    <tr><td>Codex</td><td>Chief Architect · board</td><td>Code, sims, OCR, lecture drafting; blocking pre-commit review</td></tr>
+    <tr><td>Gemini + NotebookLM</td><td>Director, Research &amp; Media</td><td>Question generation + media (audio/decks)</td></tr>
+    <tr><td>Grok</td><td>Director, Realtime Intel &amp; Imagery</td><td>Realtime web/X research + image generation</td></tr>
+    <tr><td>Hermes</td><td>Chief of Staff (Ops &amp; Comms)</td><td>Cron + phone/Telegram notify + kanban</td></tr>
+  </table>
+
+  <h2 id="tests">Tests</h2>
+  <p><span class="badge ok">11 / 11 passing</span> — adapters + catalog + state machine (spine), thin/thick render
+  (lectures), gate + tick (scheduler). Source-dependent tests skip cleanly in CI (GitHub Actions, Python 3.12).
+  SAMAGRA phases each ship their own TDD suite (adapters mock the HTTP clients — no live-prod calls in CI).</p>
+
+  <h2 id="decisions">Recent decisions</h2>
+  <div class="log"><div class="d">2026-06-19 · SAMAGRA — one phased plan, rename first</div>
+    Build order locked: rename <code>teachingos → samagra</code> (Phase 0) → subsystem adapters → governance → active loop. 34 tasks across 4 phases; spec + plan committed and recorded to the cbm sidecar.</div>
+  <div class="log"><div class="d">2026-06-19 · Reflect, don't duplicate</div>
+    mycontentdev read via cloud admin API (<code>x-mcd-admin</code>); munshi via <code>driver.mjs library()</code> (cookie auth, <code>MUNSHI_SECRET</code>); SAMAGRA mirrors subsystem state + a thin board-review overlay — no parallel state machine.</div>
+  <div class="log"><div class="d">2026-06-19 · Governance mechanics</div>
+    Per-agent git worktrees (deepak/khanak/codex); markdown outbox files + <code>samagra.db</code> index + Assignments tab; pre-commit Codex review blocks on <code>severity==CRITICAL</code> with no escape hatch (fail-closed). Only board agents approve writes.</div>
+  <div class="log"><div class="d">2026-06-18 · Greenfield control plane</div>
+    TeachingOS is a new repo orchestrating existing tools in place — not a rewrite. Spine + dashboard first.</div>
+  <div class="log"><div class="d">2026-06-18 · Lectures: thin/thick, no PDF</div>
+    Thin = concise revision sheet, thick = full chapter; export HTML + DOCX (OMML math) + Google Docs.</div>
+
+  <h2 id="artifacts">Artifacts produced</h2>
+  <table>
+    <tr><th>Path</th><th>What</th></tr>
+    <tr><td><code>docs/superpowers/specs/2026-06-19-samagra-evolution-design.md</code></td><td>approved SAMAGRA design spec (integration contracts verified)</td></tr>
+    <tr><td><code>docs/superpowers/plans/2026-06-19-samagra-evolution.md</code></td><td>34-task, 4-phase SAMAGRA implementation plan (TDD)</td></tr>
+    <tr><td><code>teachingos/</code></td><td>package — adapters, catalog, state, scheduler, api, portal, lectures</td></tr>
+    <tr><td><code>teachingos.db</code></td><td>unified catalog (generated, gitignored)</td></tr>
+    <tr><td><code>build/lectures/&lt;slug&gt;/</code></td><td>exported thin/thick HTML + DOCX</td></tr>
+    <tr><td><code>state/*.orchestrator_state.json</code></td><td>pipeline state + tracker.txt + notifications.log</td></tr>
+  </table>
+
+  <h2 id="next">Next actions</h2>
+  <p>SAMAGRA is fully planned. The next action is to execute Phase 0; a few slice-1 items still need your input to switch on the unattended parts:</p>
+  <table>
+    <tr><th>Item</th><th>Status</th><th>Action</th></tr>
+    <tr><td>Execute SAMAGRA Phase 0 (rename)</td><td><span class="badge todo">ready</span></td><td>Run the plan: merge PR #1 → <code>gh repo rename samagra</code> → rename the package. Then Phases 1–3. Subagent-driven or inline execution.</td></tr>
+    <tr><td>Windows scheduled task (hourly tick)</td><td><span class="badge todo">needs OK</span></td><td>Run <code>teachingos schedule-install</code> (or approve it) — registering an OS-level recurring job needs your consent.</td></tr>
+    <tr><td>Notification channels</td><td><span class="badge todo">creds</span></td><td>Set <code>TELEGRAM_BOT_TOKEN</code>/<code>CHAT_ID</code> + gmail <code>SMTP_PASS</code> in <code>.env</code>. Until then notifications are logged only.</td></tr>
+    <tr><td>Google Docs export</td><td><span class="badge todo">creds</span></td><td>Set <code>GOOGLE_OAUTH_CLIENT</code> (Desktop OAuth JSON); HTML + DOCX already work.</td></tr>
+  </table>
+</main>
+</div>
+
+<script>
+(function(){
+  var t = localStorage.getItem('tos-status-theme') || 'light';
+  document.documentElement.dataset.theme = t;
+  document.getElementById('theme').onclick = function(){
+    var n = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = n;
+    localStorage.setItem('tos-status-theme', n);
+  };
+})();
+</script>
+</body>
+</html>

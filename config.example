@@ -1,0 +1,8 @@
+TeachingOS configuration
+========================
+
+All configuration is via environment variables (or a .env file in the repo root).
+See `.env.example` for the full, documented list — copy it to `.env` and fill in.
+
+For machine-specific Python overrides you may also create `config.local.py` in the
+repo root (gitignored); anything it defines overrides `teachingos/config.py`.
