@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TeachingOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">TeachingOS <small>v{{ version }}</small></div>
+  <div class="search"><input id="globalSearch" type="search"
+       placeholder="Search across lectures, questions, booklets, INSP, sims…"></div>
+  <div class="actions">
+    <button class="btn" id="refreshBtn" title="Rebuild the catalog">↻ Refresh</button>
+    <button class="btn" id="themeBtn" title="Toggle theme">◐</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="side" id="sidenav">
+    <div class="grp">Browse</div>
+    <a class="tab active" data-tab="overview">Overview</a>
+    <a class="tab" data-tab="questions">Questions <span class="ct" id="ct-qx"></span></a>
+    <a class="tab" data-tab="lectures">Lectures <span class="ct" id="ct-textbook"></span></a>
+    <a class="tab" data-tab="booklets">Booklets <span class="ct" id="ct-booklets"></span></a>
+    <a class="tab" data-tab="insp">INSP <span class="ct" id="ct-insp"></span></a>
+    <a class="tab" data-tab="sims">Simulations <span class="ct" id="ct-sims"></span></a>
+    <div class="grp">Operate</div>
+    <a class="tab" data-tab="pipelines">Pipelines</a>
+  </nav>
+  <main id="main"><div class="empty">Loading…</div></main>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
