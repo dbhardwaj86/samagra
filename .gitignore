@@ -8,7 +8,7 @@ credentials*.json
 client_secret*.json
 
 # --- generated data (content/state stay local, never in git) ---
-teachingos.db
+samagra.db
 *.db
 state/
 build/
