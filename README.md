@@ -1,4 +1,4 @@
-# TeachingOS
+# SAMAGRA
 
 Agentic content-pipeline OS for a JEE/NEET physics teaching operation, orchestrated by Claude Code with Codex, Gemini/NotebookLM, Grok and Hermes as role-specialized workers.
 
@@ -20,28 +20,28 @@ phone + email notifications).
 
 ## Architecture (3 layers)
 
-1. **Source adapters** (`teachingos/adapters/`) — read-only, each normalizes its source into a common `Artifact`.
-2. **Catalog + state** (`teachingos/catalog.py`, `state.py`) — `teachingos.db` unified catalog + a phase state machine.
-3. **Portal + API** (`teachingos/api/`, `portal/`) — FastAPI + a UI forked from QX's browser.
+1. **Source adapters** (`samagra/adapters/`) — read-only, each normalizes its source into a common `Artifact`.
+2. **Catalog + state** (`samagra/catalog.py`, `state.py`) — `samagra.db` unified catalog + a phase state machine.
+3. **Portal + API** (`samagra/api/`, `portal/`) — FastAPI + a UI forked from QX's browser.
 
 ## Quickstart
 
 ```bash
 # Phase A (spine) needs no dependencies:
-python -m teachingos refresh     # build the unified catalog from local sources
-python -m teachingos status      # source summaries + pipeline states
-python -m teachingos search "gauss" --source qx
+python -m samagra refresh     # build the unified catalog from local sources
+python -m samagra status      # source summaries + pipeline states
+python -m samagra search "gauss" --source qx
 
 # Portal (Phase B) and beyond:
 python -m venv .venv && . .venv/Scripts/activate
 pip install -r requirements.txt
-python -m teachingos serve       # http://127.0.0.1:8799
+python -m samagra serve       # http://127.0.0.1:8799
 ```
 
 ## Configuration
 
 Via environment variables or a `.env` file (see `.env.example`). **This repo is public:**
-no secrets and no content/copyrighted material are ever committed — TeachingOS only references
+no secrets and no content/copyrighted material are ever committed — SAMAGRA only references
 local source paths, kept out of git via `.gitignore`.
 
 ## License

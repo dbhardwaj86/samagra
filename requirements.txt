@@ -1,5 +1,5 @@
 # Phase A (spine) uses only the Python standard library — nothing here is needed
-# for `python -m teachingos refresh|status|search`.
+# for `python -m samagra refresh|status|search`.
 
 # Phase B (portal)
 fastapi>=0.110

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TeachingOS → SAMAGRA — Status</title>
+<title>SAMAGRA — Status</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -57,7 +57,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
 </head>
 <body>
 <header class="top">
-  <h1>TeachingOS → SAMAGRA</h1><span class="sub">Slice 1 done · SAMAGRA planned</span>
+  <h1>SAMAGRA</h1><span class="sub">Slice 1 done · Phase 0 (rename) done</span>
   <nav>
     <a href="#overview">Overview</a><a href="#phases">Phases</a>
     <a href="#samagra">SAMAGRA</a><a href="#arch">Architecture</a>
@@ -83,21 +83,23 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
 
 <main>
   <h2 id="overview">Overview</h2>
-  <p class="lede">TeachingOS is an agentic content-pipeline control plane for a JEE/NEET physics
+  <p class="lede">SAMAGRA is an agentic content-pipeline control plane for a JEE/NEET physics
   teaching operation. It orchestrates several already-working tools — the QX question engine,
   the physics-textbook lecture engine, booklets, INSP papers and Pratyaksh sims — behind one
   portal, fills the thin/thick lecture-generation gap, and runs semi-autonomously with hard
   gates at publish and Telegram + email notifications.</p>
-  <p>Repo: <a href="https://github.com/dbhardwaj86/teachingos">github.com/dbhardwaj86/teachingos</a>
-  · branch <code>slice-1</code> (<a href="https://github.com/dbhardwaj86/teachingos/pull/1">PR #1</a>)
+  <p>Repo: <a href="https://github.com/dbhardwaj86/samagra">github.com/dbhardwaj86/samagra</a>
+  · <a href="https://github.com/dbhardwaj86/samagra/pull/1">PR #1</a> squash-merged to <code>main</code>
   · local-first (Python + FastAPI). Slice 1 is <strong>code-complete and verified</strong>.</p>
-  <p><strong>2026-06-19 — SAMAGRA planning milestone.</strong> The slice-1 spine is being evolved into
+  <p><strong>2026-06-19 — SAMAGRA Phase 0 complete.</strong> The slice-1 spine is being evolved into
   <strong>SAMAGRA</strong> (समग्र — <em>integrated / whole</em>): a company-structured agentic content OS
   that folds in <code>mycontentdev</code> (editorial seeds) and <code>munshi</code> (phone capture) and
   governs a worker fleet through a board of three frontier agents. All ten open questions are decided; an
   approved design spec and a 34-task, four-phase implementation plan are committed and recorded
   (see <a href="#samagra">SAMAGRA roadmap</a> + <a href="#artifacts">Artifacts</a>).
-  <strong>Nothing built yet</strong> — execution begins at Phase 0 (the <code>teachingos → samagra</code> rename).</p>
+  <strong>Phase 0 (rename) is done</strong> — PR #1 merged, the GitHub repo and Python package are now
+  <code>samagra</code>, <code>samagra.db</code> rebuilt to 7,044 artifacts, 11/11 tests green. Phase 1
+  (subsystem adapters) is next.</p>
 
   <h2 id="phases">Phase status — Slice 1 (built)</h2>
   <div class="grid">
@@ -111,7 +113,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   <p class="lede">One phased plan. Each phase ends green before the next. Build order:
   rename → adapters → governance → loop.</p>
   <div class="grid">
-    <div class="card"><div class="n">0 <span class="badge todo">planned</span></div><div class="l">Rename <code>teachingos → samagra</code> (repo + package); merge PR #1 first</div></div>
+    <div class="card"><div class="n">0 <span class="badge ok">done</span></div><div class="l">Rename to <code>samagra</code> (repo + package); PR #1 merged</div></div>
     <div class="card"><div class="n">1 <span class="badge todo">planned</span></div><div class="l">Read-only adapters — mycontentdev (cloud admin API) + munshi (<code>library()</code>); reflect state</div></div>
     <div class="card"><div class="n">2 <span class="badge todo">planned</span></div><div class="l">Governance — <code>samagra.db</code> store, Assignments tab, blocking Codex pre-commit hook, agent worktrees, org SVG</div></div>
     <div class="card"><div class="n">3 <span class="badge todo">planned</span></div><div class="l">Active loop — munshi → proposed seed (w/ pointers) → board approve → capture API</div></div>
@@ -136,7 +138,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     <text class="mut" x="34" y="54">overview · search · lectures · questions · pipeline board · gates · assignments (planned)</text>
     <rect class="acc" x="20" y="86" width="680" height="58" rx="10"/>
     <text class="ttl" x="34" y="106">② Catalog + State</text>
-    <text class="mut" x="34" y="126">teachingos.db (FTS5) · phase state machine · scheduler · notify</text>
+    <text class="mut" x="34" y="126">samagra.db (FTS5) · phase state machine · scheduler · notify</text>
     <rect class="acc" x="20" y="158" width="680" height="44" rx="10"/>
     <text class="ttl" x="34" y="184">① Source adapters (read-only, normalized)</text>
     <g>
@@ -184,14 +186,16 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   SAMAGRA phases each ship their own TDD suite (adapters mock the HTTP clients — no live-prod calls in CI).</p>
 
   <h2 id="decisions">Recent decisions</h2>
+  <div class="log"><div class="d">2026-06-19 · Phase 0 executed — package renamed to samagra</div>
+    PR #1 squash-merged to <code>main</code>; GitHub repo and Python package are now <code>samagra</code>; env keys moved to the <code>SAMAGRA_*</code> namespace; <code>samagra.db</code> rebuilt to 7,044 artifacts; 11/11 tests green.</div>
   <div class="log"><div class="d">2026-06-19 · SAMAGRA — one phased plan, rename first</div>
-    Build order locked: rename <code>teachingos → samagra</code> (Phase 0) → subsystem adapters → governance → active loop. 34 tasks across 4 phases; spec + plan committed and recorded to the cbm sidecar.</div>
+    Build order locked: rename to <code>samagra</code> (Phase 0) → subsystem adapters → governance → active loop. 34 tasks across 4 phases; spec + plan committed and recorded to the cbm sidecar.</div>
   <div class="log"><div class="d">2026-06-19 · Reflect, don't duplicate</div>
     mycontentdev read via cloud admin API (<code>x-mcd-admin</code>); munshi via <code>driver.mjs library()</code> (cookie auth, <code>MUNSHI_SECRET</code>); SAMAGRA mirrors subsystem state + a thin board-review overlay — no parallel state machine.</div>
   <div class="log"><div class="d">2026-06-19 · Governance mechanics</div>
     Per-agent git worktrees (deepak/khanak/codex); markdown outbox files + <code>samagra.db</code> index + Assignments tab; pre-commit Codex review blocks on <code>severity==CRITICAL</code> with no escape hatch (fail-closed). Only board agents approve writes.</div>
   <div class="log"><div class="d">2026-06-18 · Greenfield control plane</div>
-    TeachingOS is a new repo orchestrating existing tools in place — not a rewrite. Spine + dashboard first.</div>
+    SAMAGRA is a new repo orchestrating existing tools in place — not a rewrite. Spine + dashboard first.</div>
   <div class="log"><div class="d">2026-06-18 · Lectures: thin/thick, no PDF</div>
     Thin = concise revision sheet, thick = full chapter; export HTML + DOCX (OMML math) + Google Docs.</div>
 
@@ -200,18 +204,18 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     <tr><th>Path</th><th>What</th></tr>
     <tr><td><code>docs/superpowers/specs/2026-06-19-samagra-evolution-design.md</code></td><td>approved SAMAGRA design spec (integration contracts verified)</td></tr>
     <tr><td><code>docs/superpowers/plans/2026-06-19-samagra-evolution.md</code></td><td>34-task, 4-phase SAMAGRA implementation plan (TDD)</td></tr>
-    <tr><td><code>teachingos/</code></td><td>package — adapters, catalog, state, scheduler, api, portal, lectures</td></tr>
-    <tr><td><code>teachingos.db</code></td><td>unified catalog (generated, gitignored)</td></tr>
+    <tr><td><code>samagra/</code></td><td>package — adapters, catalog, state, scheduler, api, portal, lectures</td></tr>
+    <tr><td><code>samagra.db</code></td><td>unified catalog (generated, gitignored)</td></tr>
     <tr><td><code>build/lectures/&lt;slug&gt;/</code></td><td>exported thin/thick HTML + DOCX</td></tr>
     <tr><td><code>state/*.orchestrator_state.json</code></td><td>pipeline state + tracker.txt + notifications.log</td></tr>
   </table>
 
   <h2 id="next">Next actions</h2>
-  <p>SAMAGRA is fully planned. The next action is to execute Phase 0; a few slice-1 items still need your input to switch on the unattended parts:</p>
+  <p>SAMAGRA Phase 0 (rename) is complete. The next action is Phase 1 (subsystem adapters); a few slice-1 items still need your input to switch on the unattended parts:</p>
   <table>
     <tr><th>Item</th><th>Status</th><th>Action</th></tr>
-    <tr><td>Execute SAMAGRA Phase 0 (rename)</td><td><span class="badge todo">ready</span></td><td>Run the plan: merge PR #1 → <code>gh repo rename samagra</code> → rename the package. Then Phases 1–3. Subagent-driven or inline execution.</td></tr>
-    <tr><td>Windows scheduled task (hourly tick)</td><td><span class="badge todo">needs OK</span></td><td>Run <code>teachingos schedule-install</code> (or approve it) — registering an OS-level recurring job needs your consent.</td></tr>
+    <tr><td>SAMAGRA Phase 0 (rename)</td><td><span class="badge ok">done</span></td><td>PR #1 merged; repo + package renamed <code>samagra</code>; catalog rebuilt (7,044 artifacts); 11/11 green. Next: Phase 1 adapters.</td></tr>
+    <tr><td>Windows scheduled task (hourly tick)</td><td><span class="badge todo">needs OK</span></td><td>Run <code>samagra schedule-install</code> (or approve it) — registering an OS-level recurring job needs your consent.</td></tr>
     <tr><td>Notification channels</td><td><span class="badge todo">creds</span></td><td>Set <code>TELEGRAM_BOT_TOKEN</code>/<code>CHAT_ID</code> + gmail <code>SMTP_PASS</code> in <code>.env</code>. Until then notifications are logged only.</td></tr>
     <tr><td>Google Docs export</td><td><span class="badge todo">creds</span></td><td>Set <code>GOOGLE_OAUTH_CLIENT</code> (Desktop OAuth JSON); HTML + DOCX already work.</td></tr>
   </table>
