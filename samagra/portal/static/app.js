@@ -34,6 +34,7 @@ const TABS = {
   booklets: () => renderSourceTable("booklets", "Booklets", ["Title", "Folder", ""]),
   insp: () => renderSourceTable("insp", "INSP / Olympiad", ["Title", "Kind", ""]),
   sims: renderSims, pipelines: renderPipelines,
+  assignments: renderAssignments,
 };
 function activate(tab) {
   document.querySelectorAll("nav.side .tab").forEach(a =>
@@ -185,6 +186,30 @@ async function runTick() {
   const b = $("#tickBtn"); b.textContent = "▶ …"; b.disabled = true;
   await fetch("/api/tick", { method: "POST" });
   renderPipelines();
+}
+
+// ---- assignments (governance) ----
+async function renderAssignments() {
+  main.innerHTML = `<h1 class="page">Assignments</h1><p class="lede">Loading…</p>`;
+  const d = await jget("/api/assignments");
+  const aRows = (d.assignments || []).map(a => `<tr>
+    <td>${esc(a.id)}</td><td>${esc(a.agent)}</td>
+    <td>${esc(a.pipeline || "-")}</td>
+    <td>${esc(a.seed_ref || a.artifact_ref || "-")}</td>
+    <td>${statusPill(a.status)}</td>
+    <td>${esc(a.review_by || "-")}</td>
+    <td class="src">${esc(a.outbox_path)}</td></tr>`);
+  const eRows = (d.events || []).map(e => `<tr>
+    <td class="src">${esc(e.ts)}</td><td>${esc(e.actor)}</td>
+    <td>${esc(e.verb)}</td><td>${esc(e.assignment_id || "-")}</td>
+    <td>${esc(e.subsystem || "-")}</td><td>${esc(e.note || "")}</td></tr>`);
+  main.innerHTML = `<h1 class="page">Assignments <span class="src">governance · outbox index</span></h1>
+    <p class="lede">${(d.assignments || []).length} assignment(s) · board-routed via the outbox.</p>`
+    + table(["ID", "Agent", "Pipeline", "Ref", "Status", "Review by", "Outbox"], aRows)
+    + `<h3 style="margin:18px 0 8px">Events ledger</h3>`
+    + table(["When", "Actor", "Verb", "Assignment", "Subsystem", "Note"], eRows);
+  const ct = $("#ct-assignments");
+  if (ct) ct.textContent = (d.assignments || []).length || "";
 }
 
 // ---- global search ----
