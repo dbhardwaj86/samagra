@@ -50,6 +50,27 @@ Via environment variables or a `.env` file (see `.env.example`). **This repo is 
 no secrets and no content/copyrighted material are ever committed — SAMAGRA only references
 local source paths, kept out of git via `.gitignore`.
 
+## Pre-commit Codex review (advisory-local + enforced-CI)
+
+SAMAGRA ships a committed pre-commit hook (`.githooks/pre-commit`) that asks Codex
+to review the staged diff. It BLOCKS the commit only when a finding is a
+**confirmed** `CRITICAL` — a second Codex pass over the same diff independently
+agrees — and the verdict is cached by staged-diff hash so repeated attempts of
+the identical diff don't re-prompt. Enable it once per clone (it then applies to
+the repo and every worktree):
+
+```
+git config core.hooksPath .githooks
+```
+
+Requirements: `codex` on PATH (`npm i -g @openai/codex`) or `CODEX_BIN` set.
+The local hook is **advisory** (runbook D5): a confirmed-CRITICAL blocks, but if
+Codex cannot run the commit is **not** wedged (it warns and allows), and an
+audited break-glass exists for emergencies — `SAMAGRA_REVIEW_BREAKGLASS="<reason>"`
+allows the commit and logs to `state/review/breakglass.log`. Real enforcement
+lives in CI / branch protection; the human publish gate is the only sacred,
+never-automated block. Manual run: `python -m samagra review-staged`.
+
 ## License
 
 Private project; code only. Source content remains local and is not part of this repository.
