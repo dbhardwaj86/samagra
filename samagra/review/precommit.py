@@ -80,6 +80,16 @@ def _diff_hash(diff: str) -> str:
     return hashlib.sha256(diff.encode("utf-8")).hexdigest()
 
 
+def _warn(msg: str) -> None:
+    """Emit a diagnostic that can NEVER raise — even a broken stderr is swallowed.
+    Used inside every best-effort wrapper so a failing *warning* print can't escape
+    and let the outer guard downgrade a decided verdict."""
+    try:
+        print(msg, file=sys.stderr)
+    except Exception:  # noqa: BLE001 - a diagnostic must never affect control flow
+        pass
+
+
 # -- durable side files (state/ is gitignored) ---------------------------
 def _review_dir() -> Path:
     d = config.STATE_DIR / "review"
@@ -121,8 +131,7 @@ def _save_cache(cache: dict) -> None:
             cache = dict(keep)
         _cache_path().write_text(json.dumps(cache, indent=2), encoding="utf-8")
     except Exception as e:  # noqa: BLE001 - cache persistence must never flip a verdict
-        print(f"[codex-precommit] warning: could not write review cache: {e}",
-              file=sys.stderr)
+        _warn(f"[codex-precommit] warning: could not write review cache: {e}")
 
 
 def _remember(cache: dict, dhash: str, entry: dict) -> None:
@@ -133,8 +142,7 @@ def _remember(cache: dict, dhash: str, entry: dict) -> None:
         cache[dhash] = entry
         _save_cache(cache)
     except Exception as e:  # noqa: BLE001 - verdict persistence is never a gate
-        print(f"[codex-precommit] warning: could not persist verdict: {e}",
-              file=sys.stderr)
+        _warn(f"[codex-precommit] warning: could not persist verdict: {e}")
 
 
 def _now() -> str:
@@ -155,8 +163,7 @@ def _audit_breakglass(diff_hash: str, reason: str) -> None:
         with (_review_dir() / "breakglass.log").open("a", encoding="utf-8") as fh:
             fh.write(line)
     except OSError as e:
-        print(f"[codex-precommit] warning: could not write break-glass log: {e}",
-              file=sys.stderr)
+        _warn(f"[codex-precommit] warning: could not write break-glass log: {e}")
 
 
 # -- verdict helpers -----------------------------------------------------
@@ -168,8 +175,7 @@ def _emit(fn) -> None:
     try:
         fn()
     except Exception as e:  # noqa: BLE001 - a side-effect must never flip a verdict
-        print(f"[codex-precommit] warning: side-effect failed: {e}",
-              file=sys.stderr)
+        _warn(f"[codex-precommit] warning: side-effect failed: {e}")
 
 
 def _criticals(findings) -> list[dict]:
@@ -210,11 +216,9 @@ def review_staged_diff() -> int:
     try:
         return _review_staged_diff_inner()
     except Exception as e:  # noqa: BLE001 - the local hook must never wedge a commit
-        print("\n=== SAMAGRA pre-commit: review error (advisory) ===",
-              file=sys.stderr)
-        print(f"  unexpected error in the local hook: {e!r}", file=sys.stderr)
-        print("  Commit ALLOWED locally — enforcement is in CI / branch "
-              "protection.", file=sys.stderr)
+        _warn("\n=== SAMAGRA pre-commit: review error (advisory) ===")
+        _warn(f"  unexpected error in the local hook: {e!r}")
+        _warn("  Commit ALLOWED locally — enforcement is in CI / branch protection.")
         return 0
 
 
@@ -253,13 +257,10 @@ def _review_staged_diff_inner() -> int:
     try:
         findings = _review_once(diff)
     except Exception as e:  # noqa: BLE001 - CodexError or any failure is advisory
-        print("\n=== SAMAGRA pre-commit: review skipped (advisory) ===",
-              file=sys.stderr)
-        print(f"  Codex could not run: {e}", file=sys.stderr)
-        print("  Commit ALLOWED locally — enforcement is in CI / branch "
-              "protection.", file=sys.stderr)
-        print("  (Restore `codex` on PATH or set CODEX_BIN to re-enable the "
-              "local gate.)", file=sys.stderr)
+        _warn("\n=== SAMAGRA pre-commit: review skipped (advisory) ===")
+        _warn(f"  Codex could not run: {e}")
+        _warn("  Commit ALLOWED locally — enforcement is in CI / branch protection.")
+        _warn("  (Restore `codex` on PATH or set CODEX_BIN to re-enable the local gate.)")
         return 0
 
     crits = _criticals(findings)
@@ -276,7 +277,7 @@ def _review_staged_diff_inner() -> int:
     except Exception as e:  # noqa: BLE001 - confirm failure -> advisory, not block
         _emit(lambda: _print_findings(crits, "UNCONFIRMED CRITICAL (confirm pass "
                                              "errored) — allowed"))
-        print(f"  confirm pass could not run: {e}", file=sys.stderr)
+        _warn(f"  confirm pass could not run: {e}")
         return 0
 
     if _criticals(confirm):

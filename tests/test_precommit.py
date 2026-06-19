@@ -10,6 +10,7 @@ fail-closed assertions.)
 from __future__ import annotations
 
 import json
+import sys
 
 import pytest
 
@@ -213,4 +214,39 @@ def test_cached_block_with_malformed_findings_still_blocks(monkeypatch):
         precommit, "_load_cache",
         lambda: {dhash: {"verdict": "block", "findings": ["not-a-dict"], "ts": []}})
     monkeypatch.setattr(precommit, "dispatch_codex", _no_call)
+    assert precommit.review_staged_diff() == 1
+
+
+class _BrokenStderr:
+    """A stderr whose every write raises — simulates a broken pipe / closed fd."""
+
+    def write(self, *a, **k):
+        raise OSError("stderr is broken")
+
+    def flush(self, *a, **k):
+        pass
+
+
+def test_confirmed_block_survives_broken_stderr(monkeypatch):
+    # Even if EVERY stderr write fails (so the verdict banner AND the best-effort
+    # warning print both raise), a confirmed CRITICAL must still return 1 — _warn()
+    # swallows stderr failures so nothing escapes to the outer guard.
+    crit = [{"severity": "CRITICAL", "file": "x.py", "line": 3, "issue": "rm -rf"}]
+    monkeypatch.setattr(precommit, "get_staged_diff", lambda: "diff --git a b")
+    monkeypatch.setattr(precommit, "dispatch_codex",
+                        _seq(_result(crit), _result(crit)))
+    monkeypatch.setattr(sys, "stderr", _BrokenStderr())
+    assert precommit.review_staged_diff() == 1
+
+
+def test_cached_block_survives_broken_stderr(monkeypatch):
+    diff = "diff --git a b"
+    dhash = precommit._diff_hash(diff)
+    monkeypatch.setattr(precommit, "get_staged_diff", lambda: diff)
+    monkeypatch.setattr(precommit, "_load_cache", lambda: {dhash: {
+        "verdict": "block",
+        "findings": [{"severity": "CRITICAL", "file": "x", "line": 1, "issue": "y"}],
+        "ts": "2026"}})
+    monkeypatch.setattr(precommit, "dispatch_codex", _no_call)
+    monkeypatch.setattr(sys, "stderr", _BrokenStderr())
     assert precommit.review_staged_diff() == 1
