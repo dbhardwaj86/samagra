@@ -23,6 +23,13 @@ PIPELINES: dict[str, dict] = {
         "owners": {"draft": "codex", "enrich": "codex",
                    "approve": "human", "export": "teachingos"},
     },
+    "mycontentdev": {
+        "label": "Editorial (mycontentdev)",
+        "phases": ["capture", "enrich", "review", "publish"],
+        "gates": ["review", "publish"],
+        "owners": {"capture": "human", "enrich": "claude2",
+                   "review": "claude1", "publish": "human"},
+    },
     "questions": {
         "label": "Question corpus (QX)",
         "phases": ["extract", "tag", "verify"],
