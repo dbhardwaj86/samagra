@@ -71,12 +71,32 @@ def test_reflect_review_gate_ready_when_draft_ready(monkeypatch):
     assert any(ev == "gate-ready" for ev, _ in events)
 
 
+def test_reflect_changes_requested_triggers_review_gate(monkeypatch):
+    # changes_requested is the OTHER half of the draft_ready OR — pin it directly.
+    fake = FakeMcdClient(["captured", "changes_requested"])
+    events = []
+    scheduler._reflect_mycontentdev(dry=False, events=events, client=fake)
+    st = state.load("mycontentdev")
+    assert st["phases"]["review"]["status"] == "awaiting_gate"
+    assert any(ev == "gate-ready" for ev, _ in events)
+
+
 def test_reflect_publish_done_when_all_done(monkeypatch):
     fake = FakeMcdClient(["done", "done"])
     events = []
     scheduler._reflect_mycontentdev(dry=False, events=events, client=fake)
     st = state.load("mycontentdev")
     assert st["phases"]["publish"]["status"] == "done"
+
+
+def test_reflect_publish_not_done_when_partial(monkeypatch):
+    # Not all seeds done -> publish stays pending; a draft_ready still opens review.
+    fake = FakeMcdClient(["done", "draft_ready"])
+    events = []
+    scheduler._reflect_mycontentdev(dry=False, events=events, client=fake)
+    st = state.load("mycontentdev")
+    assert st["phases"]["publish"]["status"] == "pending"
+    assert st["phases"]["review"]["status"] == "awaiting_gate"
 
 
 def test_reflect_dry_run_does_not_mutate_state(monkeypatch):

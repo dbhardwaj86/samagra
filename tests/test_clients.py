@@ -65,6 +65,7 @@ def test_mcd_available_true_with_env(monkeypatch):
 
 def test_mcd_query_posts_with_admin_header(monkeypatch):
     fake = FakeRequests([{"id": "s1", "title": "Gauss law"}])
+    monkeypatch.setattr(mcd_client, "_load_cloud_json", lambda: {})
     monkeypatch.setattr(mcd_client, "requests", fake)
     c = mcd_client.McdClient(api_url="https://mcd.example.dev",
                              admin_key="ADMIN-SECRET")
@@ -78,6 +79,7 @@ def test_mcd_query_posts_with_admin_header(monkeypatch):
 
 def test_mcd_pending_gets_with_admin_header(monkeypatch):
     fake = FakeRequests([{"id": "s2", "status": "needs_processing"}])
+    monkeypatch.setattr(mcd_client, "_load_cloud_json", lambda: {})
     monkeypatch.setattr(mcd_client, "requests", fake)
     c = mcd_client.McdClient(api_url="https://mcd.example.dev",
                              admin_key="ADMIN-SECRET")
