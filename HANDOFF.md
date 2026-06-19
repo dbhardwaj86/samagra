@@ -1,13 +1,15 @@
 # SAMAGRA — Handoff
 
-> **▶ STATUS:** The project is now **SAMAGRA** (package `samagra`) — a company-structured agent org
+> **▶ STATUS:** The project is **SAMAGRA** (package `samagra`) — a company-structured agent org
 > folding in `mycontentdev` + `munshi`, with a blocking pre-commit Codex review and a CEO prompt-outbox.
-> Planning is complete and **Phase 0 (rename) is done**; the live artifacts are the spec + plan under
-> `docs/superpowers/` (original brief: [`SAMAGRA-HANDOFF.md`](SAMAGRA-HANDOFF.md)). The record below is
-> slice-1 (built-and-verified).
+> **Phase 0 (rename), Track A (stabilize) and Phase 1 (read-only subsystem adapters) are done and merged to
+> `main`** (63/63 green; Phase 1 cleared an adversarial 42-agent pre-merge review — one HIGH, MUN-01, fixed).
+> `main` is 10 commits ahead of `origin` (local merge; push is an owner action). The live plan is under
+> `docs/superpowers/` (original brief: [`SAMAGRA-HANDOFF.md`](SAMAGRA-HANDOFF.md)). **Next: Phase 2 (governance).**
 
-**Repo:** github.com/dbhardwaj86/samagra · branch `slice-1` (PR #1) · local-first Python+FastAPI.
-**State:** Slice 1 (spine + portal + thin/thick exporter + semi-autonomous loop) is code-complete and verified. 11/11 tests pass.
+**Repo:** github.com/dbhardwaj86/samagra · branch `main` · local-first Python+FastAPI.
+**State:** Spine + portal + thin/thick exporter + semi-autonomous loop + two read-only subsystem adapters
+(mycontentdev seeds, munshi `library()`) reflecting into the catalog. **63/63 tests pass.**
 
 ## Run it
 
@@ -25,7 +27,8 @@ set PYTHONPATH=%CD%                 # or: export PYTHONPATH=$(pwd) in bash
 
 ## Layout (source of truth)
 
-- `samagra/adapters/` — read-only source adapters → common `Artifact`.
+- `samagra/adapters/` — read-only source adapters → common `Artifact` (incl. Phase 1 `mcd.py`, `munshi.py`).
+- `samagra/clients/` — read-only subsystem HTTP clients: `McdClient` (mycontentdev admin API), `MunshiClient` (`library()`); secret-safe, never logged.
 - `samagra/catalog.py` — `samagra.db` unified catalog (FTS5) + search/overview/facets.
 - `samagra/state.py` — phase state machine; `state/<pipeline>.orchestrator_state.json` + `tracker.txt`.
 - `samagra/scheduler.py` — `tick()`, `gate()`, Task Scheduler installer.

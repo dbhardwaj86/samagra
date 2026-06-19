@@ -57,7 +57,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
 </head>
 <body>
 <header class="top">
-  <h1>SAMAGRA</h1><span class="sub">Track A merged to main (34/34) · vision folded · Phase 1 next</span>
+  <h1>SAMAGRA</h1><span class="sub">Phase 1 merged to main (63/63) · adversarial pre-merge review · Phase 2 next</span>
   <nav>
     <a href="#overview">Overview</a><a href="#phases">Phases</a>
     <a href="#samagra">SAMAGRA</a><a href="#arch">Architecture</a>
@@ -121,6 +121,24 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   public via a separate entity (the OS stays inward). No phase re-sequencing; an in-place fix removed a
   stray Phase-1 <code>create_seed</code> write.</p>
 
+  <p><strong>2026-06-19 — SAMAGRA Phase 1 built, reviewed and merged to <code>main</code>.</strong> The two
+  read-only subsystem adapters are live: <code>McdClient</code>/<code>McdAdapter</code> (mycontentdev seeds via
+  the cloud admin API, <code>x-mcd-admin</code>) and <code>MunshiClient</code>/<code>MunshiAdapter</code>
+  (munshi <code>library()</code>, cookie auth), both normalized into the unified catalog, plus a
+  <code>mycontentdev</code> pipeline and a <code>_reflect_mycontentdev</code> reflector that mirrors seed
+  status into the state machine. Built TDD in 8 tasks (P1-01→P1-08), then put through an
+  <strong>adversarial multi-agent pre-merge review</strong> (42 agents, every integration contract
+  re-verified against the live <code>mycontentdev</code> + <code>myProd</code> source). The review returned
+  <em>CHANGES-REQUESTED</em> for one real HIGH defect — <strong>MUN-01</strong>: the munshi adapter read a
+  <code>payload.text/body</code> the live server never emits (each kind stores its title under a
+  kind-specific key: <code>todo→task</code>, <code>issue→summary</code>, <code>question→stem</code>,
+  <code>followup→note</code>, <code>note→issue</code>), so every title silently collapsed to the bare kind
+  and the green test masked it with a fabricated payload. Fixed against the verified schema + locked with
+  real-schema fixtures; cheap test-hygiene nits (hermetic client tests, reflector branch coverage) folded in.
+  Suite <strong>34 → 63 green</strong>; fast-forward-merged to <code>main</code>. The refresh-isolation +
+  stale-visibility hardening (F1/F4) is carried into Phase 2 (its <code>stale</code> column touches the
+  Phase-1 schema-freeze). <code>create_seed</code> remains deferred to Phase 3 (no write path shipped).</p>
+
   <h2 id="phases">Phase status — Slice 1 (built)</h2>
   <div class="grid">
     <div class="card"><div class="n">A <span class="badge ok">done</span></div><div class="l">Spine — adapters, catalog, state machine, CLI</div></div>
@@ -134,8 +152,8 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   rename → adapters → governance → loop.</p>
   <div class="grid">
     <div class="card"><div class="n">0 <span class="badge ok">done</span></div><div class="l">Rename to <code>samagra</code> (repo + package); PR #1 merged</div></div>
-    <div class="card"><div class="n">1 <span class="badge todo">build next</span></div><div class="l">Read-only adapters — mycontentdev + munshi (<code>library()</code>); reflect state. <strong>Track A stabilize (S-01–S-05) done</strong> on <code>phase1-stabilize</code>.</div></div>
-    <div class="card"><div class="n">2 <span class="badge todo">planned</span></div><div class="l">Governance — split <code>catalog.db</code>/<code>governance.db</code>, Assignments tab, Codex pre-commit (advisory-local + enforced-CI), agent worktrees, org SVG</div></div>
+    <div class="card"><div class="n">1 <span class="badge ok">done</span></div><div class="l">Read-only adapters — mycontentdev + munshi (<code>library()</code>); reflect state. Built TDD, adversarial pre-merge review (MUN-01 fixed), merged to <code>main</code>. 63/63.</div></div>
+    <div class="card"><div class="n">2 <span class="badge todo">build next</span></div><div class="l">Governance — <code>samagra.db</code> store (assignments/events/review overlay), Assignments tab, Codex pre-commit (advisory-local + enforced-CI), agent worktrees, org SVG. <em>+ carry-in: refresh per-adapter isolation + stale visibility (F1/F4).</em></div></div>
     <div class="card"><div class="n">3 <span class="badge todo">planned</span></div><div class="l">Active loop — munshi → proposed seed (w/ pointers) → board approve → capture API</div></div>
   </div>
   <p>Governance principle: only the three board agents — <strong>Claude-Deepak (CEO)</strong>,
@@ -176,7 +194,9 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   plus an <strong>Assignments</strong> tab and a governance store in the same catalog DB.</p>
 
   <h2 id="coverage">Source coverage</h2>
-  <p class="lede">Unified catalog: <strong>7,044 artifacts</strong> across 6 sources (read-only). SAMAGRA Phase 1 adds 2 more.</p>
+  <p class="lede">Unified catalog: <strong>7,044 artifacts</strong> across 6 local sources (read-only).
+  Phase 1 wired in 2 network-backed sources — they reflect live state when creds are present and skip
+  cleanly otherwise (a failing/offline subsystem never erases the catalog — D4/S-05).</p>
   <table>
     <tr><th>Source</th><th>Artifacts</th><th>Headline</th></tr>
     <tr><td>QX (gpt-extract-ques)</td><td>5,284 papers</td><td>67,276 questions, faceted + semantic search</td></tr>
@@ -185,8 +205,8 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     <tr><td>claude-INSP-extract</td><td>136 items</td><td>116 sets · 20 papers</td></tr>
     <tr><td>pratyaksh-May-deploy</td><td>1,554 sims</td><td>read-only</td></tr>
     <tr><td>QuestionDB (HF)</td><td>—</td><td>online target (offline/private)</td></tr>
-    <tr><td>mycontentdev <span class="badge todo">Phase 1</span></td><td>seeds</td><td>cloud admin API (read-only); reflects seed status</td></tr>
-    <tr><td>munshi <span class="badge todo">Phase 1</span></td><td>items</td><td><code>library()</code> over the Worker (read-only)</td></tr>
+    <tr><td>mycontentdev <span class="badge ok">Phase 1</span></td><td>seeds</td><td><code>McdAdapter</code> — cloud admin API (read-only); reflects seed status into the <code>mycontentdev</code> pipeline</td></tr>
+    <tr><td>munshi <span class="badge ok">Phase 1</span></td><td>items</td><td><code>MunshiAdapter</code> — <code>library()</code> over the Worker (read-only); per-kind title from the live payload schema</td></tr>
   </table>
 
   <h2 id="workers">Worker routing (role-specialized)</h2>
@@ -201,15 +221,27 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   </table>
 
   <h2 id="tests">Tests</h2>
-  <p><span class="badge ok">34 / 34 passing</span> (last run 2026-06-19) — spine + lectures + scheduler, plus
-  Track A: harness isolation, atomic state writes, gate-prereq enforcement + <code>/api/gate</code> 409,
-  refresh last-known-good, refresh-failure caller safety, state read-modify-write under one lock, and a
-  provably single-holder lock (auto-reclaim removed). The suite is now isolated from the real
-  <code>samagra.db</code> (autouse <code>conftest.py</code> fixture → real catalog byte-identical across runs).
-  Source-dependent tests skip cleanly in CI; SAMAGRA phases each ship their own TDD suite (HTTP mocked — no
-  live-prod calls).</p>
+  <p><span class="badge ok">63 / 63 passing</span> (last run 2026-06-19) — the 34-test Track A baseline
+  (spine + lectures + scheduler; harness isolation, atomic state writes, gate-prereq enforcement +
+  <code>/api/gate</code> 409, refresh last-known-good, refresh-failure caller safety, state read-modify-write
+  under one lock, provably single-holder lock) plus <strong>29 new Phase-1 tests</strong> across three
+  suites: <code>test_clients.py</code> (9 — read-only <code>McdClient</code>/<code>MunshiClient</code>,
+  URL/header/cookie shape, never-log-secret, hermetic), <code>test_subsystem_adapters.py</code> (12 —
+  <code>Artifact</code> mapping, per-kind munshi titles vs the live schema, dismissed-skip, registration),
+  and <code>test_reflect_mycontentdev.py</code> (8 — pipeline entry + reflector status mapping, gate branches,
+  dry-run). The suite is isolated from the real <code>samagra.db</code> (autouse <code>conftest.py</code>);
+  every subsystem HTTP client is MOCKED — no live-prod calls in CI.</p>
 
   <h2 id="decisions">Recent decisions</h2>
+  <div class="log"><div class="d">2026-06-19 · Phase 1 built + adversarial pre-merge review → merged to main</div>
+    The two read-only subsystem adapters (mycontentdev + munshi) shipped TDD in 8 tasks, then a 42-agent
+    pre-merge review re-verified every integration contract against the live <code>mycontentdev</code>/<code>myProd</code>
+    source. Verdict <strong>CHANGES-REQUESTED</strong> for one HIGH defect (<strong>MUN-01</strong>): the munshi
+    adapter read <code>payload.text/body</code>, but the live server stores each kind's title under a
+    kind-specific key — so titles collapsed to the bare kind, and the passing test masked it with a fabricated
+    payload. Fixed against the verified per-kind schema + locked with real-schema fixtures. The
+    refresh-abort-on-available-mcd coupling (F1/F4) was assessed real-but-LOW (no erasure; tick not installed)
+    and carried to Phase 2. Suite 34 → <strong>63 green</strong>; fast-forwarded to <code>main</code>.</div>
   <div class="log"><div class="d">2026-06-19 · Codex pre-merge review (3 passes) → Track A merged to main</div>
     A blocking Codex pre-merge review found three HIGH bugs the stabilization had missed: a refresh-failure
     <code>sum(None)</code> crash, a state lost-update, and a lock reclaim race. Three CEO-gated TDD fix-loops
@@ -255,24 +287,31 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     <tr><td><code>docs/samagra-vision-deliberation-2026-06-19.html</code></td><td>6-lens vision deliberation — 10 suggestions + 14 action items (folded into D9–D12)</td></tr>
     <tr><td><code>docs/codex-reviews/01–03-*.report.md</code></td><td>raw Codex reports (adversarial code · architecture · loop-plan)</td></tr>
     <tr><td><code>docs/codex-reviews/04–06-premerge-*.report.md</code></td><td>3-pass Codex pre-merge review (BLOCK → REQUEST-CHANGES → APPROVE) behind the S-06–S-09 fixes</td></tr>
-    <tr><td><code>tests/conftest.py</code> + 5 new suites</td><td>Track A: harness-isolation, state-atomic, lock, refresh-safety, api-gate</td></tr>
-    <tr><td><code>samagra/</code></td><td>package — adapters, catalog, state, scheduler, api, portal, lectures</td></tr>
+    <tr><td><code>tests/conftest.py</code> + 5 Track-A suites</td><td>harness-isolation, state-atomic, lock, refresh-safety, api-gate</td></tr>
+    <tr><td><code>samagra/clients/{mcd_client,munshi_client}.py</code></td><td>Phase 1 — read-only subsystem HTTP clients (secret-safe)</td></tr>
+    <tr><td><code>samagra/adapters/{mcd,munshi}.py</code> + 3 test suites</td><td>Phase 1 — subsystem adapters + <code>mycontentdev</code> pipeline + <code>_reflect_mycontentdev</code> (TDD, HTTP mocked)</td></tr>
+    <tr><td><code>samagra/</code></td><td>package — adapters, clients, catalog, state, scheduler, api, portal, lectures</td></tr>
     <tr><td><code>samagra.db</code></td><td>unified catalog (generated, gitignored)</td></tr>
     <tr><td><code>build/lectures/&lt;slug&gt;/</code></td><td>exported thin/thick HTML + DOCX</td></tr>
     <tr><td><code>state/*.orchestrator_state.json</code></td><td>pipeline state + tracker.txt + notifications.log</td></tr>
   </table>
 
   <h2 id="next">Next actions</h2>
-  <p>Phase 0 (rename), the vision fold (D9–D12), and Track A (stabilize, S-01–S-09) are <strong>merged to
-  <code>main</code></strong> after a 3-pass Codex pre-merge review (APPROVE). Suite 34/34. The push to
-  <code>origin/main</code> is the one remaining owner action. The next build is the Phase 1 chain
-  (P1-01 read-only <code>McdClient</code> → P1-07; TDD, HTTP mocked). A few slice-1 creds items remain to
-  switch on the unattended parts:</p>
+  <p>Phase 0 (rename), the vision fold (D9–D12), Track A (stabilize, S-01–S-09) and now <strong>Phase 1
+  (subsystem adapters)</strong> are all <strong>merged to <code>main</code></strong>. Suite 63/63. The push to
+  <code>origin/main</code> (now 10 commits ahead, incl. Phase 1) is the one remaining owner action. The next
+  build is <strong>Phase 2 — governance</strong>: the <code>samagra.db</code> store (assignments / events /
+  review overlay), the Assignments portal tab, the advisory-local Codex pre-commit hook, per-agent worktrees,
+  and the org-chart SVG — landing the carried-in refresh hardening (F1 per-adapter isolation + F4 stale
+  visibility) alongside its <code>stale</code> column. A few slice-1 creds items remain to switch on the
+  unattended parts:</p>
   <table>
     <tr><th>Item</th><th>Status</th><th>Action</th></tr>
-    <tr><td>Phase 0 (rename)</td><td><span class="badge ok">done</span></td><td>PR #1 merged; repo + package <code>samagra</code>; catalog 7,044 artifacts.</td></tr>
-    <tr><td>Track A — stabilize (S-01–S-09)</td><td><span class="badge ok">merged</span></td><td>9 fix-loops: 6 baseline findings + 3 pre-merge HIGHs (refresh-caller safety, state RMW lock, single-holder lock). 34/34 green; 3-pass Codex review APPROVE; fast-forwarded to <code>main</code>. Push to origin pending.</td></tr>
-    <tr><td>Phase 1 — build chain (P1-01→P1-07)</td><td><span class="badge todo">next</span></td><td>Read-only <code>McdClient</code>/<code>MunshiClient</code> + adapters + <code>mycontentdev</code> pipeline + <code>_reflect_mycontentdev</code>; TDD, HTTP mocked. <code>create_seed</code> deferred to Phase 3.</td></tr>
+    <tr><td>Phase 0 (rename)</td><td><span class="badge ok">done</span></td><td>repo + package <code>samagra</code>; catalog 7,044 artifacts.</td></tr>
+    <tr><td>Track A — stabilize (S-01–S-09)</td><td><span class="badge ok">merged</span></td><td>9 fix-loops; 34/34 green; 3-pass Codex review APPROVE; fast-forwarded to <code>main</code>.</td></tr>
+    <tr><td>Phase 1 — subsystem adapters (P1-01→P1-08)</td><td><span class="badge ok">merged</span></td><td>Read-only <code>McdClient</code>/<code>MunshiClient</code> + adapters + <code>mycontentdev</code> pipeline + <code>_reflect_mycontentdev</code>; adversarial review (MUN-01 fixed); 63/63 green; fast-forwarded to <code>main</code>. <code>create_seed</code> deferred to Phase 3.</td></tr>
+    <tr><td>Push <code>main</code> → origin</td><td><span class="badge todo">owner</span></td><td><code>git push origin main</code> — 10 commits ahead (Phase 1). Held back since the merge was local-only.</td></tr>
+    <tr><td>Phase 2 — governance</td><td><span class="badge todo">build next</span></td><td>Governance store + Assignments tab + Codex pre-commit + worktrees + org SVG; + refresh per-adapter isolation &amp; stale surfacing (F1/F4).</td></tr>
     <tr><td>Notification channels</td><td><span class="badge todo">creds</span></td><td>Set <code>TELEGRAM_BOT_TOKEN</code>/<code>CHAT_ID</code> + gmail <code>SMTP_PASS</code> in <code>.env</code>. Until then notifications are logged only.</td></tr>
     <tr><td>Google Docs export</td><td><span class="badge todo">creds</span></td><td>Set <code>GOOGLE_OAUTH_CLIENT</code> (Desktop OAuth JSON); HTML + DOCX already work.</td></tr>
   </table>
