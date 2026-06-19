@@ -10,11 +10,16 @@
 
 TeachingOS **slice-1** is built, verified (11/11 tests), and open as **PR #1** (`slice-1 → main`, MERGEABLE). It is a local-first Python + FastAPI **control plane**: read-only adapters normalise 7,044 artifacts (QX / textbook / booklets / INSP / sims) into a unified FTS5 catalog (`teachingos.db`); a JSON-file phase state machine drives four pipelines; a forked-QX portal (JS-SPA) exposes search + a gate board; a thin/thick lecture exporter emits HTML + DOCX (OMML) + Google Docs; a semi-autonomous tick loop notifies via Telegram/email. **This spec extends that spine — it does not rebuild it.**
 
-SAMAGRA (समग्र — *integrated / whole*) grows the spine into a **company-structured agentic content OS**: a board of three frontier agents governing a worker fleet, folding in `mycontentdev` (editorial seed pipeline) and `munshi` (phone capture clerk), with a blocking pre-commit Codex review and a CEO prompt-outbox.
+SAMAGRA (समग्र — *integrated / whole*) grows the spine into a **company-structured control plane** for the operator's content lifecycle: a board of three frontier agents governing a worker fleet, folding in `mycontentdev` (editorial seed pipeline) and `munshi` (phone capture clerk), with a blocking pre-commit Codex review and a CEO prompt-outbox. It is inward-facing back-office infrastructure for a single operator (§1), not a product and not an audience-facing OS. *(The "OS" framing is retired — A14/D9; see §1.)*
 
 ## 1. Goals / non-goals
 
+**Values.** SAMAGRA is built on three first-class values: *local-first*, *frugal*, and *graceful-degradation-under-owner-absence* (bus-factor-of-one must not be fatal). During owner absence, read-only lanes (capture, reflect, classification, linking) keep running and pile into a ranked, publish-ready queue; PUBLISH HALTS BY DEFAULT so nothing ships unapproved and nothing rots silently — absence costs latency, not loss. (Coverage-recompute joins these lanes only once that lane exists — Phase 2+.)
+
+SAMAGRA is a *control plane*, deliberately NOT an *operating system*: it routes, reflects, and gates — it does not own a process model, scheduler-as-platform, or app lifecycle. The word "OS" is retired because it silently licenses OS-sized scope; SAMAGRA stays a thin layer over subsystems that remain their own source of truth. (It is deliberately NOT framed as a "single pane of glass" — that framing was rejected as a north-star because it measures *seeing*, not *value*.)
+
 **Goals**
+- **Spine:** SAMAGRA owns exactly one durable primitive — a trajectory/review work-item that REFERENCES a subsystem record (seed/artifact) by id and tracks where it sits in capture→enrich→review→publish. Content source-of-truth stays in each subsystem (§2 boundary unchanged); SAMAGRA owns trajectory, not content. The JEE/NEET syllabus is a read-only projection axis, not a graph SAMAGRA curates. (The durable table that realizes this overlay is a Phase-2 build — see §6c, §9, D6.)
 - Rename `teachingos → samagra` (repo + package) cleanly, losing nothing.
 - Make SAMAGRA *see* mycontentdev and munshi as first-class read-only sources, reflecting their state (not duplicating it).
 - Stand up the governance layer: per-agent worktrees, a prompt outbox, an Assignments portal tab, and a blocking pre-commit Codex review.
@@ -26,6 +31,12 @@ SAMAGRA (समग्र — *integrated / whole*) grows the spine into a **comp
 - No new write paths into the subsystems beyond the single board-approved seed-creation in Phase 3.
 - No autonomous worker dispatch in this round (that's a later slice — see §13).
 - No migration of slice-1 catalog data; all new DB tables are additive.
+- SAMAGRA is permanently inward-facing back-office infrastructure for a single operator. It has no audience, no users, and no go-to-market identity, and is NOT a transferable operating-model or product for other AI-native creators. If a learner-facing product ever emerges, it is a SEPARATE entity that consumes SAMAGRA's published corpus — never SAMAGRA itself. *(Resolved 2026-06-19 / A6: the published OUTPUT MAY be public-facing via that separate entity; the OS itself stays inward.)*
+- The concept axis is a flat, **frozen vocabulary** — the existing mycontentdev taxonomy leaves (~100, owner Deepak, ratified at Phase-2 start) — NEVER a maintained dependency graph (that would create the second source-of-truth the spine exists to avoid). `concept_id` is dormant until Phase 2 and adds no Phase-1 schema (D11/D12).
+- No mining/learning from the decision ledger in any current phase. **Named-but-dormant:** when built, the DRAFTER may compound on Deepak's approval history (style/selection/structure); ONE adversarial REVIEWER stays anchored ONLY to external read-only ground-truth (answer keys, dimensional consistency, official syllabus weightings, known-misconception lists) and is NEVER trained on Deepak's approvals. Adversarial-reviewer catch-rate trending to zero is a RED FLAG (monoculture), not success. (Whether board-correction-rate ever becomes a headline metric is named only as a dormant possibility — the front-page metric is attention-ROI per D12.)
+- **Offline demand compass (named-but-dormant; depends on the dormant coverage scoreboard and the frozen concept vocabulary):** once a coverage axis exists, enrichment can be steered by demand signal Deepak ALREADY produces locally — (1) which concepts his QX paper-builder under-draws from (draw-asymmetry as a pointer at holes), and (2) his own post-use flags on questions captured via munshi ("too hard", "students missed this"). This adds NO Phase-1 schema and NO munshi write: the munshi one-tap flag is a munshi-SIDE capture feature SAMAGRA does not own and would only REFLECT if munshi adds it; SAMAGRA's munshi access stays read-only (refs/excerpt/hash, D3). The richer online learner-performance loop stays a dormant 3-year aspiration (not-online non-goal). Caveat: Deepak's own draw-asymmetry is a biased proxy for student need and can reinforce existing blind spots.
+
+**Kill-criterion (anti-vision).** SAMAGRA exists to give back the single operator's scarcest resource — attention. SAMAGRA is FROZEN if, by [Y = end of Phase 2: governance layer green + one golden capture→publish thread proven + N weeks of real operating use], it is not demonstrably saving the owner [X hrs/week — owner to ratify once the Phase-2 attention-ROI gauge (A8/D12) exists; seed proposal ~3 hrs/wk over ~8 weeks, NOT yet binding] of routing/triage/status-chasing versus the prior point-tools workflow. On freeze: no Phase-3 build, revert to point tools, the spine stays only as a read-only status mirror. This is a manual judgement the owner makes from the attention-ROI gauge — never a status SAMAGRA computes about itself, and no hours-saved column is added. Naming the exit now is the cheapest insurance against the meta-tool quietly out-competing the actual teaching product for the operator's time.
 
 ## 2. The ten decisions (LOCKED 2026-06-19)
 
@@ -38,7 +49,7 @@ SAMAGRA (समग्र — *integrated / whole*) grows the spine into a **comp
 | §9.5 | State boundary | **Reflect subsystem state + thin board-review overlay** (single source of truth stays in each subsystem). |
 | §9.6 | Agent isolation | **Git worktrees** of the renamed `samagra` repo (deepak / khanak / codex). |
 | §9.7 | Outbox model | **Markdown outbox files + a `samagra.db` index** + `events` audit ledger. |
-| §9.8 | Codex gate | **Block on `severity==CRITICAL`, no escape hatch**; repo-wide via committed `core.hooksPath`; fail-closed if Codex can't run. |
+| §9.8 | Codex gate | ~~Block on `severity==CRITICAL`, no escape hatch, fail-closed~~ **→ SUPERSEDED by D5/D9 (2026-06-19):** advisory-local (confirmed-CRITICAL, staged-diff-hash cached, audited break-glass) + enforced-CI; the human publish gate is the only sacred block (see §10 gate model). |
 | §9.4 | munshi→mcd bridge | **Propose → board-approve → create via capture API** (`POST /api/seeds`, app key). |
 | §9.9 | Org titles | **Adopt the proposed chart**; human Founder & Chairman = **Deepak (the BOSS)**. |
 
@@ -94,6 +105,8 @@ Each phase ends green (pytest, slice-1 style) before the next begins — one pla
 
 ## 6. Phase 1 — subsystem adapters (reflect, don't duplicate)
 
+> **Phase-1 acceptance (A4/D9c):** Phase 1 proves the **read-only slice** of the golden thread (munshi → seed → enriched → published); "published" closes only after the Phase-3 board-approved write (D2/D7). Phase 1 accepts exactly the two new adapters reflecting + the mycontentdev pipeline reflected read-only + the existing slice-1 publish gate reused unchanged — no new write path, no new status/step.
+
 Both follow the **verified** slice-1 adapter contract: subclass `adapters.base.Adapter` (`name`, `label`, `available() -> bool`, `summary() -> dict`, `artifacts() -> Iterator[Artifact]`), register in `samagra.adapters.ALL_ADAPTERS` (`adapters/__init__.py`). `Artifact` fields: `uid, source, kind, title, subject, unit, chapter, status, path, url, updated_at, meta` (dict; serialised inline by `Artifact.row()`). `available()` gates `artifacts()` — guard on creds/reachability so a missing key degrades gracefully.
 
 ### 6a. mycontentdev adapter (`McdAdapter`)
@@ -108,7 +121,7 @@ Both follow the **verified** slice-1 adapter contract: subclass `adapters.base.A
 
 ### 6c. Reflected pipelines + board-review overlay
 - Add `mycontentdev` (and optionally `munshi-intake`) pipelines to the **`PIPELINES` dict in `state.py`** (hardcoded by design). Mirror the verified `scheduler._reflect_textbook(dry, events)` pattern: `state.load(pipeline)` → `state.set_phase(pipeline, phase, status, **fields)` → `state.save(st)`; reflect mycontentdev seed-status into phase status read-only. **Honor `config.TEXTBOOK_LOCK`-style coexistence** — if a subsystem runs its own automation, don't fight it; mirror only.
-- **Board-review overlay** = new `samagra.db` tables (§9) recording board-agent approval of *worker outputs* across subsystems. References subsystem records by id; never copies their content. This is the one piece of state SAMAGRA *owns* (subsystems don't model "which board agent approved this artifact").
+- **Board-review overlay** = `samagra.db` tables (§9) recording board-agent approval of *worker outputs* across subsystems; references subsystem records by id, never copies their content. This trajectory/review work-item is the single durable thing SAMAGRA owns — it tracks *trajectory*, not content (§2 boundary unchanged). **Phasing note (D9a):** although described here under Phase 1, the durable table that realizes this overlay (`review_overlay`, with `assignments`/`events`) is a **PHASE-2** build (plan `governance/store.py`; §9; D6 splits it into `governance.db`). The spec's Phase-1 placement is superseded by the runbook (D6) + the Phase-1 loop backlog, which creates NO governance table in Phase 1. Phase 1 reflects subsystem state only and adds no governance schema. **Front-page metric (A8/D12):** the chosen north-star is attention-ROI (minutes-of-Deepak-attention-per-published-artifact), computed from the `events` ledger — therefore a Phase-2 render, zero Phase-1 schema; coverage-at-tier is the named-dormant Phase-2+ successor.
 
 ## 7. Phase 2 — governance mechanics
 
@@ -120,7 +133,10 @@ Both follow the **verified** slice-1 adapter contract: subclass `adapters.base.A
 - **`samagra.db` index:** an `assignments` table indexes the outbox files with status (`queued → running → in-review → approved | changes`); every transition appends to an `events` ledger (mirrors mycontentdev's `events` semantics).
 - **Assignments tab** follows the **verified** portal SPA pattern: add `<a class="tab" data-tab="assignments">` to `portal/templates/portal.html` nav; add `GET /api/assignments` (JSON) to `api/app.py`; add `renderAssignments()` to `portal/static/app.js` and register it in the `TABS` object; optional `#ct-assignments` count badge. All dynamic HTML via the existing `esc()` (XSS).
 
-### 7c. Pre-commit Codex review (blocking, no escape hatch)
+### 7c. Pre-commit Codex review (blocking on confirmed-CRITICAL; advisory-local + enforced-CI)
+
+> **SUPERSEDED by runbook D5/D9 (2026-06-19):** the gate is **advisory-local** — it blocks only a *confirmed*-CRITICAL finding surviving the staged-diff-hash cache, with an **audited break-glass** (`SAMAGRA_REVIEW_BREAKGLASS="<reason>"`, logged), and **real enforcement in CI / branch protection** — **NOT** fail-closed / no-escape-hatch. The bullets below describe the original (retired) fail-closed design; read them through D5/D9. The human publish gate (Gate 1) is the only sacred, never-automated block.
+
 - **Install:** committed `core.hooksPath` (e.g. `.githooks/`) so the main repo **and every worktree** inherit one hook automatically. Set via `git config core.hooksPath .githooks` during Phase 0/2 setup (documented in the repo).
 - **Invocation (verified pattern from `codex_dispatch.py`):** `codex exec --ephemeral --skip-git-repo-check --sandbox read-only --output-last-message <tmp.json> --color never -`, prompt on **stdin**, structured findings read back from the temp JSON. Resolve the CLI via `shutil.which("codex")` / `CODEX_BIN`. **Reduce `timeout_s` from the default 900 to ~90s** for pre-commit ergonomics; keep `max_attempts=2`.
 - **Verdict logic:** parse `result.parsed["findings"]`; **block (exit non-zero) iff any finding has `severity == "CRITICAL"`**. Empty findings = pass. `HIGH/MED/LOW` print but do not block.
@@ -147,6 +163,8 @@ Additive only; slice-1 catalog tables untouched.
 - **`events`** — append-only audit ledger: `id, ts, actor (board agent / system), verb, assignment_id?, subsystem, subsystem_ref, note`. Mirrors mycontentdev `events` semantics so the two ledgers read alike.
 - **`review_overlay`** — board approval of worker outputs: `id, subsystem, subsystem_ref, artifact_uid?, reviewer (board agent), verdict (approved|changes), rationale, ts`. References subsystem records; never copies content.
 
+**Decision-ledger (A10):** the append-only `events` ledger plus `review_overlay` ARE SAMAGRA's decision ledger — every board approve/reject/changes is one immutable row. These tables first **materialize in Phase 2** (`governance.db`, per D6) — runbook D6 + the Phase-1 loop backlog (which creates no governance table) supersede §6c's Phase-1 description. Phase 1 adds no decision-capture schema because Phase 1 has no approve/reject surface. Rows stay free of structured rejection-reason metadata (schema-freeze D11): verdict + free-text rationale only, no enumerated reason columns.
+
 (New pipelines also require entries in the hardcoded `PIPELINES` dict in `state.py`, per §6c.)
 
 ## 10. Safety invariants (every phase)
@@ -158,12 +176,16 @@ Additive only; slice-1 catalog tables untouched.
 - Honor subsystem locks (e.g. `TEXTBOOK_LOCK` pattern) — mirror, don't fight, another system's automation.
 - Public-repo hygiene preserved through the rename.
 
+**Capability boundary (folds A7; strengthens invariant #1 above).** Safety is structural, not a promise the operator must remember. Every adapter is, by construction, READ-ONLY in Phase 1 — none exposes a mutating method. Writes are a typed, board-gated capability class whose Phase-1 membership is the EMPTY SET; the first and only member, `McdClient.create_seed`, is enumerated only when it ships in Phase 3 and is reachable only through the approved-assignment path (D7). Any write not in this enumerated set is rejected because no code path exists to perform it — rejected by architecture, not by a reviewer. Adding a member is a Chairman decision, not routine engineering. This capability boundary adds no Phase-1 type, field, registry, or callable surface; it is enforced today solely by the absence of any mutating code path.
+
+**Gate model (folds A5 / runbook D9; supersedes §9.8).** Three ranked gates only: **Gate 1** — the human publish gate (BLOCKING, sacred, never automated) carries the physics-correctness checklist (sign conventions; limiting cases; difficulty/JEE-NEET calibration; ambiguity; corpus-linkage) as human-run prose at the existing `publish` gate (no new column/status/step); **Gate 2** — Codex pre-commit (BLOCKING, repo-wide per D5: advisory-local + confirmed-CRITICAL-only + audited break-glass + enforced-CI); **Gate 3** — advisory (non-blocking) for all other code/physics review. The fail-closed / no-escape-hatch language of §9.8 + §7c is **retired** (D5/D9).
+
 ## 11. Testing (pytest, slice-1 style — target green per phase)
 
 - **Adapter tests** against fixture/mocked API responses (no live-prod dependency in CI): mcd query/pending JSON → `Artifact`s; munshi `library()` JSON → `Artifact`s; `available()` false when creds absent.
 - **State/reflect tests:** mycontentdev seed-status → reflected phase status; idempotent re-reflect.
 - **Assignments state-machine tests:** legal/illegal transitions; `events` append on each.
-- **Codex hook unit test:** findings with a `CRITICAL` → non-zero exit; empty findings → zero; Codex-unavailable → non-zero (fail-closed). Mock the dispatch helper.
+- **Codex hook unit test:** findings with a *confirmed* `CRITICAL` → non-zero exit; empty/HIGH/MED/LOW findings → zero; Codex-unavailable → **does not wedge commits** (advisory-local per D5; real enforcement is CI). Mock the dispatch helper. *(Supersedes the original fail-closed assertion.)*
 - **Bridge dry-run test:** munshi item → proposed seed payload (+ resolved pointers) **without** writing; classification heuristics.
 
 ## 12. Open items / risks to confirm during implementation
@@ -171,15 +193,16 @@ Additive only; slice-1 catalog tables untouched.
 1. **Capture auth = app password.** SAMAGRA must hold the mcd **app password** (not just the admin key) to create seeds. Confirm the owner is comfortable storing it in SAMAGRA's gitignored `.env`. *(Mitigation: the write is board-gated and rare.)*
 2. **munshi auth is a cookie, not a header.** The adapter must send `Cookie: munshi=<MUNSHI_SECRET>`; simplest is to drive the existing `MunshiClient` (which already does this) rather than re-implement.
 3. **Codex pre-commit latency.** 900s default is far too long for a hook; spec sets ~90s. If real reviews exceed that, revisit (smaller diff scope, or stage-only critical files).
-4. **Fail-closed wedge risk.** With no escape hatch, a broken `codex` on PATH blocks all commits. Diagnostics must be loud; document the restore path in the repo README. *(Owner accepted this trade-off.)*
+4. **~~Fail-closed wedge risk.~~ RESOLVED by D5 (2026-06-19):** the local hook is **advisory** (a broken `codex` does NOT block commits); the confirmed-CRITICAL block is cached by staged-diff hash with an audited break-glass, and real enforcement lives in CI / branch protection. This retires the original fail-closed trade-off.
 5. **`PIPELINES` is hardcoded** in `state.py` — new pipelines are code edits, not config; keep them minimal.
 6. **`tracker.txt` / `events` growth** — append-only, no rotation today; fine for now, note for later.
 
 ## 13. Out of scope (future slices)
 
-- Autonomous worker dispatch (Codex/Gemini/NotebookLM/Grok actually executing assignments) — this slice only *routes* via the outbox.
+- Autonomous worker dispatch (Codex/Gemini/NotebookLM/Grok actually executing assignments) is out of scope THIS round — the outbox only routes. **Named-but-dormant trajectory (A9/D12):** autonomy will later arrive as a per-lane trust ratchet bounded by the read/write line, never a global flip. A lane earns auto-dispatch only after ~20 consecutive human-accepted-uncorrected runs; any single correction resets it to manual; **publish is never a lane**; auto-dispatch is permitted only for read-only-adapter operations whose output is itself a gated draft. First lane to graduate (post-Phase-1) = **adapter-refresh / status-reconciliation** (read-only by construction, no stake to mis-classify); classification/routing graduates second. This trajectory adds ZERO Phase-1 schema; the WATCHED-run history it will later consume comes for free from the decision-ledger (A10). Mechanism (trust counter, lane status, graduation step) is deferred to its own post-Phase-1 slice.
 - A read-only export route added to munshi (rejected in favor of `library()` reuse).
-- Deploying SAMAGRA online (slice-1's "Slice 2" note).
+- Deploying SAMAGRA itself online — amputated, not deferred (see §1 non-goals: permanently inward-facing). Any future learner-facing surface is a separate entity that consumes the corpus, not SAMAGRA online.
+- A dormant, auto-expiring, time-boxed pre-approval for exactly ONE no-new-physics class (e.g. re-publishing already-approved content to an additional format), armed by the owner before leaving (graceful-degradation-under-absence, A11). NOT built in any current phase and adds no Phase-1 schema — it pre-approves a CLASS, never an item, and is the one valve where a degradation path could leak student-facing content, so it stays unbuilt until explicitly chosen.
 
 ## 14. Verified pointers (file:line)
 

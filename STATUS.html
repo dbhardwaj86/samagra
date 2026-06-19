@@ -57,7 +57,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
 </head>
 <body>
 <header class="top">
-  <h1>SAMAGRA</h1><span class="sub">Phase 0 done · Track A stabilize done · branch phase1-stabilize</span>
+  <h1>SAMAGRA</h1><span class="sub">Phase 0 done · Track A stabilize done · vision folded (D9–D12) · branch phase1-stabilize</span>
   <nav>
     <a href="#overview">Overview</a><a href="#phases">Phases</a>
     <a href="#samagra">SAMAGRA</a><a href="#arch">Architecture</a>
@@ -92,7 +92,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   · <a href="https://github.com/dbhardwaj86/samagra/pull/1">PR #1</a> squash-merged to <code>main</code>
   · local-first (Python + FastAPI). Slice 1 is <strong>code-complete and verified</strong>.</p>
   <p><strong>2026-06-19 — SAMAGRA Phase 0 complete.</strong> The slice-1 spine is being evolved into
-  <strong>SAMAGRA</strong> (समग्र — <em>integrated / whole</em>): a company-structured agentic content OS
+  <strong>SAMAGRA</strong> (समग्र — <em>integrated / whole</em>): a company-structured control plane
   that folds in <code>mycontentdev</code> (editorial seeds) and <code>munshi</code> (phone capture) and
   governs a worker fleet through a board of three frontier agents. All ten open questions are decided; an
   approved design spec and a 34-task, four-phase implementation plan are committed and recorded
@@ -109,6 +109,17 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   refresh (F-09). The suite is now <strong>24/24 green</strong>, committed on branch
   <code>phase1-stabilize</code> (not yet merged — Chairman-gated). The Phase 1 build chain
   (P1-01→P1-07, read-only adapters) is next.</p>
+
+  <p><strong>2026-06-19 — Vision deliberation folded into the plan.</strong> A 6-lens vision deliberation
+  (14 action items) was evaluated and adversarially verified by a CEO workflow, then folded into the
+  spec, plan and runbook as decisions <strong>D9–D12</strong>: the seed-primitive <em>spine</em> (SAMAGRA
+  owns a trajectory work-item that <em>references</em> a subsystem record, not the seed), a reconciled
+  three-gate model (the human publish gate is the only sacred block; the Codex gate stays advisory-local
+  per D5), the read→write capability boundary, and a <em>schema-freeze rule</em> (no new Phase-1
+  field/status/step). Four Chairman calls were recorded — north-star = attention-ROI, concept vocabulary =
+  mycontentdev taxonomy leaves, first autonomy lane = adapter-refresh, and the published corpus may be
+  public via a separate entity (the OS stays inward). No phase re-sequencing; an in-place fix removed a
+  stray Phase-1 <code>create_seed</code> write.</p>
 
   <h2 id="phases">Phase status — Slice 1 (built)</h2>
   <div class="grid">
@@ -198,6 +209,13 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   live-prod calls).</p>
 
   <h2 id="decisions">Recent decisions</h2>
+  <div class="log"><div class="d">2026-06-19 · Vision deliberation folded → D9–D12</div>
+    The 6-lens vision deliberation (A1–A14) was evaluated + adversarially verified by a CEO workflow and
+    folded into spec/plan/runbook. <strong>D9</strong> seed-primitive spine + reconciled 3-gate model +
+    Phase-1 acceptance (golden thread = whole-arc DoD); <strong>D10</strong> read→write capability boundary;
+    <strong>D11</strong> schema-freeze rule + dormant register. Chairman <strong>D12</strong>: metric =
+    attention-ROI, vocab = mycontentdev taxonomy leaves, first autonomy lane = adapter-refresh, corpus may
+    be public via a separate entity. No re-sequencing; <code>create_seed</code> dropped from Phase 1.</div>
   <div class="log"><div class="d">2026-06-19 · Codex baseline review → stabilize before build</div>
     Three read-only <code>gpt-5.5</code> Codex passes (code / architecture / loop-plan) reconciled into
     <code>docs/codex-reviews/PHASE1-loop-runbook.md</code> (decisions D1–D8). Track A fix-loops S-01–S-05
@@ -226,6 +244,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     <tr><td><code>docs/superpowers/plans/2026-06-19-samagra-evolution.md</code></td><td>34-task, 4-phase SAMAGRA implementation plan (TDD)</td></tr>
     <tr><td><code>docs/codex-reviews/PHASE1-loop-runbook.md</code></td><td>reconciled Codex review → decisions D1–D8 + Phase-1 loop backlog + Khanak prompt template</td></tr>
     <tr><td><code>docs/codex-reviews/SAMAGRA-review-briefing.html</code></td><td>consolidated review briefing (3 gpt-5.5 agents)</td></tr>
+    <tr><td><code>docs/samagra-vision-deliberation-2026-06-19.html</code></td><td>6-lens vision deliberation — 10 suggestions + 14 action items (folded into D9–D12)</td></tr>
     <tr><td><code>docs/codex-reviews/01–03-*.report.md</code></td><td>raw Codex reports (adversarial code · architecture · loop-plan)</td></tr>
     <tr><td><code>tests/conftest.py</code> + 5 new suites</td><td>Track A: harness-isolation, state-atomic, lock, refresh-safety, api-gate</td></tr>
     <tr><td><code>samagra/</code></td><td>package — adapters, catalog, state, scheduler, api, portal, lectures</td></tr>
@@ -238,7 +257,8 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   <p>Phase 0 (rename) and Track A (stabilize, S-01–S-05) are done and committed on branch
   <code>phase1-stabilize</code> (not merged — Chairman-gated). The next action is the Phase 1 build chain
   (P1-01 read-only <code>McdClient</code> → P1-07); a Codex pre-merge review precedes the Chairman's merge to
-  <code>main</code>. A few slice-1 creds items remain to switch on the unattended parts:</p>
+  <code>main</code>. The vision deliberation is folded into the spec/plan/runbook (D9–D12; four Chairman
+  decisions recorded). A few slice-1 creds items remain to switch on the unattended parts:</p>
   <table>
     <tr><th>Item</th><th>Status</th><th>Action</th></tr>
     <tr><td>Phase 0 (rename)</td><td><span class="badge ok">done</span></td><td>PR #1 merged; repo + package <code>samagra</code>; catalog 7,044 artifacts.</td></tr>

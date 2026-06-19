@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAMAGRA — The Big Picture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#fbfbfd; --surface:#ffffff; --surface-2:#f5f6f8; --border:#e8eaef;
+    --text:#1b1f27; --muted:#5f656f; --faint:#9098a3;
+    --accent:#4f46e5; --accent-soft:#eef0fe; --accent-line:#cdd0f6;
+    --good:#0d9488; --good-soft:#d9f2ee;
+    --warn:#b45309; --warn-soft:#fbedd1;
+    --shadow:0 1px 2px rgba(17,24,39,.04), 0 10px 30px -16px rgba(17,24,39,.16);
+    --radius:16px; --maxw:760px;
+    --sans:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  }
+  html[data-theme="dark"]{
+    --bg:#0e1014; --surface:#161a20; --surface-2:#1c2027; --border:#272d36;
+    --text:#e8eaef; --muted:#a4abb6; --faint:#79808b;
+    --accent:#9a96f7; --accent-soft:#1d1b39; --accent-line:#3a3782;
+    --good:#2dd4bf; --good-soft:#0c2b28;
+    --warn:#f5b461; --warn-soft:#33240f;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 14px 34px -18px rgba(0,0,0,.65);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--text); font-family:var(--sans);
+    font-size:17px; line-height:1.75; -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent); text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* header */
+  header.top{
+    position:sticky; top:0; z-index:30;
+    background:color-mix(in srgb, var(--bg) 85%, transparent);
+    backdrop-filter:saturate(150%) blur(10px);
+    border-bottom:1px solid var(--border);
+  }
+  .top-in{max-width:1180px; margin:0 auto; padding:14px 24px; display:flex; align-items:center; gap:14px}
+  .brand{display:flex; align-items:center; gap:12px; font-weight:700; letter-spacing:-.01em}
+  .glyph{width:34px; height:34px; border-radius:10px; display:grid; place-items:center;
+    background:linear-gradient(135deg, var(--accent), #837dff); color:#fff; font-weight:800; font-size:17px;
+    box-shadow:var(--shadow)}
+  .brand small{display:block; font-weight:500; color:var(--muted); font-size:12px; letter-spacing:.02em}
+  .spacer{flex:1}
+  .toggle{cursor:pointer; border:1px solid var(--border); background:var(--surface); color:var(--muted);
+    border-radius:10px; padding:7px 11px; font-size:14px; line-height:1}
+  .toggle:hover{color:var(--text)}
+
+  /* layout */
+  .shell{max-width:1180px; margin:0 auto; display:grid; grid-template-columns:210px minmax(0,1fr); gap:40px; padding:0 24px}
+  nav.toc{position:sticky; top:70px; align-self:start; height:calc(100vh - 70px); overflow:auto; padding:40px 4px}
+  nav.toc .lbl{font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--faint); font-weight:700; margin:0 10px 10px}
+  nav.toc a{display:block; color:var(--muted); font-size:14px; padding:7px 12px; border-radius:9px; border-left:2px solid transparent; line-height:1.35}
+  nav.toc a:hover{color:var(--text); background:var(--surface-2); text-decoration:none}
+  nav.toc a.active{color:var(--accent); border-left-color:var(--accent); background:var(--accent-soft); font-weight:600}
+
+  main{padding:44px 0 120px; min-width:0}
+  .wrap{max-width:var(--maxw)}
+
+  section{margin:0 0 76px; scroll-margin-top:86px}
+  .eyebrow{font-size:12.5px; text-transform:uppercase; letter-spacing:.12em; color:var(--accent); font-weight:700; margin:0 0 12px}
+  h1{font-size:40px; line-height:1.12; letter-spacing:-.03em; margin:0 0 18px; font-weight:800}
+  h2{font-size:25px; line-height:1.2; letter-spacing:-.02em; margin:0 0 16px; font-weight:750}
+  p{margin:0 0 18px; max-width:60ch}
+  .big{font-size:21px; line-height:1.6; color:var(--text)}
+  .lede{font-size:20px; line-height:1.6; color:var(--muted); max-width:60ch}
+  .muted{color:var(--muted)}
+  strong{font-weight:650}
+
+  .tagrow{display:flex; flex-wrap:wrap; gap:9px; margin:22px 0 0}
+  .tag{font-size:13.5px; color:var(--muted); background:var(--surface); border:1px solid var(--border);
+    border-radius:999px; padding:6px 13px}
+
+  figure{margin:30px 0; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:26px 24px; box-shadow:var(--shadow)}
+  figure svg{display:block; width:100%; height:auto}
+  figcaption{color:var(--faint); font-size:13.5px; margin-top:16px; text-align:center; line-height:1.5}
+
+  /* simple step list */
+  .steps{display:flex; flex-direction:column; gap:2px; margin:24px 0 0}
+  .step{display:flex; gap:16px; padding:16px 4px; border-bottom:1px solid var(--border)}
+  .step:last-child{border-bottom:0}
+  .step .k{flex:none; width:30px; height:30px; border-radius:9px; background:var(--accent-soft); color:var(--accent);
+    font-weight:700; display:grid; place-items:center; font-size:15px; margin-top:2px}
+  .step .t{flex:1}
+  .step .t b{font-weight:650}
+  .step .t p{margin:3px 0 0; color:var(--muted); font-size:15.5px}
+
+  /* role / rule cards */
+  .cards{display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin:24px 0 0}
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px 18px; box-shadow:var(--shadow)}
+  .card h3{margin:0 0 6px; font-size:16.5px; font-weight:650; display:flex; align-items:center; gap:9px}
+  .card .dot{width:9px; height:9px; border-radius:50%; flex:none; background:var(--accent)}
+  .card p{margin:0; font-size:15px; color:var(--muted); line-height:1.55}
+
+  .roles{margin:24px 0 0; border-top:1px solid var(--border)}
+  .role{display:flex; gap:16px; padding:15px 4px; border-bottom:1px solid var(--border); align-items:baseline}
+  .role .who{flex:none; width:160px; font-weight:650; font-size:15.5px}
+  .role .what{flex:1; color:var(--muted); font-size:15.5px}
+  .role .badge{font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;
+    border-radius:999px; padding:3px 9px; background:var(--accent-soft); color:var(--accent); white-space:nowrap}
+  .role .badge.human{background:var(--good-soft); color:var(--good)}
+
+  /* phase tracker */
+  .phases{display:flex; flex-wrap:wrap; gap:10px; margin:24px 0 0}
+  .ph{flex:1; min-width:130px; background:var(--surface); border:1px solid var(--border); border-radius:13px; padding:15px 15px; box-shadow:var(--shadow)}
+  .ph .s{font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding:3px 9px; border-radius:999px; display:inline-block}
+  .ph .s.done{background:var(--good-soft); color:var(--good)}
+  .ph .s.now{background:var(--accent-soft); color:var(--accent)}
+  .ph .s.later{background:var(--surface-2); color:var(--faint)}
+  .ph .n{font-weight:650; font-size:15.5px; margin:10px 0 2px}
+  .ph .d{font-size:14px; color:var(--muted); line-height:1.5}
+
+  /* two-column lists */
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:24px; margin:24px 0 0}
+  .col h3{font-size:14px; text-transform:uppercase; letter-spacing:.07em; color:var(--faint); font-weight:700; margin:0 0 12px}
+  ul.clean{margin:0; padding:0; list-style:none}
+  ul.clean li{position:relative; padding:9px 0 9px 24px; font-size:15.5px; color:var(--text); line-height:1.55; border-bottom:1px solid var(--border)}
+  ul.clean li:last-child{border-bottom:0}
+  ul.clean li::before{content:""; position:absolute; left:4px; top:17px; width:7px; height:7px; border-radius:50%; background:var(--accent-line)}
+  ul.clean.parked li::before{background:var(--border)}
+  ul.clean li small{display:block; color:var(--muted); font-size:13.5px; margin-top:1px}
+
+  .next{background:linear-gradient(180deg, var(--accent-soft), var(--surface) 70%); border:1px solid var(--accent-line);
+    border-radius:var(--radius); padding:24px 26px; box-shadow:var(--shadow)}
+  .next .big{margin:0}
+
+  footer{color:var(--faint); font-size:13.5px; border-top:1px solid var(--border); padding:26px 24px; text-align:center; line-height:1.6}
+
+  @media (max-width:900px){
+    .shell{grid-template-columns:1fr}
+    nav.toc{position:static; height:auto; padding:12px 0; display:flex; flex-wrap:wrap; gap:2px; border-bottom:1px solid var(--border)}
+    nav.toc .lbl{display:none}
+    nav.toc a{border-left:0; font-size:13px; padding:6px 10px}
+    nav.toc a.active{border-left:0}
+    .cards,.two{grid-template-columns:1fr}
+    h1{font-size:32px}
+  }
+  @media print{
+    header.top, nav.toc, .toggle{display:none !important}
+    body{background:#fff; font-size:12.5px}
+    .shell{display:block; max-width:none; padding:0}
+    figure,.card,.ph,.next{box-shadow:none; break-inside:avoid}
+    section{break-inside:avoid; margin-bottom:34px}
+    a{color:inherit}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <span class="glyph">स</span>
+      <span>SAMAGRA<small>The big picture · one page</small></span>
+    </div>
+    <div class="spacer"></div>
+    <button class="toggle" id="themeBtn" aria-label="Toggle dark mode">◐</button>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="toc" id="toc">
+    <div class="lbl">On this page</div>
+    <a href="#what">What it is</a>
+    <a href="#idea">The one idea</a>
+    <a href="#life">The lifecycle</a>
+    <a href="#company">The company</a>
+    <a href="#rules">Rules we never break</a>
+    <a href="#where">Where we are</a>
+    <a href="#decided">Decided &amp; parked</a>
+    <a href="#next">What's next</a>
+  </nav>
+
+  <main>
+  <div class="wrap">
+
+    <!-- WHAT -->
+    <section id="what">
+      <p class="eyebrow">The big picture</p>
+      <h1>SAMAGRA is the control room for a one-person physics teaching business.</h1>
+      <p class="lede">It does not replace the tools that already work.</p>
+      <p class="lede">It watches them, lines up the work, and makes sure nothing reaches a student without a human "yes".</p>
+      <div class="tagrow">
+        <span class="tag">Local-first</span>
+        <span class="tag">Built for one person</span>
+        <span class="tag">Read-only by default</span>
+        <span class="tag">Quality over speed</span>
+      </div>
+    </section>
+
+    <!-- ONE IDEA -->
+    <section id="idea">
+      <p class="eyebrow">01 · The one idea</p>
+      <h2>SAMAGRA owns one thing: the journey of each piece of work.</h2>
+      <p class="big">From a rough idea to something published.</p>
+      <p>Every tool keeps owning its own content. SAMAGRA just tracks <strong>where each item is</strong> on its journey, and points at <strong>where it lives</strong>.</p>
+
+      <figure>
+        <svg viewBox="0 0 720 320" role="img" aria-label="The work-item points at each tool">
+          <defs>
+            <marker id="dot" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5">
+              <circle cx="3.5" cy="3.5" r="2.4" fill="var(--accent-line)"/>
+            </marker>
+          </defs>
+          <!-- connectors -->
+          <g stroke="var(--accent-line)" stroke-width="1.6" fill="none">
+            <path d="M280,160 C200,70 170,60 150,58" marker-end="url(#dot)"/>
+            <path d="M280,160 C210,160 200,160 150,160" marker-end="url(#dot)"/>
+            <path d="M280,160 C200,250 170,260 150,262" marker-end="url(#dot)"/>
+            <path d="M440,160 C520,70 550,60 570,58" marker-end="url(#dot)"/>
+            <path d="M440,160 C510,160 520,160 570,160" marker-end="url(#dot)"/>
+            <path d="M440,160 C520,250 550,260 570,262" marker-end="url(#dot)"/>
+          </g>
+          <!-- centre -->
+          <g>
+            <rect x="280" y="128" width="160" height="64" rx="14" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.6"/>
+            <text x="360" y="153" text-anchor="middle" font-family="Inter" font-size="14.5" font-weight="700" fill="var(--accent)">The work-item</text>
+            <text x="360" y="172" text-anchor="middle" font-family="Inter" font-size="12" fill="var(--muted)">its journey</text>
+          </g>
+          <!-- chips -->
+          <g font-family="Inter" font-size="13" fill="var(--text)">
+            <g>
+              <rect x="20" y="42" width="130" height="34" rx="9" fill="var(--surface)" stroke="var(--border)"/><text x="36" y="64">munshi · capture</text>
+              <rect x="20" y="143" width="130" height="34" rx="9" fill="var(--surface)" stroke="var(--border)"/><text x="36" y="165">QX · questions</text>
+              <rect x="20" y="246" width="130" height="34" rx="9" fill="var(--surface)" stroke="var(--border)"/><text x="36" y="268">sims</text>
+            </g>
+            <g>
+              <rect x="570" y="42" width="130" height="34" rx="9" fill="var(--surface)" stroke="var(--border)"/><text x="586" y="64">mycontentdev</text>
+              <rect x="570" y="143" width="130" height="34" rx="9" fill="var(--surface)" stroke="var(--border)"/><text x="586" y="165">textbook · lectures</text>
+              <rect x="570" y="246" width="130" height="34" rx="9" fill="var(--surface)" stroke="var(--border)"/><text x="586" y="268">booklets</text>
+            </g>
+          </g>
+        </svg>
+        <figcaption>SAMAGRA owns the journey — the lines. Each tool still owns its own content — the boxes.</figcaption>
+      </figure>
+    </section>
+
+    <!-- LIFECYCLE -->
+    <section id="life">
+      <p class="eyebrow">02 · The lifecycle</p>
+      <h2>Every item walks the same four steps.</h2>
+
+      <figure>
+        <svg viewBox="0 0 720 150" role="img" aria-label="Capture, enrich, review, publish">
+          <defs>
+            <marker id="arw" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="var(--faint)"/>
+            </marker>
+          </defs>
+          <g font-family="Inter">
+            <rect x="14" y="46" width="150" height="56" rx="13" fill="var(--surface)" stroke="var(--border)"/>
+            <text x="89" y="79" text-anchor="middle" font-size="15" font-weight="650" fill="var(--text)">Capture</text>
+            <rect x="190" y="46" width="150" height="56" rx="13" fill="var(--surface)" stroke="var(--border)"/>
+            <text x="265" y="79" text-anchor="middle" font-size="15" font-weight="650" fill="var(--text)">Enrich</text>
+            <rect x="366" y="46" width="150" height="56" rx="13" fill="var(--surface)" stroke="var(--border)"/>
+            <text x="441" y="79" text-anchor="middle" font-size="15" font-weight="650" fill="var(--text)">Review</text>
+            <rect x="542" y="46" width="164" height="56" rx="13" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.6"/>
+            <text x="616" y="73" text-anchor="middle" font-size="15" font-weight="700" fill="var(--accent)">Publish 🔒</text>
+            <text x="616" y="91" text-anchor="middle" font-size="11.5" fill="var(--muted)">human "yes"</text>
+          </g>
+          <g stroke="var(--faint)" stroke-width="1.6" fill="none">
+            <path d="M166,74 L186,74" marker-end="url(#arw)"/>
+            <path d="M342,74 L362,74" marker-end="url(#arw)"/>
+            <path d="M518,74 L538,74" marker-end="url(#arw)"/>
+          </g>
+        </svg>
+        <figcaption>One gate, and only one, is sacred — the human approval at <strong>Publish</strong>.</figcaption>
+      </figure>
+
+      <div class="steps">
+        <div class="step"><div class="k">1</div><div class="t"><b>Capture</b><p>An idea comes in — often a quick note from the phone.</p></div></div>
+        <div class="step"><div class="k">2</div><div class="t"><b>Enrich</b><p>An agent drafts it into real teaching material.</p></div></div>
+        <div class="step"><div class="k">3</div><div class="t"><b>Review</b><p>Another agent checks it. Code and physics are checked separately.</p></div></div>
+        <div class="step"><div class="k">4</div><div class="t"><b>Publish</b><p>Deepak approves. Always. This step is never automated.</p></div></div>
+      </div>
+    </section>
+
+    <!-- COMPANY -->
+    <section id="company">
+      <p class="eyebrow">03 · The company</p>
+      <h2>SAMAGRA is run like a small company. The titles are just plain roles.</h2>
+
+      <figure>
+        <svg viewBox="0 0 720 250" role="img" aria-label="Who reports to whom">
+          <g font-family="Inter">
+            <!-- chairman -->
+            <rect x="270" y="16" width="180" height="52" rx="13" fill="var(--good-soft)" stroke="var(--good)" stroke-width="1.6"/>
+            <text x="360" y="40" text-anchor="middle" font-size="14.5" font-weight="700" fill="var(--good)">Deepak — Chairman</text>
+            <text x="360" y="58" text-anchor="middle" font-size="11.5" fill="var(--muted)">the final "yes"</text>
+            <!-- board -->
+            <g>
+              <rect x="40" y="112" width="190" height="50" rx="12" fill="var(--surface)" stroke="var(--border)"/>
+              <text x="135" y="133" text-anchor="middle" font-size="13.5" font-weight="650" fill="var(--text)">Claude-Deepak · CEO</text>
+              <text x="135" y="150" text-anchor="middle" font-size="11.5" fill="var(--muted)">runs the floor, guards gates</text>
+              <rect x="265" y="112" width="190" height="50" rx="12" fill="var(--surface)" stroke="var(--border)"/>
+              <text x="360" y="133" text-anchor="middle" font-size="13.5" font-weight="650" fill="var(--text)">Claude-Khanak · COO</text>
+              <text x="360" y="150" text-anchor="middle" font-size="11.5" fill="var(--muted)">does the building, test-first</text>
+              <rect x="490" y="112" width="190" height="50" rx="12" fill="var(--surface)" stroke="var(--border)"/>
+              <text x="585" y="133" text-anchor="middle" font-size="13.5" font-weight="650" fill="var(--text)">Codex · Architect</text>
+              <text x="585" y="150" text-anchor="middle" font-size="11.5" fill="var(--muted)">checks the code</text>
+            </g>
+            <!-- workers -->
+            <rect x="210" y="200" width="300" height="40" rx="11" fill="var(--surface-2)" stroke="var(--border)"/>
+            <text x="360" y="224" text-anchor="middle" font-size="12.5" fill="var(--muted)">Workers (Gemini · Grok · Hermes) — draft only, never self-approve</text>
+          </g>
+          <g stroke="var(--border)" stroke-width="1.5" fill="none">
+            <path d="M360,68 L360,112"/>
+            <path d="M360,90 L135,90 L135,112"/>
+            <path d="M360,90 L585,90 L585,112"/>
+            <path d="M360,162 L360,200"/>
+          </g>
+        </svg>
+        <figcaption>Only the three board roles approve work. The humans-and-agents split is deliberate: agents draft, a human signs off.</figcaption>
+      </figure>
+      <p class="muted">The "company" is just a way to talk about it. It is not extra software — no special tables, no extra machinery.</p>
+    </section>
+
+    <!-- RULES -->
+    <section id="rules">
+      <p class="eyebrow">04 · Rules we never break</p>
+      <h2>Four lines hold the whole thing together.</h2>
+      <div class="cards">
+        <div class="card">
+          <h3><span class="dot"></span>Read-only by default</h3>
+          <p>SAMAGRA can write in exactly one place — and only after a human "yes". Everywhere else, it only reads.</p>
+        </div>
+        <div class="card">
+          <h3><span class="dot"></span>One sacred gate</h3>
+          <p>Nothing publishes without Deepak. That approval is never handed to a machine.</p>
+        </div>
+        <div class="card">
+          <h3><span class="dot"></span>Freeze the shape</h3>
+          <p>Big ambitions can be <em>named</em> today. They are not allowed to <em>add anything to build</em> today.</p>
+        </div>
+        <div class="card">
+          <h3><span class="dot"></span>A built-in off-switch</h3>
+          <p>If SAMAGRA isn't clearly saving time, we stop and go back to the old tools. The exit is written down on purpose.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- WHERE -->
+    <section id="where">
+      <p class="eyebrow">05 · Where we are</p>
+      <h2>The foundation is fixed and tested. No writing yet.</h2>
+      <div class="phases">
+        <div class="ph"><span class="s done">done</span><div class="n">Rename</div><div class="d">Now called SAMAGRA, end to end.</div></div>
+        <div class="ph"><span class="s done">done</span><div class="n">Stabilize</div><div class="d">Foundation hardened. 24 / 24 tests green.</div></div>
+        <div class="ph"><span class="s now">next</span><div class="n">Read two tools</div><div class="d">Watch two more tools. Still read-only.</div></div>
+        <div class="ph"><span class="s later">later</span><div class="n">Governance</div><div class="d">Assignments, reviews, code gate.</div></div>
+        <div class="ph"><span class="s later">later</span><div class="n">The one write</div><div class="d">Turn a phone note into a draft idea.</div></div>
+      </div>
+      <p class="muted" style="margin-top:22px">Today: the groundwork is solid and proven. Next: teach SAMAGRA to read two more tools — and nothing more.</p>
+    </section>
+
+    <!-- DECIDED -->
+    <section id="decided">
+      <p class="eyebrow">06 · Decided &amp; parked</p>
+      <h2>What's settled, and what's named-but-not-built.</h2>
+      <div class="two">
+        <div class="col">
+          <h3>Decided</h3>
+          <ul class="clean">
+            <li>The headline number is <strong>time saved</strong><small>Minutes of Deepak's attention per published item.</small></li>
+            <li>Reuse the <strong>existing topic list</strong><small>~100 tags we already have — never a sprawling map.</small></li>
+            <li>First self-driving lane is <strong>refreshing read-only data</strong><small>The safest possible thing to automate — and only later.</small></li>
+            <li>Published work <strong>may go public</strong><small>Through a separate front — never SAMAGRA itself.</small></li>
+          </ul>
+        </div>
+        <div class="col">
+          <h3>Parked (named, not built)</h3>
+          <ul class="clean parked">
+            <li>A coverage scoreboard<small>Which topics are well-covered, which have holes.</small></li>
+            <li>Learning from past approvals<small>So drafts start closer to Deepak's taste.</small></li>
+            <li>Self-driving lanes<small>Earned slowly, one safe lane at a time.</small></li>
+            <li>A "keep going while I'm away" valve<small>For exam-season crunch, tightly limited.</small></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- NEXT -->
+    <section id="next">
+      <p class="eyebrow">07 · What's next</p>
+      <div class="next">
+        <p class="big">Build the two read-only readers (Phase 1). Then a code review. Then Deepak merges it in.</p>
+      </div>
+    </section>
+
+  </div>
+  </main>
+</div>
+
+<footer>
+  One-stop high-level summary — kept current as the project moves.<br>
+  The full detail lives in the spec, the plan and the runbook. · Last updated 19 Jun 2026.
+</footer>
+
+<script>
+  (function(){
+    var root=document.documentElement, btn=document.getElementById('themeBtn');
+    var saved=null; try{ saved=localStorage.getItem('samagra-sum-theme'); }catch(e){}
+    if(saved){ root.setAttribute('data-theme', saved); }
+    else if(window.matchMedia && window.matchMedia('(prefers-color-scheme:dark)').matches){ root.setAttribute('data-theme','dark'); }
+    btn.addEventListener('click', function(){
+      var d = root.getAttribute('data-theme')==='dark';
+      root.setAttribute('data-theme', d?'light':'dark');
+      try{ localStorage.setItem('samagra-sum-theme', d?'light':'dark'); }catch(e){}
+    });
+  })();
+  (function(){
+    var links=[].slice.call(document.querySelectorAll('nav.toc a'));
+    var map={}; links.forEach(function(a){ map[a.getAttribute('href').slice(1)]=a; });
+    var obs=new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(l){ l.classList.remove('active'); });
+          if(map[e.target.id]) map[e.target.id].classList.add('active');
+        }
+      });
+    }, {rootMargin:'-25% 0px -65% 0px', threshold:0});
+    [].slice.call(document.querySelectorAll('main section[id]')).forEach(function(s){ obs.observe(s); });
+  })();
+</script>
+</body>
+</html>

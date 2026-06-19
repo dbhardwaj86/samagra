@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Evolve the verified TeachingOS slice-1 spine into **SAMAGRA** — a company-structured agentic content OS — by renaming the package, adding read-only `mycontentdev` + `munshi` adapters, standing up the governance layer (per-agent worktrees, prompt outbox, Assignments tab, blocking pre-commit Codex review), and wiring the board-approved `munshi → mycontentdev` capture loop.
+**Goal:** Evolve the verified TeachingOS slice-1 spine into **SAMAGRA** — a company-structured **control plane** (not an "OS" — see spec §1) — by renaming the package, adding read-only `mycontentdev` + `munshi` adapters, standing up the governance layer (per-agent worktrees, prompt outbox, Assignments tab, blocking pre-commit Codex review), and wiring the board-approved `munshi → mycontentdev` capture loop.
 
-**Architecture:** One phased plan over the existing Python + FastAPI control plane. **Phase 0** renames `teachingos → samagra`. **Phase 1** adds two read-only HTTP-client-backed adapters that *reflect* subsystem state into the unified catalog. **Phase 2** adds a `samagra.db` governance store, an Assignments portal tab, a vendored Codex pre-commit hook (block on `CRITICAL`, no escape hatch, fail-closed), per-agent git worktrees, and an org-chart SVG. **Phase 3** adds the classify → propose → board-approve → capture bridge. Each phase ends with a green `pytest` run before the next begins.
+**Architecture:** One phased plan over the existing Python + FastAPI control plane. **Phase 0** renames `teachingos → samagra`. **Phase 1** adds two read-only HTTP-client-backed adapters that *reflect* subsystem state into the unified catalog. **Phase 2** adds a `samagra.db` governance store, an Assignments portal tab, a vendored Codex pre-commit hook (blocking on confirmed-`CRITICAL` only, advisory-local + audited break-glass + enforced-CI per runbook D5/D9 — **not** fail-closed), per-agent git worktrees, and an org-chart SVG. **Phase 3** adds the classify → propose → board-approve → capture bridge. Each phase ends with a green `pytest` run before the next begins.
 
 **Tech Stack:** Python 3.11 (`.venv`), FastAPI + Jinja/JS-SPA portal, SQLite/FTS5 (`samagra.db`), `pytest` (TDD), git worktrees + `core.hooksPath`, Codex CLI (`codex exec`), Cloudflare-hosted `mycontentdev` (D1/R2) + `munshi` (Worker) read over HTTP.
 
@@ -21,7 +21,7 @@ Every task below uses these verbatim. Do not invent alternative names.
 **Adapter contract (existing slice-1):** subclass `samagra.adapters.base.Adapter` — `name:str`, `label:str`, `available()->bool`, `summary()->dict`, `artifacts()->Iterator[Artifact]`. `Artifact` fields (exact order): `uid, source, kind, title, subject, unit, chapter, status, path, url, updated_at, meta` (`meta` is a dict, serialized inline by `Artifact.row()`). Register adapters in `samagra/adapters/__init__.py` → `ALL_ADAPTERS`.
 
 **HTTP clients (`samagra/clients/`):**
-- `McdClient(api_url=None, admin_key=None, app_key=None)` — `query(sql)->list[dict]` (`POST /api/admin/query`, header `x-mcd-admin`, body `{"sql":...}`); `pending()->list[dict]` (`GET /api/admin/pending`, `x-mcd-admin`); `create_seed(payload)->dict` (`POST /api/seeds`, header `x-mcd-key`, **Phase 3 only**); `available()->bool`. Loads `mcd-cloud.json` `{apiUrl,adminKey}` or env `MCD_API_URL`/`MCD_ADMIN_KEY`/`MCD_APP_KEY`. Never logs key values.
+- `McdClient(api_url=None, admin_key=None, app_key=None)` — **Phase-1 surface is READ-ONLY:** `query(sql)->list[dict]` (`POST /api/admin/query`, header `x-mcd-admin`, body `{"sql":...}`); `pending()->list[dict]` (`GET /api/admin/pending`, `x-mcd-admin`); `available()->bool`; secret-free `__repr__`. **`create_seed(payload)` is NOT built or tested in Phase 1 — DEFERRED to Phase 3 per runbook D2/D9** (a read-only phase must not ship a write method into prod-adjacent code before governance + idempotency D7 exist). This supersedes the earlier "built now, used only in Phase 3" note and the `test_mcd_create_seed_posts_with_app_key` test in Task 1.2 below, both of which predate D2. Loads `mcd-cloud.json` `{apiUrl,adminKey}` or env `MCD_API_URL`/`MCD_ADMIN_KEY`/`MCD_APP_KEY`. Never logs key values.
 - `MunshiClient(api_url=None, secret=None)` — `library()->dict` (`GET /api/library`, header `Cookie: munshi=<urlencoded secret>`, returns `{"people":[...],"total":int,"items":[...]}`); `available()->bool`. Env `MUNSHI_API_URL`/`MUNSHI_SECRET`. Never logs the secret.
 
 **Adapters:** `samagra/adapters/mcd.py` → `McdAdapter(Adapter)` (`name="mycontentdev"`); `samagra/adapters/munshi.py` → `MunshiAdapter(Adapter)` (`name="munshi"`). Seed `type` ∈ {concept, question, snippet, simulation_idea, experiment, notebooklm_link, rough_idea}; seed `status` ∈ {captured, needs_processing, processing, draft_ready, changes_requested, approved, brief_generated, content_linked, done, archived}. munshi `item.kind` ∈ {note, todo, issue, question, followup}; `item.status` ∈ {open, claimed_done, validated, dismissed}.
@@ -32,11 +32,13 @@ Every task below uses these verbatim. Do not invent alternative names.
 
 **Assignments tab:** `GET /api/assignments` in `samagra/api/app.py` → `{"assignments":[...],"events":[...]}`; nav link `data-tab="assignments"` in `portal/templates/portal.html`; `renderAssignments()` + `TABS.assignments` in `portal/static/app.js` (reuse `jget`/`esc`/`activate`).
 
-**Codex hook:** vendor `samagra/review/codex_dispatch.py` → `dispatch_codex(prompt, *, schema=None, timeout_s=90, max_attempts=2) -> CodexResult(parsed, raw, elapsed_s, attempts)`; invocation `codex exec --ephemeral --skip-git-repo-check --sandbox read-only --output-last-message <tmp.json> --color never -` (prompt on stdin; exe via `shutil.which("codex")`/`CODEX_BIN`). `samagra/review/precommit.py` → `get_staged_diff()`, `review_staged_diff()->int` (block with exit 1 iff any finding `severity=="CRITICAL"`; empty/HIGH-MED-LOW → 0; **fail-closed**: any exception → exit 1 + loud diagnostics, no escape hatch). `.githooks/pre-commit` → `exec python -m samagra.review.precommit`; install via `git config core.hooksPath .githooks` (shared by all worktrees). CLI verb `samagra review-staged`.
+**Codex hook:** vendor `samagra/review/codex_dispatch.py` → `dispatch_codex(prompt, *, schema=None, timeout_s=90, max_attempts=2) -> CodexResult(parsed, raw, elapsed_s, attempts)`; invocation `codex exec --ephemeral --skip-git-repo-check --sandbox read-only --output-last-message <tmp.json> --color never -` (prompt on stdin; exe via `shutil.which("codex")`/`CODEX_BIN`). `samagra/review/precommit.py` → `get_staged_diff()`, `review_staged_diff()->int` (block with exit 1 iff a *confirmed* `CRITICAL` finding survives the staged-diff-hash cache; empty/HIGH-MED-LOW → 0; **advisory-local per D5/D9** — Codex unavailable/timeout does NOT wedge commits, audited break-glass `SAMAGRA_REVIEW_BREAKGLASS`, real enforcement in CI/branch-protection; **not** fail-closed). `.githooks/pre-commit` → `exec python -m samagra.review.precommit`; install via `git config core.hooksPath .githooks` (shared by all worktrees). CLI verb `samagra review-staged`.
 
 **Bridge (`samagra/bridge/`):** `classify.py::classify_item(item)->"content"|"ops"`; `pointers.py::resolve_pointers(text, *, limit=5)->list[{uid,source,kind,title}]` (catalog FTS5); `seed_payload.py::build_seed_payload(item, pointers)->dict` (the `POST /api/seeds` body with `detail.pointers`); `run.py::scan(dry=True)->list[dict]` (proposes + records `in-review` assignments, **never writes a seed**) and `run.py::submit(assignment_id)->dict` (refuses unless assignment `status=="approved"`, then `McdClient.create_seed` + `append_event`). CLI: `samagra bridge scan [--dry-run]`, `samagra bridge submit <assignmentId>`.
 
 **Safety (all phases):** reads are read-only; the **only** subsystem write is `McdClient.create_seed` in Phase 3 (board-approved). Never echo/log/commit secret *values*. Tests **mock** the HTTP clients — no live-prod calls in CI.
+
+**Schema-freeze rule (Phase 1).** An aspiration may be NAMED in prose but may NOT add a field, status value, or workflow step to the Phase-1 data model. Declaring an empty/optional column or a dormant prose goal is free; POPULATING it, constraining it NOT-NULL, or adding a status/step that reads it is a later-phase build. Every dormant aspiration carries an explicit "dormant until Phase N" tag; new tables remain additive. Audit before merging any Phase-1 task: does this diff add a field/status/step a named-but-dormant aspiration would have needed? If yes, it is out of Phase-1 scope. **Dormant register:** `concept_id` (Phase 2), concept vocabulary (Phase 2), autonomy ratchet (post-Phase-1), decision-ledger mining (later), coverage scoreboard + demand compass (Phase 2+), pre-approval valve (later). See runbook D11.
 
 ---
 
@@ -827,7 +829,9 @@ Expected: push succeeds against `…/samagra.git`; the log shows the Phase 0 com
 
 ## Phase 1 — Subsystem adapters (mycontentdev + munshi)
 
-This phase adds two read-only HTTP clients (`McdClient`, `MunshiClient`), two new source adapters (`McdAdapter`, `MunshiAdapter`) that normalize those subsystems into `Artifact` records, a new `"mycontentdev"` pipeline in the state machine, and a `_reflect_mycontentdev` scheduler reflector. Everything is read-only (no writes into any subsystem yet — `create_seed` is built but exercised only in Phase 3). All tests MOCK the HTTP layer by injecting fake clients or monkeypatching `requests`; there are NO live-prod calls. All imports use the `samagra.*` package (post Phase-0 rename).
+This phase adds two read-only HTTP clients (`McdClient`, `MunshiClient`), two new source adapters (`McdAdapter`, `MunshiAdapter`) that normalize those subsystems into `Artifact` records, a new `"mycontentdev"` pipeline in the state machine, and a `_reflect_mycontentdev` scheduler reflector. Everything is read-only (no writes into any subsystem yet — `create_seed` is **deferred to Phase 3 per D2/D9**, not shipped in Phase 1). All tests MOCK the HTTP layer by injecting fake clients or monkeypatching `requests`; there are NO live-prod calls. All imports use the `samagra.*` package (post Phase-0 rename).
+
+**Phase-1 acceptance (and how it relates to the golden thread).** The golden thread munshi → seed → enriched → published is the definition-of-done for the WHOLE 4-phase arc, not Phase 1. Phase 1 accepts EXACTLY: (a) the TWO new read-only adapters (McdAdapter, MunshiAdapter) reflecting real state into the catalog + the mycontentdev pipeline reflected read-only into state; (b) the existing slice-1 sources still green after registration (a failing/offline new adapter must not erase the catalog — D4/S-05); (c) the EXISTING slice-1 publish gate reused unchanged — no new status or workflow step; (d) no new write path (create_seed not shipped in Phase 1 per D2/D9). Phase 1 ships nothing beyond (a)-(c). "Published" closes only after the Phase-3 board-approved write (D2/D7).
 
 **Files:**
 
@@ -895,6 +899,8 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 - Create `samagra/clients/mcd_client.py`
 
 `McdClient` wraps the mycontentdev admin API. `query(sql)` POSTs to `{apiUrl}/api/admin/query` with header `x-mcd-admin: <adminKey>` and body `{"sql": sql}`, returning the raw array. `pending()` GETs `{apiUrl}/api/admin/pending` with the same header. `create_seed(payload)` POSTs to `{apiUrl}/api/seeds` with header `x-mcd-key: <appKey>` (used only in Phase 3). `available()` is True iff `api_url` and the needed key are set. Config loads from `mcd-cloud.json {apiUrl,adminKey}` or env `MCD_API_URL`/`MCD_ADMIN_KEY`/`MCD_APP_KEY`. The client trims trailing slashes off the URL (mirroring `_cloud.mjs`) and never logs key values.
+
+> **SUPERSEDED (runbook D2/D9, 2026-06-19):** `create_seed` is **deferred to Phase 3** and must NOT be built or tested in Phase 1. Skip the `test_mcd_create_seed_posts_with_app_key` test and the `create_seed` method in the code blocks below; ship only `query`/`pending`/`available`/secret-free `__repr__`. The original create_seed code/test is retained below for the Phase-3 build only.
 
 - [ ] **Step 1: Write the failing tests.** Create `tests/test_clients.py` with the `McdClient` tests (the `MunshiClient` tests are appended in Task 1.3). A `FakeRequests` records the last call and returns a canned JSON `Response`-like object, injected by monkeypatching `samagra.clients.mcd_client.requests`:
 
@@ -1902,7 +1908,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 - **Create** `samagra/governance/store.py` — `samagra.db` tables (`assignments`, `events`, `review_overlay`) + CRUD/transition helpers, reusing the catalog connection pattern.
 - **Create** `samagra/review/__init__.py` — package marker for the review tooling.
 - **Create** `samagra/review/codex_dispatch.py` — minimal vendored Codex subprocess wrapper (`dispatch_codex` + `CodexResult` + `CodexError`).
-- **Create** `samagra/review/precommit.py` — staged-diff Codex review; block iff any finding is `CRITICAL`; fail-closed.
+- **Create** `samagra/review/precommit.py` — staged-diff Codex review; block iff a *confirmed* `CRITICAL` survives the diff-hash cache; **advisory-local per D5/D9** (not fail-closed — see banner at Task 2.3).
 - **Create** `.githooks/pre-commit` — sh shim that runs `python -m samagra.review.precommit` for the repo and all worktrees.
 - **Create** `board/deepak/AGENTS.md`, `board/khanak/AGENTS.md`, `board/codex/AGENTS.md` — per-agent role/authority/outbox docs committed in main.
 - **Create** `board/deepak/outbox/.gitkeep`, `board/khanak/outbox/.gitkeep`, `board/codex/outbox/.gitkeep` — keep empty outbox dirs in git.
@@ -2342,7 +2348,9 @@ EOF
 
 ---
 
-### Task 2.3: Pre-commit verdict logic — failing test first (block on CRITICAL, fail-closed)
+### Task 2.3: Pre-commit verdict logic — failing test first (block on confirmed-CRITICAL; advisory-local)
+
+> **SUPERSEDED by runbook D5/D9 (2026-06-19):** the steps below still implement the *retired* fail-closed / no-escape-hatch design. When Phase 2 is actually planned, rewrite this task to D5/D9: the local hook is **advisory** — it blocks only a *confirmed*-CRITICAL surviving the staged-diff-hash cache, carries an audited break-glass (`SAMAGRA_REVIEW_BREAKGLASS="<reason>"`, logged), and a Codex that cannot run does **NOT** wedge commits; real enforcement lives in CI / branch protection. The human publish gate (Gate 1) is the only sacred, never-automated block. Treat the fail-closed wording in Tasks 2.3–2.5 + the README block as historical until that rewrite lands.
 
 **Files:**
 - Create `tests/test_precommit.py`
@@ -2644,19 +2652,22 @@ EOF
 ```bash
 cat >> README.md <<'EOF'
 
-## Pre-commit Codex review (blocking, no escape hatch)
+## Pre-commit Codex review (advisory-local + enforced-CI)
 
 SAMAGRA ships a committed pre-commit hook that asks Codex to review the staged
-diff and BLOCKS the commit if any finding has `severity == CRITICAL`. Enable it
-once per clone (it then applies to the repo and every worktree):
+diff and BLOCKS the commit if a *confirmed* finding has `severity == CRITICAL`
+(cached by staged-diff hash). Enable it once per clone (it then applies to the
+repo and every worktree):
 
 ```
 git config core.hooksPath .githooks
 ```
 
 Requirements: `codex` on PATH (`npm i -g @openai/codex`) or `CODEX_BIN` set.
-The hook is **fail-closed** — if Codex cannot run, the commit is blocked with
-diagnostics. There is no bypass flag by design. Manual run:
+The local hook is **advisory** (D5/D9): a confirmed-CRITICAL blocks, but if Codex
+cannot run the commit is **not** wedged, and an audited break-glass
+(`SAMAGRA_REVIEW_BREAKGLASS="<reason>"`, logged) exists for emergencies. Real
+enforcement lives in CI / branch protection. Manual run:
 `python -m samagra review-staged`.
 EOF
 ```

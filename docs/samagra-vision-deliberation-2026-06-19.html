@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAMAGRA — Vision Deliberation · 2026-06-19</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#fcfcfd; --surface:#ffffff; --surface-2:#f6f7f9; --border:#e7e9ee;
+    --text:#1c2024; --muted:#5b616b; --faint:#878d97;
+    --accent:#4f46e5; --accent-soft:#eef0fe; --accent-line:#c7c9f7;
+    --now:#0d9488; --now-soft:#d8f3ef;
+    --next:#b45309; --next-soft:#fbedd1;
+    --later:#6d28d9; --later-soft:#ede7fb;
+    --good:#15803d; --warn:#b45309; --danger:#be123c;
+    --shadow:0 1px 2px rgba(17,24,39,.04),0 8px 24px -12px rgba(17,24,39,.12);
+    --radius:14px; --maxw:880px;
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    --sans:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  }
+  html[data-theme="dark"]{
+    --bg:#0e1014; --surface:#161a20; --surface-2:#1b2027; --border:#272d36;
+    --text:#e7e9ee; --muted:#a3aab4; --faint:#79808b;
+    --accent:#8b87f5; --accent-soft:#1d1b39; --accent-line:#3a3782;
+    --now:#2dd4bf; --now-soft:#0c2b28;
+    --next:#f5b461; --next-soft:#33240f;
+    --later:#a78bfa; --later-soft:#241a3a;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 30px -14px rgba(0,0,0,.6);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
+    line-height:1.62;font-size:16px;-webkit-font-smoothing:antialiased;
+    font-feature-settings:"cv05","ss01";
+  }
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* ---------- sticky header ---------- */
+  header.top{
+    position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--bg) 86%,transparent);
+    backdrop-filter:saturate(150%) blur(10px);border-bottom:1px solid var(--border);
+  }
+  .top-in{max-width:1240px;margin:0 auto;padding:12px 22px;display:flex;align-items:center;gap:14px}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:700;letter-spacing:-.01em}
+  .brand .glyph{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#7c74ff);
+    display:grid;place-items:center;color:#fff;font-weight:800;font-size:15px;box-shadow:var(--shadow)}
+  .brand small{display:block;font-weight:500;color:var(--muted);font-size:11.5px;letter-spacing:.02em}
+  .top-spacer{flex:1}
+  .top-links{display:flex;gap:6px;align-items:center}
+  .top-links a{color:var(--muted);font-size:13.5px;padding:6px 10px;border-radius:8px}
+  .top-links a:hover{background:var(--surface-2);text-decoration:none;color:var(--text)}
+  .toggle{cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    border-radius:9px;padding:6px 10px;font-size:13px;display:inline-flex;gap:6px;align-items:center}
+  .toggle:hover{color:var(--text)}
+
+  /* ---------- layout ---------- */
+  .shell{max-width:1240px;margin:0 auto;display:grid;grid-template-columns:248px minmax(0,1fr);gap:34px;padding:0 22px}
+  nav.toc{position:sticky;top:64px;align-self:start;height:calc(100vh - 64px);overflow:auto;padding:28px 6px 40px}
+  nav.toc .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--faint);font-weight:700;margin:18px 8px 8px}
+  nav.toc a{display:block;color:var(--muted);font-size:13.5px;padding:5px 10px;border-radius:8px;border-left:2px solid transparent;line-height:1.4}
+  nav.toc a:hover{color:var(--text);background:var(--surface-2);text-decoration:none}
+  nav.toc a.active{color:var(--accent);border-left-color:var(--accent);background:var(--accent-soft);font-weight:600}
+  main{padding:30px 0 120px;min-width:0}
+  .wrap{max-width:var(--maxw)}
+
+  section{margin:0 0 46px;scroll-margin-top:78px}
+  h1{font-size:31px;line-height:1.18;letter-spacing:-.025em;margin:.1em 0 .35em;font-weight:800}
+  h2{font-size:21px;letter-spacing:-.02em;margin:0 0 14px;font-weight:700;display:flex;align-items:center;gap:10px}
+  h2 .num{font-size:12.5px;color:var(--accent);font-weight:700;font-family:var(--mono);background:var(--accent-soft);
+    padding:3px 8px;border-radius:7px}
+  h3{font-size:16.5px;margin:0 0 6px;font-weight:650;letter-spacing:-.01em}
+  p{margin:0 0 14px;color:var(--text)}
+  .lede{font-size:17.5px;color:var(--muted);line-height:1.6}
+  .muted{color:var(--muted)}
+  strong{font-weight:650}
+  code{font-family:var(--mono);font-size:.86em;background:var(--surface-2);border:1px solid var(--border);
+    padding:1px 6px;border-radius:6px;color:var(--text)}
+
+  .meta-row{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
+  .chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);
+    background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:5px 11px}
+  .chip b{color:var(--text);font-weight:600}
+
+  .callout{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);
+    border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
+  .callout.verdict{border-left-color:var(--accent);background:linear-gradient(180deg,var(--accent-soft),var(--surface) 60%)}
+
+  figure{margin:6px 0 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:18px;box-shadow:var(--shadow);overflow:hidden}
+  figure svg{display:block;width:100%;height:auto}
+  figcaption{color:var(--faint);font-size:12.5px;margin-top:10px;text-align:center}
+
+  /* ---------- panel grid ---------- */
+  .lens-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .lens{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 15px;box-shadow:var(--shadow)}
+  .lens .ln{display:flex;align-items:center;gap:9px;font-weight:650;font-size:14.5px}
+  .lens .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .lens p{font-size:13px;color:var(--muted);margin:7px 0 0;line-height:1.5}
+
+  /* ---------- suggestion cards ---------- */
+  .sg{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    box-shadow:var(--shadow);margin:0 0 16px;overflow:hidden}
+  .sg-head{display:flex;align-items:flex-start;gap:14px;padding:16px 18px 12px}
+  .rank{flex:none;width:34px;height:34px;border-radius:10px;background:var(--accent-soft);color:var(--accent);
+    font-weight:800;font-size:16px;display:grid;place-items:center;font-family:var(--mono);border:1px solid var(--accent-line)}
+  .sg-title{flex:1;min-width:0}
+  .sg-title h3{margin:1px 0 8px}
+  .badges{display:flex;flex-wrap:wrap;gap:6px}
+  .b{font-size:11px;font-weight:650;letter-spacing:.02em;border-radius:999px;padding:3px 9px;border:1px solid transparent;text-transform:uppercase}
+  .b.now{background:var(--now-soft);color:var(--now)}
+  .b.next{background:var(--next-soft);color:var(--next)}
+  .b.later{background:var(--later-soft);color:var(--later)}
+  .b.con{background:var(--surface-2);color:var(--muted);border-color:var(--border);text-transform:none;letter-spacing:0}
+  .sg-body{padding:0 18px 16px 18px}
+  .sg-body p{font-size:14.5px;margin:10px 0 0}
+  .field{margin-top:12px;padding-top:12px;border-top:1px dashed var(--border)}
+  .field .k{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);font-weight:700;margin-bottom:3px}
+  .field.risk .k{color:var(--warn)}
+  .field p{margin:0;font-size:13.5px;color:var(--muted)}
+  .field.shift p{color:var(--text)}
+
+  /* ---------- action items ---------- */
+  .ai-group{margin:0 0 20px}
+  .ai-group > .gh{display:flex;align-items:center;gap:9px;font-weight:700;font-size:14px;margin:0 0 10px}
+  .ai{display:flex;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:11px;
+    padding:12px 14px;margin:0 0 8px;box-shadow:var(--shadow)}
+  .ai .box{flex:none;width:18px;height:18px;border:2px solid var(--accent-line);border-radius:5px;margin-top:2px}
+  .ai .id{font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:600;flex:none;margin-top:1px;width:34px}
+  .ai .txt{flex:1;min-width:0}
+  .ai .txt p{margin:0;font-size:14px}
+  .ai .txt .sub{font-size:12.5px;color:var(--faint);margin-top:3px}
+  .ai .ref{font-size:11.5px;color:var(--muted);font-family:var(--mono);white-space:nowrap}
+  .decide{border-color:var(--accent-line);background:linear-gradient(180deg,var(--accent-soft),var(--surface) 70%)}
+  .pill-decide{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#fff;
+    background:var(--accent);border-radius:999px;padding:2px 8px;display:inline-block}
+
+  ul.clean{margin:8px 0 0;padding:0;list-style:none}
+  ul.clean li{position:relative;padding:7px 0 7px 22px;border-bottom:1px solid var(--border);font-size:14px;color:var(--muted)}
+  ul.clean li:last-child{border-bottom:0}
+  ul.clean li::before{content:"";position:absolute;left:4px;top:14px;width:6px;height:6px;border-radius:50%;background:var(--accent-line)}
+
+  hr{border:0;border-top:1px solid var(--border);margin:34px 0}
+  footer{color:var(--faint);font-size:12.5px;border-top:1px solid var(--border);padding:22px;text-align:center}
+
+  @media (max-width:960px){
+    .shell{grid-template-columns:1fr}
+    nav.toc{position:static;height:auto;max-height:none;border-bottom:1px solid var(--border);
+      padding:10px 6px;display:flex;flex-wrap:wrap;gap:2px}
+    nav.toc .lbl{display:none}
+    nav.toc a{border-left:0;font-size:12.5px;padding:5px 9px}
+    nav.toc a.active{border-left:0}
+    .lens-grid{grid-template-columns:1fr}
+    .top-links{display:none}
+  }
+  @media print{
+    header.top,nav.toc,.toggle,.top-links{display:none!important}
+    body{background:#fff;font-size:12px}
+    .shell{display:block;max-width:none;padding:0}
+    .sg,.callout,figure,.ai,.lens{box-shadow:none;break-inside:avoid}
+    section{break-inside:avoid}
+    h1{break-before:page}
+    a{color:inherit;text-decoration:none}
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <span class="glyph">स</span>
+      <span>SAMAGRA · Vision Deliberation<small>Multi-agent debate · 2026-06-19</small></span>
+    </div>
+    <div class="top-spacer"></div>
+    <div class="top-links">
+      <a href="#suggestions">10 Suggestions</a>
+      <a href="#actions">Action Items</a>
+      <a href="#verdict">Verdict</a>
+    </div>
+    <button class="toggle" id="themeBtn" aria-label="Toggle theme">🌙 <span id="themeLbl">Dark</span></button>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="toc" id="toc">
+    <div class="lbl">Contents</div>
+    <a href="#overview">Overview</a>
+    <a href="#method">How the debate ran</a>
+    <a href="#panel">The panel</a>
+    <a href="#synthesis">Synthesis</a>
+    <a href="#suggestions">The 10 suggestions</a>
+    <a href="#actions">Action items</a>
+    <a href="#open">Open question</a>
+    <a href="#also">Also considered</a>
+    <a href="#verdict">Verdict</a>
+  </nav>
+
+  <main>
+  <div class="wrap">
+
+    <section id="overview">
+      <h1>SAMAGRA — Vision Deliberation</h1>
+      <p class="lede">A judge-moderated panel of six perspectives debated SAMAGRA's <strong>intent and future direction</strong> — not its code — across two rounds. This document records what the room converged on, the ten most useful recommendations it surfaced, and the concrete action items derived from them.</p>
+      <div class="meta-row">
+        <span class="chip"><b>6</b> debate lenses</span>
+        <span class="chip"><b>2</b> rounds (judge-seeded)</span>
+        <span class="chip"><b>14</b> agents</span>
+        <span class="chip"><b>2</b> judge passes</span>
+        <span class="chip">Scope: <b>intent, not implementation</b></span>
+      </div>
+      <p class="muted" style="margin-top:16px;font-size:14.5px">The premise the panel argued from: <strong>SAMAGRA</strong> (समग्र — <em>integrated / whole</em>) is a <em>control plane</em> for a one-person JEE/NEET physics teaching operation. It does not rebuild the owner's tools (QX question bank, textbook/lecture engine, booklet proofer, olympiad extractor, sims, the <code>munshi</code> phone-capture clerk, the <code>mycontentdev</code> seed pipeline) — it reads them, reflects their state, and unifies them along one lifecycle: <strong>capture → enrich → review/approve → publish</strong>, governed by a deliberate "company" metaphor with the human as the final publish gate.</p>
+    </section>
+
+    <section id="method">
+      <h2><span class="num">01</span> How the debate ran</h2>
+      <p>Each lens critiqued the intent and proposed vision shifts in Round 1. An impartial judge distilled the strongest threads, the genuine tensions, and the gaps into a <em>seed brief</em> — which became Round 2's marching orders. The lenses then took sides, conceded, and sharpened. A final judge pass synthesized both rounds into the ranked recommendations below.</p>
+      <figure>
+        <svg viewBox="0 0 860 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Debate flow diagram">
+          <defs>
+            <marker id="arw" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L7,3 L0,6 Z" fill="var(--faint)"/>
+            </marker>
+            <linearGradient id="gJudge" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="var(--accent)"/><stop offset="1" stop-color="#7c74ff"/>
+            </linearGradient>
+          </defs>
+          <!-- Round 1 -->
+          <g>
+            <rect x="20" y="40" width="170" height="150" rx="12" fill="var(--surface-2)" stroke="var(--border)"/>
+            <text x="105" y="32" text-anchor="middle" fill="var(--faint)" font-size="12" font-family="Inter" font-weight="700">ROUND 1 · critique</text>
+            <g font-family="Inter" font-size="11" fill="var(--text)">
+              <rect x="32" y="52" width="146" height="20" rx="6" fill="var(--surface)" stroke="var(--border)"/><text x="40" y="66">Visionary</text>
+              <rect x="32" y="74" width="146" height="20" rx="6" fill="var(--surface)" stroke="var(--border)"/><text x="40" y="88">Minimalist</text>
+              <rect x="32" y="96" width="146" height="20" rx="6" fill="var(--surface)" stroke="var(--border)"/><text x="40" y="110">Pedagogy</text>
+              <rect x="32" y="118" width="146" height="20" rx="6" fill="var(--surface)" stroke="var(--border)"/><text x="40" y="132">Architect</text>
+              <rect x="32" y="140" width="146" height="20" rx="6" fill="var(--surface)" stroke="var(--border)"/><text x="40" y="154">Operator</text>
+              <rect x="32" y="162" width="146" height="20" rx="6" fill="var(--surface)" stroke="var(--border)"/><text x="40" y="176">AI-Native</text>
+            </g>
+          </g>
+          <!-- Judge seed -->
+          <g>
+            <rect x="270" y="70" width="150" height="90" rx="12" fill="url(#gJudge)"/>
+            <text x="345" y="105" text-anchor="middle" fill="#fff" font-size="13" font-family="Inter" font-weight="700">JUDGE</text>
+            <text x="345" y="124" text-anchor="middle" fill="#fff" font-size="11" font-family="Inter" opacity=".9">seed brief:</text>
+            <text x="345" y="140" text-anchor="middle" fill="#fff" font-size="10.5" font-family="Inter" opacity=".9">threads · tensions · gaps</text>
+          </g>
+          <!-- Round 2 -->
+          <g>
+            <rect x="500" y="40" width="170" height="150" rx="12" fill="var(--surface-2)" stroke="var(--border)"/>
+            <text x="585" y="32" text-anchor="middle" fill="var(--faint)" font-size="12" font-family="Inter" font-weight="700">ROUND 2 · resolve</text>
+            <g font-family="Inter" font-size="11" fill="var(--text)">
+              <rect x="512" y="62" width="146" height="20" rx="6" fill="var(--surface)" stroke="var(--border)"/><text x="520" y="76">take sides on tensions</text>
+              <rect x="512" y="90" width="146" height="20" rx="6" fill="var(--surface)" stroke="var(--border)"/><text x="520" y="104">concede the weak</text>
+              <rect x="512" y="118" width="146" height="20" rx="6" fill="var(--surface)" stroke="var(--border)"/><text x="520" y="132">sharpen the strong</text>
+              <rect x="512" y="146" width="146" height="20" rx="6" fill="var(--surface)" stroke="var(--border)"/><text x="520" y="160">fill the gaps</text>
+            </g>
+          </g>
+          <!-- Final -->
+          <g>
+            <rect x="750" y="70" width="92" height="90" rx="12" fill="url(#gJudge)"/>
+            <text x="796" y="100" text-anchor="middle" fill="#fff" font-size="12" font-family="Inter" font-weight="700">JUDGE</text>
+            <text x="796" y="118" text-anchor="middle" fill="#fff" font-size="10.5" font-family="Inter" opacity=".9">10 ranked</text>
+            <text x="796" y="132" text-anchor="middle" fill="#fff" font-size="10.5" font-family="Inter" opacity=".9">suggestions</text>
+          </g>
+          <!-- arrows -->
+          <g stroke="var(--faint)" stroke-width="1.6" fill="none">
+            <path d="M192,115 L266,115" marker-end="url(#arw)"/>
+            <path d="M422,115 L496,115" marker-end="url(#arw)"/>
+            <path d="M672,115 L746,115" marker-end="url(#arw)"/>
+          </g>
+        </svg>
+        <figcaption>Round 1 → judge seed → Round 2 → final synthesis. The first round's output literally seeds the second.</figcaption>
+      </figure>
+    </section>
+
+    <section id="panel">
+      <h2><span class="num">02</span> The panel</h2>
+      <p>Six deliberately clashing lenses, chosen so ambition, restraint, pedagogy, scale, sustainability, and AI-nativeness would actively disagree.</p>
+      <div class="lens-grid">
+        <div class="lens"><div class="ln"><span class="dot" style="background:#4f46e5"></span>Product Visionary</div><p>North stars and 3-year arcs — what could SAMAGRA <em>uniquely</em> become; where the intent is too timid.</p></div>
+        <div class="lens"><div class="ln"><span class="dot" style="background:#0d9488"></span>Ruthless Minimalist</div><p>YAGNI for a single-operator tool — is the org metaphor earning its complexity, or is it theater?</p></div>
+        <div class="lens"><div class="ln"><span class="dot" style="background:#b45309"></span>Pedagogy &amp; Domain Expert</div><p>JEE/NEET physics — does any of this actually improve teaching outcomes and the end learner?</p></div>
+        <div class="lens"><div class="ln"><span class="dot" style="background:#6d28d9"></span>Systems &amp; Scale Architect</div><p>Where the intent <em>strains</em> as subsystems, volume, and agents grow — leverage and durability.</p></div>
+        <div class="lens"><div class="ln"><span class="dot" style="background:#be123c"></span>Operator &amp; Sustainability Realist</div><p>The human as scarcest resource and single point of failure — ROI per unit of attention.</p></div>
+        <div class="lens"><div class="ln"><span class="dot" style="background:#0ea5e9"></span>AI-Native Strategist</div><p>Does the agent-org <em>exploit</em> what agents are good at, or just LARP a corporate hierarchy?</p></div>
+      </div>
+    </section>
+
+    <section id="synthesis">
+      <h2><span class="num">03</span> Synthesis — what converged</h2>
+      <div class="callout">
+        <p>After two rounds, the room turned its disagreements into a <strong>sequence</strong> rather than a stalemate:</p>
+        <ul class="clean">
+          <li>The <strong>org/company metaphor is a UX skin</strong> — engaging, but never a data model, workflow step, or named-agent topology. The durable primitive underneath is just <em>roles + rights</em> (draft / review / approve / publish).</li>
+          <li>The spine question resolved near-unanimously: <strong>SAMAGRA owns exactly one primitive</strong> — the seed/work-item — while the JEE/NEET syllabus is a <em>read-only projection axis</em> every seed points at. Concept-coverage becomes a query over the spine, not a rival source of truth.</li>
+          <li>Ambition vs. minimalism settled by timeline + an auditable rule: <strong>an aspiration may be named in the intent but must add zero fields/statuses/steps to the Phase-1 schema.</strong> Two outward ambitions were <em>cut</em>, not deferred.</li>
+          <li>Gates collapsed to <strong>one sacred blocking human gate (publish)</strong>, with physics-correctness folded in as its checklist; code review demoted to advisory except on the single write-path.</li>
+          <li>Autonomy became a <strong>per-lane ratchet</strong> — read-only lanes earn auto-dispatch by demonstrated reliability; publish stays human-gated forever, because the bright line is the <em>read→write boundary</em>, not autonomous-vs-manual.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="suggestions">
+      <h2><span class="num">04</span> The 10 suggestions</h2>
+      <p class="muted" style="font-size:14px">Ranked by usefulness (impact × how much it sharpens the intent). Horizon: <span class="b now">now</span> <span class="b next">next</span> <span class="b later">later</span>. The consensus chip shows how settled each one is.</p>
+
+      <!-- 1 -->
+      <div class="sg">
+        <div class="sg-head">
+          <div class="rank">1</div>
+          <div class="sg-title">
+            <h3>Make the seed the one owned primitive; syllabus is a read-only projection axis</h3>
+            <div class="badges"><span class="b now">now</span><span class="b con">near-consensus</span></div>
+          </div>
+        </div>
+        <div class="sg-body">
+          <p>Declare that SAMAGRA owns exactly ONE source of truth — the seed/work-item (identity, status, trajectory, typed pointers) — and nothing else. The JEE/NEET syllabus concept-node is <strong>not</strong> a graph SAMAGRA curates; it is mirrored read-only like every other silo, and every seed carries a mandatory, never-null <code>concept_id</code> pointer alongside its <code>qx_id</code>/<code>sim_id</code>. Concept-coverage, taste-history, and pedagogical gaps all become <code>GROUP BY</code> queries over the spine, never parallel stores that drift.</p>
+          <div class="field shift"><div class="k">Vision shift</div><p>"Integrated/whole" stops meaning "seven dashboards in one window" and starts meaning "every artifact knows which piece of physics it serves and where it is in its life." The portal becomes a replaceable view; the registry of seeds becomes the durable asset.</p></div>
+          <div class="field"><div class="k">Why it matters</div><p>The keystone that makes "control plane, not a rebuild" actually hold: subsystems stay source-of-truth for content, SAMAGRA owns only trajectory. Adding a tool becomes O(1) ("teach the seed to point at it"), and it is the substrate the dormant scoreboard, ledger, and per-lane autonomy later stand on at zero retrofit cost.</p></div>
+          <div class="field risk"><div class="k">Risk</div><p>The mandatory pointer needs a frozen, flat ~80–120-leaf syllabus vocabulary; if it's allowed to grow into a maintained dependency graph, it quietly becomes the second source of truth the decision was meant to avoid.</p></div>
+          <div class="field"><div class="k">Dissent</div><p>Architect framed concept-node as a read-only projection axis; Pedagogy wanted it as the day-one front page and conceded. Residual quibble — "projection axis" vs "mandatory tag" — is a distinction without a difference in practice.</p></div>
+        </div>
+      </div>
+
+      <!-- 2 -->
+      <div class="sg">
+        <div class="sg-head">
+          <div class="rank">2</div>
+          <div class="sg-title">
+            <h3>Resolve ambition vs. minimalism with a schema-freeze rule</h3>
+            <div class="badges"><span class="b now">now</span><span class="b con">consensus</span></div>
+          </div>
+        </div>
+        <div class="sg-body">
+          <p>Adopt a mechanical, auditable test: an aspiration may appear in the intent doc but may <strong>not</strong> add a field, status, or workflow step to the Phase-1 data model. Phase 1 builds only (a) ONE golden capture→publish thread end-to-end through real <code>munshi → seed → enriched → published</code>, (b) the other six adapters as read-only status mirrors, (c) the human publish gate. The compounding taste-engine, learner-as-endpoint, per-lane autonomy, and coverage scoreboard are <em>named-but-dormant</em> with explicit "dormant until Phase N" tags.</p>
+          <div class="field shift"><div class="k">Vision shift</div><p>The aspiration fight becomes a release schedule. "Name it now, build it later" stops being a slogan and becomes a contract: the intent doc grows, the Phase-1 surface does not.</p></div>
+          <div class="field"><div class="k">Why it matters</div><p>Serves the frugal, single-operator, YAGNI values while preventing the calcification the ambitious lenses feared — identity is cheap to declare and expensive to retrofit, but scope is frozen where it actually costs the one operator. The antidote to solo-founder death-by-breadth without amputating the long game.</p></div>
+          <div class="field risk"><div class="k">Risk</div><p>The rule erodes the instant a "free declaration" smuggles in a logging field (e.g. structured rejection-reasons). Declaring an empty column is free; populating it is a later-phase build.</p></div>
+          <div class="field"><div class="k">Dissent</div><p>Consensus on the mechanism. Minimalist and Operator insisted on naming what gets CUT (not just deferred); the ambitious lenses accepted the zero-field price.</p></div>
+        </div>
+      </div>
+
+      <!-- 3 -->
+      <div class="sg">
+        <div class="sg-head">
+          <div class="rank">3</div>
+          <div class="sg-title">
+            <h3>One sacred blocking publish gate; physics-correctness is its checklist, not a second wall</h3>
+            <div class="badges"><span class="b now">now</span><span class="b con">reconciled</span></div>
+          </div>
+        </div>
+        <div class="sg-body">
+          <p>Ship a single ranked gate list. <strong>Gate 1</strong> (BLOCKING, human-owned, permanent, never delegable): human approves publish — its checklist explicitly includes physics correctness (sign conventions, limiting cases), difficulty/exam-target calibration, answer-ambiguity, and "does this link to its concept-node + theory + sim + graded problem." <strong>Gate 2</strong> (BLOCKING but structural/narrow, owned by Codex): pre-commit review scoped ONLY to the single approved write-path adapter. <strong>Gate 3</strong> (ADVISORY, non-blocking): all other code review and any agent-produced physics review, attached to the seed to inform Gate 1.</p>
+          <div class="field shift"><div class="k">Vision shift</div><p>Quality stops being "two gates slowing a solo operator" and becomes "one human gate that checks what the student feels, plus a narrow structural wall protecting the one mutation." Pedagogy made first-class without multiplying blocking stops.</p></div>
+          <div class="field"><div class="k">Why it matters</div><p>Honors "quality over speed" where the student feels it — a wrong sign convention reaching a learner is what destroys a teacher's reputation — while refusing to make a solo operator climb two blocking walls per artifact. Code correctness and physics correctness are orthogonal; only the latter belongs at the sacred gate.</p></div>
+          <div class="field risk"><div class="k">Risk</div><p>Folding physics into the publish gate concentrates ALL pedagogical risk on one human's attention at one moment; if volume rises, that gate becomes the bottleneck and risks rubber-stamping.</p></div>
+          <div class="field"><div class="k">Dissent</div><p>Reconciled: Minimalist wanted one gate with code review advisory; Pedagogy wanted a first-class physics gate. Physics-as-checklist (not a parallel gate) satisfied both; Architect added the read→write boundary as the only other blocking gate.</p></div>
+        </div>
+      </div>
+
+      <!-- 4 -->
+      <div class="sg">
+        <div class="sg-head">
+          <div class="rank">4</div>
+          <div class="sg-title">
+            <h3>Recast the safety invariant as a read→write capability boundary, not a moral promise</h3>
+            <div class="badges"><span class="b next">next</span><span class="b con">broadly accepted</span></div>
+          </div>
+        </div>
+        <div class="sg-body">
+          <p>Reframe "never mutate the tools, one approved write" from a promise the human enforces into a structural boundary the architecture enforces: every adapter is declared read or write; writes are a typed, enumerable, board-gated capability class; any un-enumerated write is rejected by the architecture, not by a reviewer. The bright line downstream becomes "does this action cross read→write," not "autonomous vs manual."</p>
+          <div class="field shift"><div class="k">Vision shift</div><p>Safety moves from a cultural rule requiring everyone to remember restraint into an invariant that holds regardless of how many agents act. The human becomes the approver of <em>capabilities</em>, not the guarantor of restraint.</p></div>
+          <div class="field"><div class="k">Why it matters</div><p>The single-write "exception" framing is a smell — exceptions multiply, each a fresh negotiation. A capability boundary lets per-lane autonomy and even a future second operator grow without rewriting the trust model, while keeping read-only-by-default — SAMAGRA's whole identity.</p></div>
+          <div class="field risk"><div class="k">Risk</div><p>Formalizing writes as an enumerable class can subtly legitimize MORE of them — making mutation feel routine erodes the read-only default that keeps the corpus safe.</p></div>
+          <div class="field"><div class="k">Dissent</div><p>Architect's framing, broadly accepted. The safety-minded reading cautions that naming a write-capability class must not normalize growth of that class.</p></div>
+        </div>
+      </div>
+
+      <!-- 5 -->
+      <div class="sg" style="border-color:var(--accent-line)">
+        <div class="sg-head">
+          <div class="rank">5</div>
+          <div class="sg-title">
+            <h3>Build the dashboard as two ranked altitudes: attention-ROI gauge + concept-coverage scoreboard</h3>
+            <div class="badges"><span class="b next">next</span><span class="b con" style="color:var(--danger)">live disagreement</span></div>
+          </div>
+        </div>
+        <div class="sg-body">
+          <p>Reject "single pane of glass" as the north star (it measures <em>seeing</em>, not value). The front page shows TWO things at different altitudes: a concept-coverage map (concept × JEE/NEET × difficulty tier, colored by gaps) as the content scoreboard you steer toward, and <em>minutes-of-Deepak's-attention-per-published-artifact</em> as a persistent health gauge that arms the kill-criterion. Throughput/flow and integration demote to diagnostics. Phase 1: attention-ROI primary (no corpus to score yet); from Phase 2 coverage becomes the long-run direction metric.</p>
+          <div class="field shift"><div class="k">Vision shift</div><p>Headline shifts from "can I see all my tools" to "is my curriculum becoming whole, and is it costing me less of myself each month." Two ranked numbers replace a wall of seven dashboards.</p></div>
+          <div class="field"><div class="k">Why it matters</div><p>Binds the project to the scarce resource a one-person shop can least afford (attention) AND the only metric a content farm structurally cannot fake (coverage-at-tier). Prevents both named failure modes: greening coverage while burning out the proprietor, and saving hours by publishing redundant easy-mechanics while whole chapters stay holes.</p></div>
+          <div class="field risk"><div class="k">Risk</div><p>The least-settled tension — three credible primaries. Picking the wrong front-page metric will quietly bias every roadmap decision; the two-altitude reconciliation may be a diplomatic dodge that defers the real choice.</p></div>
+          <div class="field"><div class="k">Dissent</div><p>Live: Operator → attention-ROI (only metric that can KILL a feature). Pedagogy → coverage-at-tier long-run. AI-Native → board-correction-rate subsumes attention-ROI. Architect → attention-ROI segmented BY coverage. The verdict adopts the altitude-stack, but the primacy fight is genuinely unresolved.</p></div>
+        </div>
+      </div>
+
+      <!-- 6 -->
+      <div class="sg">
+        <div class="sg-head">
+          <div class="rank">6</div>
+          <div class="sg-title">
+            <h3>Convert autonomy into a per-lane ratchet bounded by the read/write line; graduate ONE read-only lane first</h3>
+            <div class="badges"><span class="b next">next</span><span class="b con">settled in shape</span></div>
+          </div>
+        </div>
+        <div class="sg-body">
+          <p>Replace the binary "no autonomous dispatch ever / flip it on someday" with a per-lane trust dial. The FIRST lane to earn auto-dispatch is read-only, student-invisible, fully-reversible — leading candidates: seed classification/routing (every capture hits it; steepest daily copy-paste tax) or adapter-refresh/status-reconciliation. Graduation: ~20 consecutive human-accepted-uncorrected runs. Rollback: any single correction drops the lane to manual and resets the counter. Bright line: auto-dispatch only for read-only-adapter operations whose output is itself a gated draft. Publish never becomes a lane.</p>
+          <div class="field shift"><div class="k">Vision shift</div><p>"Semi-autonomous with hard gates" stops being "fully manual with ceremony" and becomes a credible trajectory: autonomy grows toward Deepak's free time, never toward the student's experience.</p></div>
+          <div class="field"><div class="k">Why it matters</div><p>The manual outbox costs hours TODAY — every worker action gates on a copy-paste round-trip from the one binding-constraint human, collapsing four jobs (orchestrate/route/arbitrate/gate) onto one tired teacher where three are pure glue. A ratchet buys those hours back without cracking the safety model, making "agentic" real instead of theater.</p></div>
+          <div class="field risk"><div class="k">Risk</div><p>Mis-classifying a lane's stake could let a bad item flow further before a human sees it; and a lane can't graduate until the golden path has logged enough WATCHED runs — so autonomy comes after Phase 1, not before.</p></div>
+          <div class="field"><div class="k">Dissent</div><p>Contested in detail: Operator/AI-Native → make routing autonomous first. Safety reading → any auto-dispatch erodes the invariant before read-only guarantees are battle-tested. Lenses disagree on the exact first lane (classification vs adapter-refresh vs enrichment-drafting).</p></div>
+        </div>
+      </div>
+
+      <!-- 7 -->
+      <div class="sg">
+        <div class="sg-head">
+          <div class="rank">7</div>
+          <div class="sg-title">
+            <h3>Make graceful-degradation-under-owner-absence a named first-class value</h3>
+            <div class="badges"><span class="b later">later</span><span class="b con">Operator-owned</span></div>
+          </div>
+        </div>
+        <div class="sg-body">
+          <p>Elevate bus-factor-of-one to a named constraint alongside local-first and frugal. Model: during owner absence, all read-only lanes (capture, classification, enrichment, linking, coverage-recompute) keep running and PILE UP into a ranked, publish-ready queue; publish HALTS by default so nothing ships unapproved and nothing rots silently. For seasonal crunch, add a dormant, auto-expiring, narrowly-scoped time-boxed pre-approval for exactly ONE no-new-physics class (e.g. re-publishing already-approved content to an additional format) that the human arms before leaving.</p>
+          <div class="field shift"><div class="k">Vision shift</div><p>Owner-absence becomes a designed, graceful state rather than a crash; absence costs latency, not loss. Continuity becomes a property of keeping the gate a small durable rule, not a person who must always be present.</p></div>
+          <div class="field"><div class="k">Why it matters</div><p>A single-operator, sole-publish-approver business with seasonal deadlines is one illness / exam-crunch / trip from a multi-week stall while munshi keeps filling — an existential operational risk no other lens raised. This preserves gate integrity (pre-approve a CLASS, not an item) while removing "one bad month = total stall."</p></div>
+          <div class="field risk"><div class="k">Risk</div><p>Any pre-approval, however narrow, widens the trust surface the read-only invariant keeps small; the time-boxed publish class is the one place a degradation valve could leak student-facing content.</p></div>
+          <div class="field"><div class="k">Dissent</div><p>Minimalist and Architect endorsed the queue model; mild dissent on the pre-approval valve — purists want publish to halt completely with zero exceptions.</p></div>
+        </div>
+      </div>
+
+      <!-- 8 -->
+      <div class="sg">
+        <div class="sg-head">
+          <div class="rank">8</div>
+          <div class="sg-title">
+            <h3>Reserve a decision-ledger now; mine it later — keep an adversarial reviewer that never drinks from it</h3>
+            <div class="badges"><span class="b later">later</span><span class="b con">consensus on the split</span></div>
+          </div>
+        </div>
+        <div class="sg-body">
+          <p>Name the compounding loop as the long-game asset but make it cost-honest: Phase 1 only APPENDS a row to a per-seed decision ledger on every approve/reject/edit (near-free — the human's already clicking). Reading/learning from it to pre-fill drafts is explicitly dormant. When built, split who-learns-from-what: the DRAFTER may compound on Deepak's approval history (style, selection, structure); one REVIEWER agent stays adversarial with a rubric anchored to EXTERNAL read-only truth (exam answer keys, dimensional consistency, official syllabus weightings, known-misconception lists) and is NEVER trained on Deepak's approvals.</p>
+          <div class="field shift"><div class="k">Vision shift</div><p>The headline metric can shift over years from "did we ship" to "is the board's correction rate falling" — while adversarial-reviewer-catch-rate→zero is treated as a RED FLAG (monoculture won), not a success.</p></div>
+          <div class="field"><div class="k">Why it matters</div><p>Every approve/reject across 67k questions + 59 chapters is a labeled pedagogical judgment that currently evaporates. Capturing it is the one thing a fleet of agents can do that a folder of scripts cannot — reframing SAMAGRA from replicable middleware into a compounding asset. The split is the only answer to the loop's existential failure mode: entrenching Deepak's blind spots and breeding reviewer monoculture.</p></div>
+          <div class="field risk"><div class="k">Risk</div><p>Mining the ledger is ML-adjacent territory a single operator may not want to maintain; and if the "free" Phase-1 row quietly grows structured rejection-reason metadata, it violates the schema-freeze rule (#2).</p></div>
+          <div class="field"><div class="k">Dissent</div><p>Visionary, Pedagogy, Architect, AI-Native independently arrived at the same split (taste compounds on style/selection; correctness checked against external ground-truth). AI-Native frames correction-rate as the org's north star; others keep it as one gauge among several.</p></div>
+        </div>
+      </div>
+
+      <!-- 9 -->
+      <div class="sg">
+        <div class="sg-head">
+          <div class="rank">9</div>
+          <div class="sg-title">
+            <h3>CUT the outward product/positioning ambitions; SAMAGRA is permanently inward back-office infra</h3>
+            <div class="badges"><span class="b now">now</span><span class="b con" style="color:var(--warn)">partial dissent</span></div>
+          </div>
+        </div>
+        <div class="sg-body">
+          <p>Amputate, not defer, two items from the intent: (a) "SAMAGRA as a transferable operating-model/product for AI-native solo creators" and (b) the outward "expert-curated, AI-scaled" market-positioning wedge. Declare explicitly that SAMAGRA is permanently inward-facing back-office infrastructure with no audience and no go-to-market identity; if a learner-facing product ever emerges, it is a SEPARATE entity that consumes SAMAGRA's corpus, never SAMAGRA itself.</p>
+          <div class="field shift"><div class="k">Vision shift</div><p>The intent declares generalization and positioning out of scope by design, removing the gravitational pull toward a second company masquerading as a vision item.</p></div>
+          <div class="field"><div class="k">Why it matters</div><p>Both ambitions import go-to-market and generalization thinking that collides with the frugal, single-operator, not-online intent and dilutes the physics moat. Carrying them invites scope decisions made for an audience that does not exist — exactly how a one-person teaching business dies of startup-itis.</p></div>
+          <div class="field risk"><div class="k">Risk</div><p>Amputating positioning entirely may under-claim a genuinely rare asset (expert taste enforced through hard gates over a deep linked corpus); identity is expensive to retrofit, so a permanent "never outward" could foreclose a real option.</p></div>
+          <div class="field"><div class="k">Dissent</div><p>Operator and Minimalist push hard for amputation. Visionary proposed both, withdrew the transferable-product idea, but argued the OUTPUT is legitimately public-facing even if the OS stays private — a partial, unresolved dissent on positioning.</p></div>
+        </div>
+      </div>
+
+      <!-- 10 -->
+      <div class="sg">
+        <div class="sg-head">
+          <div class="rank">10</div>
+          <div class="sg-title">
+            <h3>Close the loop with OFFLINE demand signal Deepak already produces — no deployment, no product</h3>
+            <div class="badges"><span class="b later">later</span><span class="b con">Pedagogy-owned</span></div>
+          </div>
+        </div>
+        <div class="sg-body">
+          <p>Give "enrichment" a pedagogical compass without violating the not-online non-goal by feeding the coverage scoreboard with signal that already exists locally: (1) which concepts Deepak's QX paper-builder under-draws from (the asymmetry IS demand signal pointing at holes), and (2) Deepak's own post-use flags on questions ("this NEET item was actually too hard," "students missed this") captured via munshi in one tap. The richer online learner-performance loop stays a named-but-dormant 3-year aspiration.</p>
+          <div class="field shift"><div class="k">Vision shift</div><p>The lifecycle gains an honest return path (publish → offline observe which concepts are under-served / mis-calibrated → re-prioritize) that respects single-operator and not-online constraints while pointing enrichment at real gaps.</p></div>
+          <div class="field"><div class="k">Why it matters</div><p>Without a demand compass, "enrichment" prioritizes whatever got captured on the phone first rather than where learning actually breaks. This turns the pipeline from pure author-push into frugal demand-pull using data the operator already generates — closing the lifecycle past "publish" without a student channel the non-goals forbid.</p></div>
+          <div class="field risk"><div class="k">Risk</div><p>Deepak's own usage asymmetry is a biased proxy for student need — it can reinforce the very blind spots the compounding loop is supposed to avoid, since both are downstream of his past choices.</p></div>
+          <div class="field"><div class="k">Dissent</div><p>Visionary and AI-Native wanted the loop to close from learner performance. Minimalist explicitly CUT "munshi-as-student-demand-sensor" as a different company — so the offline proxy is the compromise, with the online version dissented-into-dormancy.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="actions">
+      <h2><span class="num">05</span> Action items</h2>
+      <p>Derived from the suggestions, grouped by horizon. Items marked <span class="pill-decide">decide</span> need an owner call before they can be folded into the plan. References point back to suggestion numbers above.</p>
+
+      <div class="ai-group">
+        <div class="gh"><span class="b now">now</span> Spine &amp; scope — lock before Phase 1 builds</div>
+        <div class="ai"><div class="box"></div><div class="id">A1</div><div class="txt"><p>Rewrite the spec's spine section: declare the <strong>seed/work-item</strong> as SAMAGRA's single source of truth; syllabus = read-only projection axis; add a mandatory, never-null <code>concept_id</code> pointer to the seed alongside <code>qx_id</code>/<code>sim_id</code>.</p></div><div class="ref">← #1</div></div>
+        <div class="ai decide"><div class="box"></div><div class="id">A2</div><div class="txt"><p><span class="pill-decide">decide</span>&nbsp; Freeze a flat <strong>~80–120-leaf concept vocabulary</strong> for the projection axis and ban it from growing into a maintained dependency graph.</p><p class="sub">Owner sign-off needed: which vocabulary (NCERT leaf nodes? the existing mycontentdev taxonomy's leaves?) and who owns it.</p></div><div class="ref">← #1</div></div>
+        <div class="ai"><div class="box"></div><div class="id">A3</div><div class="txt"><p>Add the <strong>schema-freeze rule</strong> to the plan: aspirations may be named in prose but add zero Phase-1 fields/statuses/steps; tag every dormant aspiration "dormant until Phase N."</p></div><div class="ref">← #2</div></div>
+        <div class="ai"><div class="box"></div><div class="id">A4</div><div class="txt"><p>Define <strong>Phase 1 acceptance</strong> as exactly: one golden <code>munshi → seed → enriched → published</code> thread + six read-only adapters + the human publish gate. Nothing else.</p></div><div class="ref">← #2</div></div>
+        <div class="ai"><div class="box"></div><div class="id">A5</div><div class="txt"><p>Replace multi-gate language with the <strong>single ranked gate list</strong> (Gate 1 publish / Gate 2 narrow Codex / Gate 3 advisory) and write the publish-gate <strong>physics checklist</strong> (sign conventions, limiting cases, difficulty/exam calibration, ambiguity, linkage).</p></div><div class="ref">← #3</div></div>
+        <div class="ai decide"><div class="box"></div><div class="id">A6</div><div class="txt"><p><span class="pill-decide">decide</span>&nbsp; <strong>Amputate</strong> the transferable-product ambition + outward market-positioning from the intent; add a "permanently inward back-office infra" clause.</p><p class="sub">Owner decision: full amputation vs. Visionary's caveat that the <em>output</em> (not the OS) may be public-facing.</p></div><div class="ref">← #9</div></div>
+      </div>
+
+      <div class="ai-group">
+        <div class="gh"><span class="b next">next</span> Trust model &amp; metrics — design as Phase 1 proves out</div>
+        <div class="ai"><div class="box"></div><div class="id">A7</div><div class="txt"><p>Reframe the safety invariant as a <strong>read→write capability boundary</strong>: declare each adapter read or write; make writes a typed, enumerable, board-gated class; reject un-enumerated writes structurally.</p></div><div class="ref">← #4</div></div>
+        <div class="ai decide"><div class="box"></div><div class="id">A8</div><div class="txt"><p><span class="pill-decide">decide</span>&nbsp; Pick the <strong>north-star / front-page metric.</strong> Adopt the two-altitude dashboard (attention-ROI gauge + concept-coverage scoreboard) <em>or</em> name a single primary. <strong>This is the debate's one genuinely unresolved tension.</strong></p><p class="sub">Candidates: attention-ROI (can kill a feature) · coverage-at-tier (can't be faked) · board-correction-rate (compounding).</p></div><div class="ref">← #5</div></div>
+        <div class="ai decide"><div class="box"></div><div class="id">A9</div><div class="txt"><p><span class="pill-decide">decide</span>&nbsp; Specify the <strong>per-lane autonomy ratchet</strong> (trust dial, ~20 uncorrected-run graduation, reset-on-correction, publish never a lane) and choose the <strong>first lane</strong> to graduate.</p><p class="sub">Owner decision: classification/routing (highest copy-paste tax) vs. adapter-refresh (read-only by definition).</p></div><div class="ref">← #6</div></div>
+      </div>
+
+      <div class="ai-group">
+        <div class="gh"><span class="b later">later</span> Compounding &amp; resilience — reserve cheaply now, build later</div>
+        <div class="ai"><div class="box"></div><div class="id">A10</div><div class="txt"><p>Add a near-free <strong>decision-ledger append</strong> on every approve/reject/edit in Phase 1 (dormant for mining). Keep the row free of structured metadata so it respects the schema-freeze (A3). Design the drafter-vs-adversarial-reviewer learning split for the later build.</p></div><div class="ref">← #8</div></div>
+        <div class="ai"><div class="box"></div><div class="id">A11</div><div class="txt"><p>Name <strong>graceful-degradation-under-absence</strong> as a first-class value: read-only lanes queue, publish halts by default; spec a dormant, auto-expiring, time-boxed pre-approval for one no-new-physics class.</p></div><div class="ref">← #7</div></div>
+        <div class="ai"><div class="box"></div><div class="id">A12</div><div class="txt"><p>Design the <strong>offline demand compass</strong>: QX paper-builder draw-asymmetry + one-tap munshi post-use flags feed the coverage scoreboard. Keep the online learner-performance loop dormant.</p></div><div class="ref">← #10</div></div>
+      </div>
+
+      <div class="ai-group">
+        <div class="gh"><span class="chip" style="padding:3px 10px">consider</span> Optional, from "also considered"</div>
+        <div class="ai"><div class="box"></div><div class="id">A13</div><div class="txt"><p>Add an explicit <strong>kill-criterion / anti-vision clause</strong>: "if SAMAGRA isn't saving X hrs/week by milestone Y, freeze it and return to point tools." Pairs with the attention-ROI gauge (A8).</p></div><div class="ref">also</div></div>
+        <div class="ai"><div class="box"></div><div class="id">A14</div><div class="txt"><p>Reconsider the <strong>"agentic OS" label</strong> → "control plane / single pane" so the word <em>OS</em> stops licensing OS-sized feature creep. Keep the evocative SAMAGRA name.</p></div><div class="ref">also</div></div>
+      </div>
+    </section>
+
+    <section id="open">
+      <h2><span class="num">06</span> The one open question</h2>
+      <div class="callout" style="border-left-color:var(--danger)">
+        <h3 style="margin-bottom:8px">The north-star metric is genuinely unresolved (A8 / #5)</h3>
+        <p class="muted" style="margin:0">The panel stacked three credible primaries by <em>altitude</em> rather than picking one — and flagged that this may be a diplomatic dodge. Whatever lands on the front page will quietly bias every roadmap decision, so this is the highest-value owner call before the plan is folded in.</p>
+        <ul class="clean">
+          <li><strong>attention-ROI</strong> (Operator) — the only metric that can <em>kill</em> a feature; right for Phase 1 when there's no corpus to score.</li>
+          <li><strong>concept-coverage-at-tier</strong> (Pedagogy) — the only metric a content farm structurally cannot fake; right as the long-run direction.</li>
+          <li><strong>board-correction-rate</strong> (AI-Native) — the compounding metric; subsumes the others over a multi-year horizon.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="also">
+      <h2><span class="num">07</span> Also considered</h2>
+      <p class="muted" style="font-size:14px">Strong ideas that just missed the top 10.</p>
+      <ul class="clean">
+        <li>Rename "agentic <strong>OS</strong>" → "control plane / single pane" so the word OS stops silently licensing OS-sized feature creep (scheduler, processes, app lifecycle) — keep the SAMAGRA name, drop the OS-scale pressure.</li>
+        <li>Treat "one operator" as a <strong>parameter</strong> with a dormant delegation story rather than an assumption baked into the floor, so a future TA / co-teacher has a seam to slot into (Architect) — countered as premature by the single-operator-focus lens.</li>
+        <li>Demand an explicit <strong>kill-criterion / anti-vision clause</strong>: "if SAMAGRA isn't saving X hours/week by milestone Y, freeze it and go back to point tools" (Operator) — protects against the meta-tool competing with the actual product.</li>
+        <li>Elevate the <strong>200+ Pratyaksh sims</strong> from read-only inventory to first-class teaching instruments by binding each sim to its theory passage + the JEE problem it unlocks, so a lecture becomes a "watch this, now derive it, now solve this" arc (Pedagogy) — brushes against the read-only invariant.</li>
+        <li>Make <strong>difficulty-tier and exam-target (JEE vs NEET)</strong> first-class tracked attributes the portal balances per concept, so "coverage" means "every concept at every tier for the right exam," not just "every concept has something."</li>
+        <li><strong>Board-review-as-mentorship</strong>: when Codex rejects the same class of issue repeatedly, that rationale becomes a durable shared rubric the worker internalizes, so review volume trends down instead of scaling linearly with output (AI-Native).</li>
+      </ul>
+    </section>
+
+    <section id="verdict">
+      <h2><span class="num">08</span> Verdict</h2>
+      <div class="callout verdict">
+        <p style="font-size:16px;margin-bottom:10px"><strong>The single most important direction change: make the seed/work-item the one and only source of truth SAMAGRA owns, with the JEE/NEET syllabus mirrored as a read-only projection axis every seed must point at.</strong></p>
+        <p class="muted" style="margin-bottom:0">This one decision quietly settles the loudest fights in the room: it preserves "control plane, not a rebuild" (subsystems keep owning content, SAMAGRA owns only trajectory), it makes adding any tool O(1), and it is the substrate on which every named-but-dormant aspiration — the pedagogy coverage scoreboard, the compounding decision-ledger, per-lane autonomy — can later be built as a query or a column at zero retrofit cost. Get the spine right and the rest of the vision becomes a release schedule rather than a scope war: name the ambitions in prose, freeze them out of the Phase-1 schema, prove ONE golden capture→publish thread with the human gate working, and let the seed carry the future when the data exists. Everything else SAMAGRA aspires to is a column it has not populated yet — and declaring an empty column is free, while retrofitting identity into a system that calcified around "publish is the end" is the one expense it cannot refund later.</p>
+      </div>
+    </section>
+
+  </div>
+  </main>
+</div>
+
+<footer>
+  SAMAGRA vision deliberation · generated 2026-06-19 · 6-lens panel, 2 judge-seeded rounds, 14 agents ·
+  this document records the debate; the action items will be folded into the implementation plan separately.
+</footer>
+
+<script>
+  // theme toggle
+  (function(){
+    var root=document.documentElement, btn=document.getElementById('themeBtn'), lbl=document.getElementById('themeLbl');
+    var saved=null; try{saved=localStorage.getItem('samagra-theme');}catch(e){}
+    if(saved){root.setAttribute('data-theme',saved);}
+    else if(window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches){root.setAttribute('data-theme','dark');}
+    function sync(){var d=root.getAttribute('data-theme')==='dark';btn.firstChild.textContent=d?'☀️ ':'🌙 ';lbl.textContent=d?'Light':'Dark';}
+    sync();
+    btn.addEventListener('click',function(){
+      var d=root.getAttribute('data-theme')==='dark';
+      root.setAttribute('data-theme',d?'light':'dark');
+      try{localStorage.setItem('samagra-theme',d?'light':'dark');}catch(e){}
+      sync();
+    });
+  })();
+  // scrollspy
+  (function(){
+    var links=[].slice.call(document.querySelectorAll('nav.toc a'));
+    var map={}; links.forEach(function(a){map[a.getAttribute('href').slice(1)]=a;});
+    var secs=[].slice.call(document.querySelectorAll('main section[id]'));
+    var obs=new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(l){l.classList.remove('active');});
+          if(map[e.target.id])map[e.target.id].classList.add('active');
+        }
+      });
+    },{rootMargin:'-20% 0px -70% 0px',threshold:0});
+    secs.forEach(function(s){obs.observe(s);});
+  })();
+</script>
+</body>
+</html>
