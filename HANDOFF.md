@@ -1,15 +1,23 @@
 # SAMAGRA — Handoff
 
 > **▶ STATUS:** The project is **SAMAGRA** (package `samagra`) — a company-structured agent org
-> folding in `mycontentdev` + `munshi`, with a blocking pre-commit Codex review and a CEO prompt-outbox.
-> **Phase 0 (rename), Track A (stabilize) and Phase 1 (read-only subsystem adapters) are done, merged to
-> `main`, and pushed to `origin/main`** (63/63 green; Phase 1 cleared an adversarial 42-agent pre-merge
-> review — one HIGH, MUN-01, fixed). Repo and origin in sync. The live plan is under
-> `docs/superpowers/` (original brief: [`SAMAGRA-HANDOFF.md`](SAMAGRA-HANDOFF.md)). **Next: Phase 2 (governance).**
+> folding in `mycontentdev` + `munshi`, with an advisory pre-commit Codex review and a CEO prompt-outbox.
+> **Phase 0 (rename), Track A (stabilize) and Phase 1 (read-only subsystem adapters) are merged to `main`
+> and pushed to `origin/main`.** **Phase 2 (governance) is now BUILT TDD on `main` (suite 63 → 85 green)**,
+> reconciled to the runbook: **D6** (governance state lives in its own durable `governance.db`, separate from
+> the rebuildable catalog `samagra.db`) and **D5** (the Codex pre-commit hook is **advisory-local** —
+> confirmed-CRITICAL only, diff-hash cached, audited break-glass, never wedges; real enforcement = CI). The
+> plan's Phase-2 code was stale (it self-flagged `SUPERSEDED by D5/D9`) and was reconciled before building.
+> The live plan is under `docs/superpowers/` (original brief: [`SAMAGRA-HANDOFF.md`](SAMAGRA-HANDOFF.md)).
+> **Owner-gated & pending:** pre-merge Codex review of the Phase-2 diff → then hook activation
+> (`git config core.hooksPath .githooks`), the three agent worktrees, and push to origin. **Then: Phase 3 (active loop).**
 
 **Repo:** github.com/dbhardwaj86/samagra · branch `main` · local-first Python+FastAPI.
 **State:** Spine + portal + thin/thick exporter + semi-autonomous loop + two read-only subsystem adapters
-(mycontentdev seeds, munshi `library()`) reflecting into the catalog. **63/63 tests pass.**
+(mycontentdev seeds, munshi `library()`) reflecting into the catalog, **+ Phase-2 governance**: durable
+`governance.db` store (assignments / events ledger / review overlay), `GET /api/assignments` + the
+Assignments portal tab, an advisory Codex pre-commit gate (`samagra/review/`), the committed
+`.githooks/pre-commit` shim, and per-agent board files (`board/{deepak,khanak,codex}/`). **85/85 tests pass.**
 
 ## Run it
 
@@ -29,6 +37,10 @@ set PYTHONPATH=%CD%                 # or: export PYTHONPATH=$(pwd) in bash
 
 - `samagra/adapters/` — read-only source adapters → common `Artifact` (incl. Phase 1 `mcd.py`, `munshi.py`).
 - `samagra/clients/` — read-only subsystem HTTP clients: `McdClient` (mycontentdev admin API), `MunshiClient` (`library()`); secret-safe, never logged.
+- `samagra/governance/store.py` — Phase 2 durable `governance.db` store (D6): `assignments`, `events`, `review_overlay` + `schema_version`/migration hook + `backup()`. **Never delete `governance.db` as a "catalog reset".**
+- `samagra/review/` — Phase 2 advisory pre-commit Codex review (D5): `codex_dispatch.py` (vendored subprocess shim, lazy exe) + `precommit.py` (confirmed-CRITICAL + `state/review/` diff-hash cache + `SAMAGRA_REVIEW_BREAKGLASS` audit). CLI: `samagra review-staged`.
+- `.githooks/pre-commit` — committed shim → `python -m samagra.review.precommit`. Activate (owner) with `git config core.hooksPath .githooks`.
+- `board/{deepak,khanak,codex}/` — per-agent `AGENTS.md` + `outbox/` (indexed by `assignments`).
 - `samagra/catalog.py` — `samagra.db` unified catalog (FTS5) + search/overview/facets.
 - `samagra/state.py` — phase state machine; `state/<pipeline>.orchestrator_state.json` + `tracker.txt`.
 - `samagra/scheduler.py` — `tick()`, `gate()`, Task Scheduler installer.
@@ -51,8 +63,16 @@ QX `C:\SandBox\gpt_box\gpt-extract-ques` · textbook `C:\SandBox\gpt_box\physics
 
 ## Open / needs user consent
 
-1. **Notification creds** — fill `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` + gmail `SMTP_PASS` in `.env`.
-2. **Google Docs** — set `GOOGLE_OAUTH_CLIENT` (Desktop OAuth JSON); run an export to complete consent flow.
+**Phase-2 owner-gated (do in order — runbook §1):**
+1. **Pre-merge Codex review** — re-invoke Codex (Chief Architect) on the Phase-2 diff (9 commits, `80f464a..HEAD`) before activation/merge.
+2. **Activate the hook** — `git config core.hooksPath .githooks` (applies to repo + every worktree). Needs `codex` on PATH or `CODEX_BIN`.
+3. **Create worktrees** — `git worktree add ../samagra-deepak -b agent/deepak` (and `-khanak`, `-codex`). Board files already committed.
+4. **Push** — push `main` to `origin` after the review passes.
+
+**Creds (slice-1, unchanged):**
+5. **Notification creds** — fill `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` + gmail `SMTP_PASS` in `.env`.
+6. **Google Docs** — set `GOOGLE_OAUTH_CLIENT` (Desktop OAuth JSON); run an export to complete consent flow.
+7. **Phase 3 munshi** — drop `MUNSHI_API_URL` + `MUNSHI_SECRET` into `.env` (live worker secret value) to switch on the active loop's munshi reads. mcd already reads live via `mcd-cloud.json`.
 
 ## Slice 2 (planned)
 

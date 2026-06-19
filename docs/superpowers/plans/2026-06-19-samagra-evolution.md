@@ -1917,8 +1917,20 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 
 ## Phase 2 — Governance: store, Assignments tab, blocking Codex pre-commit hook, worktrees, org SVG
 
-> **▶ NEXT — build target (not started).** Also land the Phase-1 carry-ins here: refresh per-adapter
-> isolation + stale visibility (F1/F4) alongside the governance store's `stale`/`last_error` columns.
+> **▶ BUILT (2026-06-19) — reconciled to runbook D5/D6, suite 63 → 85 green, on `main`; pre-merge review + owner activation pending.**
+> The task code below was stale against the authoritative runbook and was reconciled before building. **As-built deviations:**
+> - **D6 (Task 2.1, 2.5):** the governance store lives in its own durable **`config.GOVERNANCE_DB` (`governance.db`)**, NOT the
+>   catalog `samagra.db`. Added `SCHEMA_VERSION` (PRAGMA user_version) + a migration hook + a consistent `backup()`. The S-01
+>   autouse fixture now also redirects `GOVERNANCE_DB`. `tests/test_governance.py` = 13 tests (incl. separation/schema/backup + the API route).
+> - **D5 (Task 2.3, 2.4, 2.7 wording):** the pre-commit hook is **advisory-local**, not fail-closed. It blocks only a *confirmed*
+>   CRITICAL (a second Codex pass agrees), memoizes by staged-diff hash (`state/review/diff_cache.json`), honors an audited
+>   break-glass (`SAMAGRA_REVIEW_BREAKGLASS`, → `state/review/breakglass.log`), and a Codex that cannot run **warns and allows**
+>   (never wedges). `tests/test_precommit.py` rewritten to match (9 tests). The "no escape hatch / fail-closed" wording in
+>   Tasks 2.3–2.5 + the board `AGENTS.md` is retired.
+> - **Task 2.5 test:** exercises the route function directly (repo convention, see `test_api_gate.py`) instead of `TestClient`, so no `httpx` dependency is added.
+> - **Owner-gated, NOT run:** `git config core.hooksPath .githooks` (Task 2.4 step 3) and `git worktree add …` (Task 2.7 step 6) — committed the files, deferred activation to the Chairman.
+>
+> Still **carried in** (not yet built here): refresh per-adapter isolation + stale visibility (F1/F4) alongside the store's `stale`/`last_error` columns.
 
 **Files:**
 - **Create** `samagra/governance/__init__.py` — package marker for the governance store.

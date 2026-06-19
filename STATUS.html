@@ -57,7 +57,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
 </head>
 <body>
 <header class="top">
-  <h1>SAMAGRA</h1><span class="sub">Phase 1 merged to main (63/63) · adversarial pre-merge review · Phase 2 next</span>
+  <h1>SAMAGRA</h1><span class="sub">Phase 2 (governance) built — 85/85 green · reconciled to D5/D6 · pre-merge review + owner activation pending</span>
   <nav>
     <a href="#overview">Overview</a><a href="#phases">Phases</a>
     <a href="#samagra">SAMAGRA</a><a href="#arch">Architecture</a><a href="#org">Org</a>
@@ -155,7 +155,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   <div class="grid">
     <div class="card"><div class="n">0 <span class="badge ok">done</span></div><div class="l">Rename to <code>samagra</code> (repo + package); PR #1 merged</div></div>
     <div class="card"><div class="n">1 <span class="badge ok">done</span></div><div class="l">Read-only adapters — mycontentdev + munshi (<code>library()</code>); reflect state. Built TDD, adversarial pre-merge review (MUN-01 fixed), merged to <code>main</code>. 63/63.</div></div>
-    <div class="card"><div class="n">2 <span class="badge todo">build next</span></div><div class="l">Governance — durable <code>governance.db</code> store (assignments/events/review overlay, D6), Assignments tab, Codex pre-commit (advisory-local + enforced-CI), agent worktrees, org SVG. <em>+ carry-in: refresh per-adapter isolation + stale visibility (F1/F4).</em></div></div>
+    <div class="card"><div class="n">2 <span class="badge ok">built · 85/85</span></div><div class="l">Governance — durable <code>governance.db</code> store (assignments/events/review overlay, D6), Assignments tab, advisory-local Codex pre-commit (confirmed-CRITICAL + diff-hash cache + break-glass, D5), org SVG. Built TDD on <code>main</code>; <em>pending pre-merge Codex review + owner-gated hook install &amp; worktrees + push.</em></div></div>
     <div class="card"><div class="n">3 <span class="badge todo">planned</span></div><div class="l">Active loop — munshi → proposed seed (w/ pointers) → board approve → capture API</div></div>
   </div>
   <p>Governance principle: only the three board agents — <strong>Claude-Deepak (CEO)</strong>,
@@ -322,7 +322,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   </svg>
 
   <h2 id="tests">Tests</h2>
-  <p><span class="badge ok">63 / 63 passing</span> (last run 2026-06-19) — the 34-test Track A baseline
+  <p><span class="badge ok">85 / 85 passing</span> (last run 2026-06-19) — the 34-test Track A baseline
   (spine + lectures + scheduler; harness isolation, atomic state writes, gate-prereq enforcement +
   <code>/api/gate</code> 409, refresh last-known-good, refresh-failure caller safety, state read-modify-write
   under one lock, provably single-holder lock) plus <strong>29 new Phase-1 tests</strong> across three
@@ -331,9 +331,28 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   <code>Artifact</code> mapping, per-kind munshi titles vs the live schema, dismissed-skip, registration),
   and <code>test_reflect_mycontentdev.py</code> (8 — pipeline entry + reflector status mapping, gate branches,
   dry-run). The suite is isolated from the real <code>samagra.db</code> and <code>governance.db</code>
-  (autouse <code>conftest.py</code>); every subsystem HTTP client is MOCKED — no live-prod calls in CI.</p>
+  (autouse <code>conftest.py</code>); every subsystem HTTP client is MOCKED — no live-prod calls in CI.
+  Phase 2 adds <strong>22</strong>: <code>test_governance.py</code> (13 — store CRUD + status state-machine +
+  events ledger + review verdicts, plus D6 separation, schema_version, idempotent init, backup, and the
+  <code>/api/assignments</code> route) and <code>test_precommit.py</code> (9 — empty-diff short-circuit,
+  confirmed-CRITICAL blocks, unconfirmed/HIGH-only allow, Codex-down never wedges, audited break-glass,
+  and diff-hash cache hits; <code>dispatch_codex</code> + git mocked).</p>
 
   <h2 id="decisions">Recent decisions</h2>
+  <div class="log"><div class="d">2026-06-19 · Phase 2 (governance) built — reconciled the stale plan to runbook D5/D6</div>
+    Before building, the plan's Phase-2 section was found stale against the authoritative runbook (it
+    self-flagged with <code>SUPERSEDED by D5/D9</code> banners). Two ratified decisions changed the build:
+    <strong>D6</strong> — governance state (assignments / events / review overlay) lives in its own
+    <strong>durable <code>governance.db</code></strong>, separate from the rebuildable catalog
+    <code>samagra.db</code> (schema_version + migration hook + consistent backup; the plan wrongly put it in
+    the catalog DB); <strong>D5</strong> — the Codex pre-commit hook is <strong>advisory-local</strong>, not
+    fail-closed: it blocks only a <em>confirmed</em> CRITICAL (a second Codex pass agrees), memoizes by
+    staged-diff hash, carries an audited break-glass (<code>SAMAGRA_REVIEW_BREAKGLASS</code>), and a Codex that
+    cannot run does <strong>not</strong> wedge commits (real enforcement = CI / branch protection). Built TDD
+    in 9 tasks (store, vendored dispatch, advisory verdict, committed hook, <code>/api/assignments</code>,
+    Assignments tab — live-verified, board <code>AGENTS.md</code> + outboxes, org SVG). Suite 63 →
+    <strong>85 green</strong>. <strong>Owner-gated &amp; pending:</strong> pre-merge Codex review, hook
+    activation (<code>git config core.hooksPath .githooks</code>), the three agent worktrees, and push to origin.</div>
   <div class="log"><div class="d">2026-06-19 · Phase 1 built + adversarial pre-merge review → merged to main</div>
     The two read-only subsystem adapters (mycontentdev + munshi) shipped TDD in 8 tasks, then a 42-agent
     pre-merge review re-verified every integration contract against the live <code>mycontentdev</code>/<code>myProd</code>
@@ -399,21 +418,27 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   </table>
 
   <h2 id="next">Next actions</h2>
-  <p>Phase 0 (rename), the vision fold (D9–D12), Track A (stabilize, S-01–S-09) and now <strong>Phase 1
-  (subsystem adapters)</strong> are all <strong>merged to <code>main</code> and pushed to <code>origin/main</code></strong>
-  (in sync). Suite 63/63. The next
-  build is <strong>Phase 2 — governance</strong>: the durable <code>governance.db</code> store (assignments / events /
-  review overlay, D6), the Assignments portal tab, the advisory-local Codex pre-commit hook, per-agent worktrees,
-  and the org-chart SVG — landing the carried-in refresh hardening (F1 per-adapter isolation + F4 stale
-  visibility) alongside its <code>stale</code> column. A few slice-1 creds items remain to switch on the
-  unattended parts:</p>
+  <p>Phase 0 (rename), the vision fold (D9–D12), Track A (stabilize) and Phase 1 (subsystem adapters) are
+  <strong>merged to <code>main</code> and pushed to <code>origin/main</code></strong>. <strong>Phase 2 —
+  governance</strong> is now <strong>built TDD on <code>main</code> (suite 63 → 85 green)</strong>, reconciled
+  to runbook <strong>D5</strong> (advisory-local hook) and <strong>D6</strong> (durable <code>governance.db</code>).
+  The immediate next step is the <strong>pre-merge Codex review</strong> of the Phase-2 diff, after which the
+  Chairman gates the owner-only actions (hook activation, worktrees, push). Then <strong>Phase 3 — the active
+  loop</strong> (munshi → proposed seed → board approve → capture API). The carried-in refresh hardening
+  (F1 per-adapter isolation + F4 stale visibility / <code>stale</code> column) remains to be folded in.
+  Owner-gated &amp; creds items:</p>
   <table>
     <tr><th>Item</th><th>Status</th><th>Action</th></tr>
     <tr><td>Phase 0 (rename)</td><td><span class="badge ok">done</span></td><td>repo + package <code>samagra</code>; catalog 7,044 artifacts.</td></tr>
     <tr><td>Track A — stabilize (S-01–S-09)</td><td><span class="badge ok">merged</span></td><td>9 fix-loops; 34/34 green; 3-pass Codex review APPROVE; fast-forwarded to <code>main</code>.</td></tr>
     <tr><td>Phase 1 — subsystem adapters (P1-01→P1-08)</td><td><span class="badge ok">merged</span></td><td>Read-only <code>McdClient</code>/<code>MunshiClient</code> + adapters + <code>mycontentdev</code> pipeline + <code>_reflect_mycontentdev</code>; adversarial review (MUN-01 fixed); 63/63 green; fast-forwarded to <code>main</code>. <code>create_seed</code> deferred to Phase 3.</td></tr>
     <tr><td>Push <code>main</code> → origin</td><td><span class="badge ok">done</span></td><td>Pushed 2026-06-19 — <code>origin/main</code> holds the full Phase-1 work; repo and origin in sync.</td></tr>
-    <tr><td>Phase 2 — governance</td><td><span class="badge todo">build next</span></td><td>Governance store + Assignments tab + Codex pre-commit + worktrees + org SVG; + refresh per-adapter isolation &amp; stale surfacing (F1/F4).</td></tr>
+    <tr><td>Phase 2 — governance (build)</td><td><span class="badge ok">built · 85/85</span></td><td>Durable <code>governance.db</code> store (D6) + Assignments tab (live-verified) + advisory Codex pre-commit (D5) + board <code>AGENTS.md</code>/outboxes + org SVG. TDD, 9 commits on <code>main</code>.</td></tr>
+    <tr><td>Phase 2 — pre-merge Codex review</td><td><span class="badge todo">pending</span></td><td>Re-invoke Codex (Chief Architect) to review the Phase-2 diff before the Chairman gates merge/activation.</td></tr>
+    <tr><td>Activate pre-commit hook</td><td><span class="badge todo">owner</span></td><td>Owner-gated: <code>git config core.hooksPath .githooks</code> (applies to repo + all worktrees). Needs <code>codex</code> on PATH or <code>CODEX_BIN</code>.</td></tr>
+    <tr><td>Create agent worktrees</td><td><span class="badge todo">owner</span></td><td>Owner-gated: <code>git worktree add ../samagra-{deepak,khanak,codex} -b agent/{…}</code>. Board files already committed.</td></tr>
+    <tr><td>Push <code>main</code> → origin (Phase 2)</td><td><span class="badge todo">owner</span></td><td>Owner-gated: push the 9 Phase-2 commits after pre-merge review passes.</td></tr>
+    <tr><td>Phase 3 — active loop</td><td><span class="badge todo">planned</span></td><td>munshi item → classify → proposed seed (w/ FTS5 pointers) → board approve → capture API. Requires live munshi creds in <code>.env</code>.</td></tr>
     <tr><td>Notification channels</td><td><span class="badge todo">creds</span></td><td>Set <code>TELEGRAM_BOT_TOKEN</code>/<code>CHAT_ID</code> + gmail <code>SMTP_PASS</code> in <code>.env</code>. Until then notifications are logged only.</td></tr>
     <tr><td>Google Docs export</td><td><span class="badge todo">creds</span></td><td>Set <code>GOOGLE_OAUTH_CLIENT</code> (Desktop OAuth JSON); HTML + DOCX already work.</td></tr>
   </table>
