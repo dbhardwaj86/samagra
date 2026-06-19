@@ -300,7 +300,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   <h2 id="next">Next actions</h2>
   <p>Phase 0 (rename), the vision fold (D9–D12), Track A (stabilize, S-01–S-09) and now <strong>Phase 1
   (subsystem adapters)</strong> are all <strong>merged to <code>main</code></strong>. Suite 63/63. The push to
-  <code>origin/main</code> (now 10 commits ahead, incl. Phase 1) is the one remaining owner action. The next
+  <code>origin/main</code> (ahead by the Phase 1 + docs-sync commits) is the one remaining owner action. The next
   build is <strong>Phase 2 — governance</strong>: the <code>samagra.db</code> store (assignments / events /
   review overlay), the Assignments portal tab, the advisory-local Codex pre-commit hook, per-agent worktrees,
   and the org-chart SVG — landing the carried-in refresh hardening (F1 per-adapter isolation + F4 stale
@@ -311,7 +311,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     <tr><td>Phase 0 (rename)</td><td><span class="badge ok">done</span></td><td>repo + package <code>samagra</code>; catalog 7,044 artifacts.</td></tr>
     <tr><td>Track A — stabilize (S-01–S-09)</td><td><span class="badge ok">merged</span></td><td>9 fix-loops; 34/34 green; 3-pass Codex review APPROVE; fast-forwarded to <code>main</code>.</td></tr>
     <tr><td>Phase 1 — subsystem adapters (P1-01→P1-08)</td><td><span class="badge ok">merged</span></td><td>Read-only <code>McdClient</code>/<code>MunshiClient</code> + adapters + <code>mycontentdev</code> pipeline + <code>_reflect_mycontentdev</code>; adversarial review (MUN-01 fixed); 63/63 green; fast-forwarded to <code>main</code>. <code>create_seed</code> deferred to Phase 3.</td></tr>
-    <tr><td>Push <code>main</code> → origin</td><td><span class="badge todo">owner</span></td><td><code>git push origin main</code> — 10 commits ahead (Phase 1). Held back since the merge was local-only.</td></tr>
+    <tr><td>Push <code>main</code> → origin</td><td><span class="badge todo">owner</span></td><td><code>git push origin main</code> — ahead by the Phase 1 + docs-sync commits. Held back since the merge was local-only.</td></tr>
     <tr><td>Phase 2 — governance</td><td><span class="badge todo">build next</span></td><td>Governance store + Assignments tab + Codex pre-commit + worktrees + org SVG; + refresh per-adapter isolation &amp; stale surfacing (F1/F4).</td></tr>
     <tr><td>Notification channels</td><td><span class="badge todo">creds</span></td><td>Set <code>TELEGRAM_BOT_TOKEN</code>/<code>CHAT_ID</code> + gmail <code>SMTP_PASS</code> in <code>.env</code>. Until then notifications are logged only.</td></tr>
     <tr><td>Google Docs export</td><td><span class="badge todo">creds</span></td><td>Set <code>GOOGLE_OAUTH_CLIENT</code> (Desktop OAuth JSON); HTML + DOCX already work.</td></tr>
