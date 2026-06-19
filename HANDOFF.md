@@ -2,9 +2,9 @@
 
 > **▶ STATUS:** The project is **SAMAGRA** (package `samagra`) — a company-structured agent org
 > folding in `mycontentdev` + `munshi`, with a blocking pre-commit Codex review and a CEO prompt-outbox.
-> **Phase 0 (rename), Track A (stabilize) and Phase 1 (read-only subsystem adapters) are done and merged to
-> `main`** (63/63 green; Phase 1 cleared an adversarial 42-agent pre-merge review — one HIGH, MUN-01, fixed).
-> `main` is ahead of `origin` by the Phase 1 + docs-sync commits (local merge; push is an owner action). The live plan is under
+> **Phase 0 (rename), Track A (stabilize) and Phase 1 (read-only subsystem adapters) are done, merged to
+> `main`, and pushed to `origin/main`** (63/63 green; Phase 1 cleared an adversarial 42-agent pre-merge
+> review — one HIGH, MUN-01, fixed). Repo and origin in sync. The live plan is under
 > `docs/superpowers/` (original brief: [`SAMAGRA-HANDOFF.md`](SAMAGRA-HANDOFF.md)). **Next: Phase 2 (governance).**
 
 **Repo:** github.com/dbhardwaj86/samagra · branch `main` · local-first Python+FastAPI.
