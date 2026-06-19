@@ -4,6 +4,8 @@ from __future__ import annotations
 from .base import Adapter, Artifact, CATALOG_COLUMNS
 from .booklets import BookletAdapter
 from .insp import INSPAdapter
+from .mcd import McdAdapter
+from .munshi import MunshiAdapter
 from .qx import QXAdapter
 from .questiondb import QuestionDBAdapter
 from .sims import SimsAdapter
@@ -16,6 +18,8 @@ ALL_ADAPTERS: list[Adapter] = [
     INSPAdapter(),
     SimsAdapter(),
     QuestionDBAdapter(),
+    McdAdapter(),
+    MunshiAdapter(),
 ]
 
 
