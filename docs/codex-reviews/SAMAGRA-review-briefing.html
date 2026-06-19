@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAMAGRA · Codex Review Briefing — 2026-06-19</title>
+<style>
+  :root{
+    --bg:#fbfcfd; --panel:#ffffff; --ink:#1c2430; --muted:#5b6776; --line:#e6eaef;
+    --accent:#0e7c86; --accent-soft:#e3f1f2; --accent-ink:#0a5b63;
+    --crit:#b42318; --high:#c4500b; --med:#9a6700; --low:#3a6ea5; --ok:#16794a;
+    --code-bg:#f5f7f9; --shadow:0 1px 2px rgba(16,24,40,.04),0 6px 22px rgba(16,24,40,.05);
+    --maxw:880px;
+  }
+  html[data-theme="dark"]{
+    --bg:#0f1419; --panel:#161c24; --ink:#e8edf2; --muted:#9aa7b5; --line:#26303b;
+    --accent:#3bb7c2; --accent-soft:#13343a; --accent-ink:#7fd3da;
+    --code-bg:#0c1116; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 28px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.62 -apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  header.top{
+    position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);
+    backdrop-filter:saturate(140%) blur(8px);border-bottom:1px solid var(--line);
+  }
+  .top-inner{max-width:1180px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:16px}
+  .brand{font-weight:700;letter-spacing:.2px}
+  .brand small{font-weight:500;color:var(--muted);margin-left:8px}
+  .top nav{margin-left:auto;display:flex;gap:18px;flex-wrap:wrap}
+  .top nav a{color:var(--muted);text-decoration:none;font-size:14px}
+  .top nav a:hover{color:var(--accent)}
+  .toggle{margin-left:8px;border:1px solid var(--line);background:var(--panel);color:var(--muted);
+    border-radius:8px;padding:6px 10px;cursor:pointer;font-size:13px}
+  .layout{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:248px 1fr;gap:36px;padding:28px 24px 80px}
+  aside{position:sticky;top:74px;align-self:start;max-height:calc(100vh - 96px);overflow:auto}
+  aside .toc-title{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:6px 0 10px}
+  aside ol{list-style:none;margin:0;padding:0}
+  aside ol li{margin:2px 0}
+  aside ol a{display:block;padding:5px 10px;border-radius:7px;color:var(--muted);text-decoration:none;font-size:13.5px;border-left:2px solid transparent}
+  aside ol a:hover{background:var(--accent-soft);color:var(--accent-ink)}
+  aside ol a.active{color:var(--accent-ink);border-left-color:var(--accent);background:var(--accent-soft)}
+  main{min-width:0;max-width:var(--maxw)}
+  h1{font-size:30px;line-height:1.2;margin:.2em 0 .3em;letter-spacing:-.02em}
+  h2{font-size:21px;margin:2em 0 .6em;padding-top:.3em;letter-spacing:-.01em}
+  h3{font-size:16.5px;margin:1.5em 0 .4em}
+  p{margin:.7em 0}
+  .lede{font-size:18px;color:var(--muted);margin:.4em 0 1.4em}
+  .meta-row{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 8px}
+  .chip{font-size:12.5px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:4px 11px;color:var(--muted)}
+  .chip b{color:var(--ink);font-weight:600}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow);margin:16px 0}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .grid3 .card{margin:0}
+  .card h4{margin:.1em 0 .4em;font-size:14.5px}
+  .card .k{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent-ink)}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+  tr:last-child td{border-bottom:none}
+  code{background:var(--code-bg);border:1px solid var(--line);border-radius:5px;padding:.08em .38em;font:13px/1.5 "SF Mono",ui-monospace,Menlo,Consolas,monospace}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow:auto}
+  pre code{background:none;border:none;padding:0}
+  .sev{font-weight:700;font-size:12px;letter-spacing:.03em;white-space:nowrap}
+  .sev.CRIT{color:var(--crit)} .sev.HIGH{color:var(--high)} .sev.MED{color:var(--med)} .sev.LOW{color:var(--low)}
+  .pill{display:inline-block;font-size:11.5px;font-weight:600;border-radius:6px;padding:2px 8px}
+  .pill.a{background:var(--accent-soft);color:var(--accent-ink)}
+  .pill.fix{background:#fdecea;color:var(--crit)} html[data-theme="dark"] .pill.fix{background:#3a1714}
+  .pill.build{background:#e7f3ee;color:var(--ok)} html[data-theme="dark"] .pill.build{background:#10301f}
+  .pill.harden{background:#eef2fb;color:var(--low)} html[data-theme="dark"] .pill.harden{background:#16243a}
+  .callout{border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 10px 10px 0;padding:12px 16px;margin:16px 0}
+  .callout b{color:var(--accent-ink)}
+  figure{margin:18px 0}
+  figcaption{font-size:13px;color:var(--muted);text-align:center;margin-top:8px}
+  .files a,a.inline{color:var(--accent);text-decoration:none}
+  .files a:hover,a.inline:hover{text-decoration:underline}
+  hr{border:none;border-top:1px solid var(--line);margin:30px 0}
+  .foot{color:var(--muted);font-size:13px;margin-top:40px}
+  svg .node{fill:var(--panel);stroke:var(--line)}
+  svg .lbl{fill:var(--ink);font:600 12px/1 "Inter",sans-serif}
+  svg .sub{fill:var(--muted);font:11px/1 "Inter",sans-serif}
+  svg .edge{stroke:var(--muted);stroke-width:1.5;fill:none;marker-end:url(#arr)}
+  svg .fixn{fill:var(--accent-soft);stroke:var(--accent)}
+  @media (max-width:860px){
+    .layout{grid-template-columns:1fr;gap:10px}
+    aside{display:none}.grid3{grid-template-columns:1fr}
+  }
+  @media print{
+    header.top,aside,.toggle{display:none!important}
+    .layout{display:block;max-width:none;padding:0}
+    main{max-width:none}.card,pre{box-shadow:none}
+    h1,h2{page-break-after:avoid}.card,table,figure,pre{page-break-inside:avoid}
+    a{color:inherit;text-decoration:none}
+    body{background:#fff}
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <span class="brand">SAMAGRA <small>Codex Review Briefing</small></span>
+    <nav>
+      <a href="#overview">Overview</a>
+      <a href="#code">Code review</a>
+      <a href="#arch">Architecture</a>
+      <a href="#decisions">Decisions</a>
+      <a href="#roadmap">Roadmap</a>
+      <a href="#split">CEO ↔ Khanak</a>
+      <a href="#backlog">Backlog</a>
+    </nav>
+    <button class="toggle" id="themeBtn" aria-label="Toggle theme">◐ Theme</button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside>
+    <div class="toc-title">On this page</div>
+    <ol id="toc">
+      <li><a href="#overview">1 · Overview</a></li>
+      <li><a href="#how">2 · How this was produced</a></li>
+      <li><a href="#code">3 · Code review (baseline)</a></li>
+      <li><a href="#arch">4 · Architecture verdict</a></li>
+      <li><a href="#decisions">5 · Reconciled decisions</a></li>
+      <li><a href="#roadmap">6 · Revised roadmap</a></li>
+      <li><a href="#split">7 · CEO ↔ Khanak split</a></li>
+      <li><a href="#backlog">8 · Phase-1 loop backlog</a></li>
+      <li><a href="#next">9 · Next action</a></li>
+    </ol>
+  </aside>
+
+  <main>
+    <h1>SAMAGRA — Codex Review &amp; Phase-1 Loop Plan</h1>
+    <p class="lede">Three independent <b>gpt-5.5</b> Codex passes (adversarial code review, vision/architecture review, loop planning) reconciled into one execution plan by the CEO.</p>
+    <div class="meta-row">
+      <span class="chip"><b>Date</b> 2026-06-19</span>
+      <span class="chip"><b>Model</b> gpt-5.5 · xhigh · priority</span>
+      <span class="chip"><b>Sandbox</b> read-only</span>
+      <span class="chip"><b>State</b> Phase 0 done · Phase 1 next</span>
+      <span class="chip"><b>Tests</b> 11/11 green (pre-review)</span>
+    </div>
+
+    <section id="overview">
+      <h2>1 · Overview</h2>
+      <p>Phase 0 (the <code>teachingos → samagra</code> rename) is complete and pushed. Before opening Phase 1, we commissioned three adversarial Codex reviews to establish a baseline. The headline conclusion is a <b>sequencing change</b>: the planned Phase-1 work adds new tests, a new pipeline, and a new state-writing scheduler helper — directly on top of a test suite that overwrites the real database and a state/lock layer that is not atomic. <b>We stabilize that foundation first, then build.</b></p>
+      <div class="callout">
+        <b>One-line verdict.</b> The spine is clean and the direction is sound <i>if</i> read-only safety becomes <i>enforced, not conventional</i>. Fix the test-harness + atomic state/lock layer first (Track A), ship Phase-1 as <b>read-only</b> clients/adapters (no write methods yet), and harden the HTTP trust boundary in parallel before any non-localhost deploy.
+      </div>
+    </section>
+
+    <section id="how">
+      <h2>2 · How this was produced</h2>
+      <p>Three Codex agents (Chief Architect role) ran concurrently, non-interactively, in a read-only sandbox so they could not mutate the tree. Each wrote a standalone report via <code>--output-last-message</code>.</p>
+      <div class="grid3">
+        <div class="card"><div class="k">Agent 1</div><h4>Adversarial code review</h4><p style="font-size:13.5px;color:var(--muted)">Whole <code>samagra/</code> + <code>tests/</code> as a baseline. 14 findings (8 HIGH).</p></div>
+        <div class="card"><div class="k">Agent 2</div><h4>Vision &amp; architecture</h4><p style="font-size:13.5px;color:var(--muted)">Spec + plan soundness, phase sequencing, risk register, org-metaphor call.</p></div>
+        <div class="card"><div class="k">Agent 3</div><h4>Loop plan</h4><p style="font-size:13.5px;color:var(--muted)">Phase 1 broken into 7 TDD loops + CEO/Khanak split + paste-ready template.</p></div>
+      </div>
+      <p class="files" style="font-size:13.5px">Raw reports: <a href="01-adversarial-code-review.report.md">01 · code review</a> · <a href="02-vision-architecture-review.report.md">02 · architecture</a> · <a href="03-loop-plan-ceo-khanak.report.md">03 · loop plan</a>. Operational runbook with paste-ready prompts: <a href="PHASE1-loop-runbook.md">PHASE1-loop-runbook.md</a>.</p>
+    </section>
+
+    <section id="code">
+      <h2>3 · Code review — baseline findings</h2>
+      <p>Solid basics: SQL parameters are bound (no string-concat), no <code>shell=True</code>, adapters mostly read-only. The risk is concentrated in <b>trust boundaries</b> and the <b>concurrency/state layer</b>, plus a test suite too shallow to catch any of it.</p>
+      <table>
+        <thead><tr><th>ID</th><th>Sev</th><th>Where</th><th>Issue</th></tr></thead>
+        <tbody>
+          <tr><td>F-01</td><td><span class="sev HIGH">HIGH</span></td><td><code>api/app.py:96</code></td><td>Mutating routes (refresh/tick/gate) have no auth/CSRF</td></tr>
+          <tr><td>F-02</td><td><span class="sev HIGH">HIGH</span></td><td><code>scheduler.py:135</code></td><td>Gate can be approved while still <code>pending</code> → exports from invalid state</td></tr>
+          <tr><td>F-03</td><td><span class="sev HIGH">HIGH</span></td><td><code>lectures/render.py:66</code></td><td>Raw source HTML rendered same-origin (lecture + portal XSS)</td></tr>
+          <tr><td>F-04</td><td><span class="sev HIGH">HIGH</span></td><td><code>api/app.py:29</code></td><td><code>/open</code> exposes whole source roots; serves untrusted HTML same-origin</td></tr>
+          <tr><td>F-05</td><td><span class="sev HIGH">HIGH</span></td><td><code>lectures/export.py:20</code></td><td>Chapter slugs → filesystem paths with no traversal validation (Windows <code>\</code>)</td></tr>
+          <tr><td>F-06</td><td><span class="sev HIGH">HIGH</span></td><td><code>lock.py:19</code></td><td>Scheduler lock is TOCTOU / non-atomic</td></tr>
+          <tr><td>F-07</td><td><span class="sev HIGH">HIGH</span></td><td><code>state.py:87</code></td><td>JSON state written non-atomically, no state lock; GET routes write</td></tr>
+          <tr><td>F-08</td><td><span class="sev HIGH">HIGH</span></td><td><code>scheduler.py:109</code></td><td>physics-textbook <code>.routine.lock</code> checked only <i>after</i> doing work</td></tr>
+          <tr><td>F-09</td><td><span class="sev MED">MED</span></td><td><code>catalog.py:46</code></td><td>Refresh deletes-first, swallows adapter errors, commits partial catalog</td></tr>
+          <tr><td>F-10</td><td><span class="sev MED">MED</span></td><td><code>api/app.py:74</code></td><td>Unbounded <code>limit</code>; <code>LIMIT -1</code> dumps whole dataset</td></tr>
+          <tr><td>F-11</td><td><span class="sev MED">MED</span></td><td><code>adapters/qx.py:18</code></td><td>QX opened <code>immutable=1</code> on a <i>live</i> DB → stale/inconsistent reads</td></tr>
+          <tr><td>F-12</td><td><span class="sev MED">MED</span></td><td><code>scheduler.py:82</code></td><td>Export-done checks only <code>*-thick.html</code>; missing thin ignored</td></tr>
+          <tr><td>F-13</td><td><span class="sev LOW">LOW</span></td><td><code>adapters/qx.py:84</code></td><td>QX relative paths → portal <code>/open</code> links 403</td></tr>
+          <tr><td>F-14</td><td><span class="sev LOW">LOW</span></td><td><code>tests/test_spine.py:16</code></td><td>Tests refresh the <i>real</i> catalog; assert shape not behavior</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:13.5px;color:var(--muted)">Severity is the reviewer's; we treat <b>F-14, F-06, F-07</b> as <i>foundational-first</i> regardless of their nominal severity because every Phase-1 loop builds on them.</p>
+    </section>
+
+    <section id="arch">
+      <h2>4 · Architecture verdict</h2>
+      <p>The adapter-as-index pattern is the right foundation — SAMAGRA reflects and routes; subsystems keep authority over their own lifecycles. Strengths: simple <code>Artifact</code> contract, FTS5 well within SQLite's comfort zone at 7k rows, conservative bounded scheduler with explicit gates. The weaknesses cluster where the plan is <i>too trusting of convention</i>:</p>
+      <ul>
+        <li><b>Read-only is not enforced</b> — file adapters rely on convention, and the planned <code>McdClient.create_seed</code> punches a write hole <i>before</i> governance exists.</li>
+        <li><b>One DB, two jobs</b> — <code>samagra.db</code> mixes rebuildable catalog with would-be-durable governance state.</li>
+        <li><b>Sensitive data duplication</b> — the munshi adapter would copy full <code>payload</code>/<code>person</code> into the catalog.</li>
+        <li><b>Fail-closed pre-commit with no escape hatch</b> wedges all commits when Codex is offline — and is <code>--no-verify</code>-bypassable anyway, so it isn't real enforcement.</li>
+        <li><b>No idempotency</b> for the future capture→seed loop → duplicate seeds on retry.</li>
+      </ul>
+      <p>The org metaphor (CEO/COO/Chief Architect, worktrees) should stay <b>operating language and permission labels</b> — not a driver of schema or branch structure. Per-agent worktrees can be deferred until parallel editing is real.</p>
+    </section>
+
+    <section id="decisions">
+      <h2>5 · Reconciled decisions</h2>
+      <table>
+        <thead><tr><th>#</th><th>Decision</th><th>Rationale</th></tr></thead>
+        <tbody>
+          <tr><td><b>D1</b></td><td>Stabilize before build — land foundational fix-loops (S-01/02/03) before dependent Phase-1 loops.</td><td>Phase-1 adds tests + state writes onto a cracked harness/lock layer.</td></tr>
+          <tr><td><b>D2</b></td><td><code>McdClient</code> ships <b>read-only</b>; <code>create_seed</code> deferred to Phase 3.</td><td>No write method in a "read-only" phase; enforce the boundary architecturally.</td></tr>
+          <tr><td><b>D3</b></td><td><code>MunshiAdapter</code> stores refs/excerpt/hash only — not full payload/person.</td><td>Reflect, don't duplicate sensitive operational data.</td></tr>
+          <tr><td><b>D4</b></td><td>Refresh preserves last-known-good; land refresh-safety (S-05) before registering HTTP adapters.</td><td>mcd/munshi can be offline; a failed refresh must not erase visibility.</td></tr>
+          <tr><td><b>D5</b></td><td>Phase-2 pre-commit = advisory-local (confirmed-CRITICAL only, diff-hash cached, <b>audited break-glass</b>) + enforced-CI.</td><td>Local hooks are bypassable; fail-closed-offline wedges all work.</td></tr>
+          <tr><td><b>D6</b></td><td>Phase-2 splits <code>catalog.db</code> vs <code>governance.db</code> with <code>schema_version</code> + migrations + backups.</td><td>Never delete durable governance as a "catalog reset."</td></tr>
+          <tr><td><b>D7</b></td><td>Phase-3 submit is idempotent + transactional (<code>munshi_item_id + payload_hash</code>).</td><td>Prevent duplicate seed creation on retry.</td></tr>
+          <tr><td><b>D8</b></td><td>Org metaphor = labels/operating-language only, not schema/branching.</td><td>Keep complexity out of the data model.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="roadmap">
+      <h2>6 · Revised roadmap</h2>
+      <p>Three tracks. <span class="pill fix">Stabilize</span> is fix-first and gates the build loops that depend on it. <span class="pill build">Build</span> is Phase-1 proper. <span class="pill harden">Harden</span> runs in parallel on a second Khanak instance (disjoint files; one coordination point on <code>scheduler.py</code>).</p>
+      <figure>
+        <svg viewBox="0 0 860 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Loop sequencing diagram">
+          <defs>
+            <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+            </marker>
+          </defs>
+          <!-- Track A -->
+          <text x="20" y="30" class="sub">TRACK A · STABILIZE (fix-first)</text>
+          <rect class="node fixn" x="20" y="42" width="120" height="46" rx="9"/>
+          <text x="80" y="64" class="lbl" text-anchor="middle">S-01</text>
+          <text x="80" y="79" class="sub" text-anchor="middle">test isolation</text>
+          <rect class="node fixn" x="170" y="14" width="120" height="40" rx="9"/>
+          <text x="230" y="33" class="lbl" text-anchor="middle">S-02</text>
+          <text x="230" y="47" class="sub" text-anchor="middle">atomic state</text>
+          <rect class="node fixn" x="170" y="64" width="120" height="40" rx="9"/>
+          <text x="230" y="83" class="lbl" text-anchor="middle">S-03</text>
+          <text x="230" y="97" class="sub" text-anchor="middle">atomic lock</text>
+          <rect class="node fixn" x="170" y="114" width="120" height="40" rx="9"/>
+          <text x="230" y="133" class="lbl" text-anchor="middle">S-05</text>
+          <text x="230" y="147" class="sub" text-anchor="middle">refresh safety</text>
+          <rect class="node fixn" x="320" y="14" width="120" height="40" rx="9"/>
+          <text x="380" y="33" class="lbl" text-anchor="middle">S-04</text>
+          <text x="380" y="47" class="sub" text-anchor="middle">gate prereqs</text>
+          <!-- Track B -->
+          <text x="320" y="100" class="sub">TRACK B · BUILD (Phase 1, serial · gate each)</text>
+          <rect class="node" x="320" y="110" width="500" height="48" rx="9"/>
+          <text x="570" y="131" class="lbl" text-anchor="middle">P1-01 → P1-02 → P1-03 → P1-04 → P1-05 → P1-07</text>
+          <text x="570" y="148" class="sub" text-anchor="middle">read-only clients · adapters · register · reflect   (P1-06 any time after S-02)</text>
+          <!-- Track C -->
+          <text x="320" y="196" class="sub">TRACK C · HARDEN (parallel · 2nd Khanak)</text>
+          <rect class="node" x="320" y="206" width="500" height="42" rx="9"/>
+          <text x="570" y="232" class="lbl" text-anchor="middle">H-01 · H-03 · H-04   (H-02 serialized around P1-07)</text>
+          <!-- Gate -->
+          <text x="20" y="290" class="sub">GATE</text>
+          <rect class="node" x="20" y="300" width="800" height="46" rx="9" style="fill:var(--accent-soft);stroke:var(--accent)"/>
+          <text x="420" y="322" class="lbl" text-anchor="middle">Track A done + Phase-1 green → CEO re-invokes Codex (pre-merge) → Chairman gates merge/push</text>
+          <text x="420" y="338" class="sub" text-anchor="middle">then Phase 2: governance store → Assignments → redesigned pre-commit (D5/D6)</text>
+          <!-- edges -->
+          <path class="edge" d="M140,60 L168,34"/>
+          <path class="edge" d="M140,65 L168,84"/>
+          <path class="edge" d="M140,80 L168,130"/>
+          <path class="edge" d="M290,34 L318,34"/>
+          <path class="edge" d="M290,134 L318,134"/>
+          <path class="edge" d="M440,34 Q470,80 470,108"/>
+        </svg>
+        <figcaption>Sequencing: foundational fix-loops gate the dependent Phase-1 build loops; hardening runs in parallel; everything funnels through a Codex pre-merge review and a Chairman merge gate.</figcaption>
+      </figure>
+    </section>
+
+    <section id="split">
+      <h2>7 · CEO ↔ Claude-Khanak split</h2>
+      <table>
+        <thead><tr><th>Work</th><th>Owner</th><th>Handoff</th></tr></thead>
+        <tbody>
+          <tr><td>Reconcile reviews · decide contracts &amp; sequencing</td><td><b>CEO</b> (Claude-Deepak)</td><td>Renders the loop prompt</td></tr>
+          <tr><td>Render paste-ready loop prompt</td><td><b>CEO</b></td><td>One loop at a time → Khanak</td></tr>
+          <tr><td>Implement loop (TDD red→green→refactor)</td><td><b>Khanak</b> (COO/CCO)</td><td>Returns done-report</td></tr>
+          <tr><td>Review diff · rerun tests · gate</td><td><b>CEO</b></td><td>Dispatches next only after gate</td></tr>
+          <tr><td>Pre-merge architecture/security review</td><td><b>Codex</b> (Chief Architect)</td><td>CEO re-invokes before merge</td></tr>
+          <tr><td>Push · merge · repo-rename · hook-install · spend · publish</td><td><b>Deepak</b> (Chairman)</td><td>Khanak STOPS &amp; escalates</td></tr>
+          <tr><td>Update <code>STATUS.html</code> / <code>HANDOFF.md</code></td><td><b>CEO</b></td><td>Khanak reports facts only</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="backlog">
+      <h2>8 · Phase-1 loop backlog</h2>
+      <table>
+        <thead><tr><th>Loop</th><th>Track</th><th>Title</th><th>First failing test</th><th>Dep</th></tr></thead>
+        <tbody>
+          <tr><td><b>S-01</b></td><td><span class="pill fix">fix</span></td><td>Test-harness isolation</td><td><code>test_refresh_does_not_touch_real_db</code></td><td>—</td></tr>
+          <tr><td><b>S-02</b></td><td><span class="pill fix">fix</span></td><td>Atomic state writes + lock</td><td><code>test_save_is_atomic_and_locked</code></td><td>S-01</td></tr>
+          <tr><td><b>S-03</b></td><td><span class="pill fix">fix</span></td><td>Atomic scheduler lock</td><td><code>test_exclusive_acquire_rejects_second_holder</code></td><td>S-01</td></tr>
+          <tr><td><b>S-04</b></td><td><span class="pill fix">fix</span></td><td>Gate prerequisite enforcement</td><td><code>test_gate_rejects_when_prereqs_incomplete</code></td><td>S-01,S-02</td></tr>
+          <tr><td><b>S-05</b></td><td><span class="pill fix">fix</span></td><td>Refresh safety / last-known-good</td><td><code>test_failed_adapter_preserves_previous_catalog</code></td><td>S-01</td></tr>
+          <tr><td><b>P1-01</b></td><td><span class="pill build">build</span></td><td>McdClient (read-only)</td><td><code>test_mcd_query_posts_with_admin_header</code></td><td>S-01</td></tr>
+          <tr><td><b>P1-02</b></td><td><span class="pill build">build</span></td><td>MunshiClient</td><td><code>test_munshi_library_sends_cookie_header</code></td><td>P1-01</td></tr>
+          <tr><td><b>P1-03</b></td><td><span class="pill build">build</span></td><td>McdAdapter</td><td><code>test_mcd_adapter_maps_row_to_artifact</code></td><td>P1-01</td></tr>
+          <tr><td><b>P1-04</b></td><td><span class="pill build">build</span></td><td>MunshiAdapter (refs only)</td><td><code>test_munshi_adapter_maps_item_to_artifact</code></td><td>P1-02</td></tr>
+          <tr><td><b>P1-05</b></td><td><span class="pill build">build</span></td><td>Register both adapters</td><td><code>test_subsystem_adapters_registered</code></td><td>P1-03,P1-04,S-05</td></tr>
+          <tr><td><b>P1-06</b></td><td><span class="pill build">build</span></td><td>mycontentdev pipeline</td><td><code>test_mycontentdev_pipeline_registered</code></td><td>S-02</td></tr>
+          <tr><td><b>P1-07</b></td><td><span class="pill build">build</span></td><td><code>_reflect_mycontentdev</code></td><td><code>test_reflect_review_gate_ready_when_draft_ready</code></td><td>P1-01,P1-06,S-03</td></tr>
+          <tr><td><b>H-01</b></td><td><span class="pill harden">harden</span></td><td>Admin-token auth + input caps</td><td>route auth + <code>limit</code> bounds</td><td>—</td></tr>
+          <tr><td><b>H-02</b></td><td><span class="pill harden">harden</span></td><td>Slug validation + path containment</td><td>traversal-rejection</td><td>~P1-07</td></tr>
+          <tr><td><b>H-03</b></td><td><span class="pill harden">harden</span></td><td>HTML sanitization + CSP</td><td>XSS-block</td><td>—</td></tr>
+          <tr><td><b>H-04</b></td><td><span class="pill harden">harden</span></td><td><code>/open</code> lockdown</td><td>path-allowlist</td><td>—</td></tr>
+        </tbody>
+      </table>
+      <p class="files" style="font-size:13.5px">Full per-loop specs + the Khanak prompt template + three rendered paste-ready prompts (S-01, S-02, P1-01): <a href="PHASE1-loop-runbook.md">PHASE1-loop-runbook.md</a>.</p>
+    </section>
+
+    <section id="next">
+      <h2>9 · Next action</h2>
+      <p>Dispatch <b>S-01 (test-harness isolation)</b> to Claude-Khanak — it is dependency-free and unblocks every later loop. Its prompt is rendered and ready in the runbook. The CEO gates S-01, then fans out S-02 / S-03 / S-05, then opens the Phase-1 build chain.</p>
+      <div class="callout">
+        <b>Decision for the Chairman:</b> confirm <b>D1</b> (stabilize-before-build) and <b>D2</b> (defer <code>create_seed</code> to Phase 3). Both tighten safety at a small velocity cost; everything downstream is sequenced around them.
+      </div>
+    </section>
+
+    <p class="foot">Generated 2026-06-19 by Claude-Deepak (CEO) from three gpt-5.5 Codex reviews. Read-only sandbox; no source files were modified by the review pass. Source prompts under <code>docs/codex-reviews/_prompts/</code>.</p>
+  </main>
+</div>
+
+<script>
+  // theme toggle (persists in-session only; defaults to system)
+  (function(){
+    var btn=document.getElementById('themeBtn');
+    var mq=window.matchMedia('(prefers-color-scheme: dark)');
+    function set(t){document.documentElement.setAttribute('data-theme',t);}
+    set(mq.matches?'dark':'light');
+    btn.addEventListener('click',function(){
+      var cur=document.documentElement.getAttribute('data-theme');
+      set(cur==='dark'?'light':'dark');
+    });
+  })();
+  // scrollspy
+  (function(){
+    var links=[].slice.call(document.querySelectorAll('#toc a'));
+    var map={};links.forEach(function(a){map[a.getAttribute('href').slice(1)]=a;});
+    var obs=new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(l){l.classList.remove('active');});
+          var a=map[e.target.id];if(a)a.classList.add('active');
+        }
+      });
+    },{rootMargin:'-20% 0px -70% 0px'});
+    ['overview','how','code','arch','decisions','roadmap','split','backlog','next']
+      .forEach(function(id){var el=document.getElementById(id);if(el)obs.observe(el);});
+  })();
+</script>
+</body>
+</html>

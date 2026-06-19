@@ -25,6 +25,10 @@ venv/
 __pycache__/
 *.pyc
 .pytest_cache/
+.pytmp/
 .mypy_cache/
 *.egg-info/
 .coverage
+
+# --- codex review run logs (keep reports + runbook, drop raw run logs) ---
+docs/codex-reviews/*.log
