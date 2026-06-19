@@ -57,7 +57,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
 </head>
 <body>
 <header class="top">
-  <h1>SAMAGRA</h1><span class="sub">Phase 0 done · Track A stabilize done · vision folded (D9–D12) · branch phase1-stabilize</span>
+  <h1>SAMAGRA</h1><span class="sub">Track A merged to main (34/34) · vision folded · Phase 1 next</span>
   <nav>
     <a href="#overview">Overview</a><a href="#phases">Phases</a>
     <a href="#samagra">SAMAGRA</a><a href="#arch">Architecture</a>
@@ -201,14 +201,22 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   </table>
 
   <h2 id="tests">Tests</h2>
-  <p><span class="badge ok">24 / 24 passing</span> (last run 2026-06-19) — spine + lectures + scheduler, plus
-  Track A: harness isolation, atomic state writes, atomic lock acquisition, gate-prereq enforcement +
-  <code>/api/gate</code> 409, and refresh last-known-good. The suite is now isolated from the real
+  <p><span class="badge ok">34 / 34 passing</span> (last run 2026-06-19) — spine + lectures + scheduler, plus
+  Track A: harness isolation, atomic state writes, gate-prereq enforcement + <code>/api/gate</code> 409,
+  refresh last-known-good, refresh-failure caller safety, state read-modify-write under one lock, and a
+  provably single-holder lock (auto-reclaim removed). The suite is now isolated from the real
   <code>samagra.db</code> (autouse <code>conftest.py</code> fixture → real catalog byte-identical across runs).
   Source-dependent tests skip cleanly in CI; SAMAGRA phases each ship their own TDD suite (HTTP mocked — no
   live-prod calls).</p>
 
   <h2 id="decisions">Recent decisions</h2>
+  <div class="log"><div class="d">2026-06-19 · Codex pre-merge review (3 passes) → Track A merged to main</div>
+    A blocking Codex pre-merge review found three HIGH bugs the stabilization had missed: a refresh-failure
+    <code>sum(None)</code> crash, a state lost-update, and a lock reclaim race. Three CEO-gated TDD fix-loops
+    (S-06–S-09) closed them — ending in a <strong>provably single-holder lock</strong> (auto-reclaim removed;
+    manual <code>samagra unlock</code> for the rare crashed-holder case). A third Codex pass returned
+    <strong>APPROVE</strong> (no must-fix; minor nits dropped by Chairman decision). <code>phase1-stabilize</code>
+    fast-forward-merged to <code>main</code>; suite 24 → <strong>34 green</strong>. Push to origin pending.</div>
   <div class="log"><div class="d">2026-06-19 · Vision deliberation folded → D9–D12</div>
     The 6-lens vision deliberation (A1–A14) was evaluated + adversarially verified by a CEO workflow and
     folded into spec/plan/runbook. <strong>D9</strong> seed-primitive spine + reconciled 3-gate model +
@@ -246,6 +254,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     <tr><td><code>docs/codex-reviews/SAMAGRA-review-briefing.html</code></td><td>consolidated review briefing (3 gpt-5.5 agents)</td></tr>
     <tr><td><code>docs/samagra-vision-deliberation-2026-06-19.html</code></td><td>6-lens vision deliberation — 10 suggestions + 14 action items (folded into D9–D12)</td></tr>
     <tr><td><code>docs/codex-reviews/01–03-*.report.md</code></td><td>raw Codex reports (adversarial code · architecture · loop-plan)</td></tr>
+    <tr><td><code>docs/codex-reviews/04–06-premerge-*.report.md</code></td><td>3-pass Codex pre-merge review (BLOCK → REQUEST-CHANGES → APPROVE) behind the S-06–S-09 fixes</td></tr>
     <tr><td><code>tests/conftest.py</code> + 5 new suites</td><td>Track A: harness-isolation, state-atomic, lock, refresh-safety, api-gate</td></tr>
     <tr><td><code>samagra/</code></td><td>package — adapters, catalog, state, scheduler, api, portal, lectures</td></tr>
     <tr><td><code>samagra.db</code></td><td>unified catalog (generated, gitignored)</td></tr>
@@ -254,15 +263,15 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   </table>
 
   <h2 id="next">Next actions</h2>
-  <p>Phase 0 (rename) and Track A (stabilize, S-01–S-05) are done and committed on branch
-  <code>phase1-stabilize</code> (not merged — Chairman-gated). The next action is the Phase 1 build chain
-  (P1-01 read-only <code>McdClient</code> → P1-07); a Codex pre-merge review precedes the Chairman's merge to
-  <code>main</code>. The vision deliberation is folded into the spec/plan/runbook (D9–D12; four Chairman
-  decisions recorded). A few slice-1 creds items remain to switch on the unattended parts:</p>
+  <p>Phase 0 (rename), the vision fold (D9–D12), and Track A (stabilize, S-01–S-09) are <strong>merged to
+  <code>main</code></strong> after a 3-pass Codex pre-merge review (APPROVE). Suite 34/34. The push to
+  <code>origin/main</code> is the one remaining owner action. The next build is the Phase 1 chain
+  (P1-01 read-only <code>McdClient</code> → P1-07; TDD, HTTP mocked). A few slice-1 creds items remain to
+  switch on the unattended parts:</p>
   <table>
     <tr><th>Item</th><th>Status</th><th>Action</th></tr>
     <tr><td>Phase 0 (rename)</td><td><span class="badge ok">done</span></td><td>PR #1 merged; repo + package <code>samagra</code>; catalog 7,044 artifacts.</td></tr>
-    <tr><td>Track A — stabilize (S-01–S-05)</td><td><span class="badge ok">done</span></td><td>6 baseline findings fixed; 24/24 green; committed on <code>phase1-stabilize</code>. Pending: Codex pre-merge review → Chairman merge to <code>main</code>.</td></tr>
+    <tr><td>Track A — stabilize (S-01–S-09)</td><td><span class="badge ok">merged</span></td><td>9 fix-loops: 6 baseline findings + 3 pre-merge HIGHs (refresh-caller safety, state RMW lock, single-holder lock). 34/34 green; 3-pass Codex review APPROVE; fast-forwarded to <code>main</code>. Push to origin pending.</td></tr>
     <tr><td>Phase 1 — build chain (P1-01→P1-07)</td><td><span class="badge todo">next</span></td><td>Read-only <code>McdClient</code>/<code>MunshiClient</code> + adapters + <code>mycontentdev</code> pipeline + <code>_reflect_mycontentdev</code>; TDD, HTTP mocked. <code>create_seed</code> deferred to Phase 3.</td></tr>
     <tr><td>Notification channels</td><td><span class="badge todo">creds</span></td><td>Set <code>TELEGRAM_BOT_TOKEN</code>/<code>CHAT_ID</code> + gmail <code>SMTP_PASS</code> in <code>.env</code>. Until then notifications are logged only.</td></tr>
     <tr><td>Google Docs export</td><td><span class="badge todo">creds</span></td><td>Set <code>GOOGLE_OAUTH_CLIENT</code> (Desktop OAuth JSON); HTML + DOCX already work.</td></tr>
