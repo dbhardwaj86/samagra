@@ -11,7 +11,8 @@
 > The live plan is under `docs/superpowers/` (original brief: [`SAMAGRA-HANDOFF.md`](SAMAGRA-HANDOFF.md)).
 > **Pre-merge review: APPROVE** (Codex gpt-5.5/xhigh, 6 rounds + a CEO adversarial Workflow audit — see
 > `docs/codex-reviews/07–13` + `12-workflow-invariant-audit.md`; all findings fixed TDD).
-> **Phase 2 SHIPPED (2026-06-19):** pushed to `origin/main` (repo + origin in sync at `da9cab3`); the advisory
+> **Phase 2 SHIPPED (2026-06-19):** `origin/main` holds Phase 2 through `da9cab3` (the end-of-session doc-sync
+> commits after it are local-ahead until the next `git push origin main`); the advisory
 > hook is ACTIVE (`core.hooksPath=.githooks`, so every commit + worktree now runs it — `codex` 0.140.0 on PATH);
 > the three agent worktrees exist (`../samagra-{deepak,khanak,codex}` on `agent/{deepak,khanak,codex}`).
 > **Next: Phase 3 (active loop)** — first reconcile its plan section vs the runbook (as Phase 2 needed), then
