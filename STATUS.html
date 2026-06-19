@@ -106,9 +106,10 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   headline call was <em>stabilize before build</em>. Five TDD fix-loops (S-01…S-05) then closed six baseline
   findings — test-harness isolation (F-14), atomic state writes + lock (F-07), atomic <code>O_EXCL</code>
   scheduler lock (F-06), gate-prerequisite enforcement + <code>/api/gate</code> 409 (F-02), and last-known-good
-  refresh (F-09). The suite is now <strong>24/24 green</strong>, committed on branch
-  <code>phase1-stabilize</code> (not yet merged — Chairman-gated). The Phase 1 build chain
-  (P1-01→P1-07, read-only adapters) is next.</p>
+  refresh (F-09). The suite reached <strong>24/24 green</strong> at S-05 on branch
+  <code>phase1-stabilize</code>; a later 3-pass Codex pre-merge review (S-06–S-09) took it to
+  <strong>34/34</strong> and it fast-forward-merged to <code>main</code> (see the decisions log).
+  Phase 1 — the read-only adapters — followed and is now also merged.</p>
 
   <p><strong>2026-06-19 — Vision deliberation folded into the plan.</strong> A 6-lens vision deliberation
   (14 action items) was evaluated and adversarially verified by a CEO workflow, then folded into the
