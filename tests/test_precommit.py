@@ -250,3 +250,42 @@ def test_cached_block_survives_broken_stderr(monkeypatch):
     monkeypatch.setattr(precommit, "dispatch_codex", _no_call)
     monkeypatch.setattr(sys, "stderr", _BrokenStderr())
     assert precommit.review_staged_diff() == 1
+
+
+class _BadStrRepr(Exception):
+    """An exception whose str() and repr() both raise — the nastiest thing a
+    diagnostic could be asked to format."""
+
+    def __str__(self):
+        raise RuntimeError("boom in __str__")
+
+    def __repr__(self):
+        raise RuntimeError("boom in __repr__")
+
+
+def test_confirmed_block_survives_exception_with_bad_str(monkeypatch):
+    # If _save_cache raises an exception whose __str__/__repr__ also raise, the
+    # diagnostic formatting must not escape and downgrade the confirmed block.
+    crit = [{"severity": "CRITICAL", "file": "x.py", "line": 3, "issue": "rm -rf"}]
+    monkeypatch.setattr(precommit, "get_staged_diff", lambda: "diff --git a b")
+    monkeypatch.setattr(precommit, "dispatch_codex",
+                        _seq(_result(crit), _result(crit)))
+
+    def boom(*a, **k):
+        raise _BadStrRepr()
+
+    monkeypatch.setattr(precommit, "_save_cache", boom)
+    assert precommit.review_staged_diff() == 1
+
+
+def test_outer_guard_survives_exception_with_bad_repr(monkeypatch):
+    # A pre-verdict error whose repr() raises must still ALLOW (0) via the outer
+    # guard, not crash the hook (which would wedge the commit).
+    monkeypatch.setattr(precommit, "get_staged_diff", lambda: "diff --git a b")
+
+    def boom():
+        raise _BadStrRepr()
+
+    monkeypatch.setattr(precommit, "_load_cache", boom)
+    monkeypatch.setattr(precommit, "dispatch_codex", _no_call)
+    assert precommit.review_staged_diff() == 0
