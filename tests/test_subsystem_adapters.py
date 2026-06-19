@@ -103,21 +103,23 @@ def test_munshi_adapter_available_delegates_to_client():
 def test_munshi_adapter_skips_dismissed():
     lib = {"people": [], "total": 2, "items": [
         {"id": 1, "kind": "note", "status": "dismissed",
-         "ts": "2026-06-01T00:00:00Z", "payload": {"text": "ignore me"}},
+         "ts": "2026-06-01T00:00:00Z", "payload": {"issue": "ignore me"}},
         {"id": 2, "kind": "note", "status": "open",
-         "ts": "2026-06-02T00:00:00Z", "payload": {"text": "keep me"}},
+         "ts": "2026-06-02T00:00:00Z", "payload": {"issue": "keep me"}},
     ]}
     arts = list(MunshiAdapter(client=FakeMunshiClient(library=lib)).artifacts())
     assert [a.uid for a in arts] == ["munshi:2"]
 
 
 def test_munshi_adapter_maps_item_to_artifact():
+    # Uses the REAL live munshi 'todo' payload schema (myProd/src/tools.ts:150 ->
+    # insertItem(sql, "todo", {task})); the title comes from payload.task.
     lib = {"people": [], "total": 1, "items": [{
         "id": 7,
         "kind": "todo",
         "status": "open",
         "ts": "2026-06-12T11:00:00Z",
-        "payload": {"text": "Draft a Gauss's law worksheet"},
+        "payload": {"task": "Draft a Gauss's law worksheet"},
         "tags": ["physics", "worksheet"],
         "person": "Khanak",
         "due": "2026-06-20",
@@ -137,11 +139,60 @@ def test_munshi_adapter_maps_item_to_artifact():
     assert a.url is None
     assert a.updated_at == "2026-06-12T11:00:00Z"
     assert a.meta == {
-        "payload": {"text": "Draft a Gauss's law worksheet"},
+        "payload": {"task": "Draft a Gauss's law worksheet"},
         "tags": ["physics", "worksheet"],
         "person": "Khanak",
         "due": "2026-06-20",
     }
+
+
+def test_munshi_adapter_title_per_kind():
+    # Each live munshi kind stores its title under a kind-specific payload key
+    # (myProd/src/tools.ts). Lock the per-kind mapping so a future schema drift
+    # is caught instead of silently collapsing titles to the bare kind (MUN-01).
+    t = "2026-06-12T11:00:00Z"
+    lib = {"people": [], "total": 5, "items": [
+        {"id": 1, "kind": "note", "status": "open", "ts": t,
+         "payload": {"topic": "rotation", "issue": "why does torque vanish?",
+                     "action": "revise"}},
+        {"id": 2, "kind": "todo", "status": "open", "ts": t,
+         "payload": {"task": "Make a worksheet"}},
+        {"id": 3, "kind": "issue", "status": "open", "ts": t,
+         "payload": {"summary": "Projector broken", "source": "lab"}},
+        {"id": 4, "kind": "question", "status": "open", "ts": t,
+         "payload": {"stem": "A block slides down...", "options": ["a", "b"]}},
+        {"id": 5, "kind": "followup", "status": "open", "ts": t,
+         "payload": {"note": "Khanak: call parent"}},
+    ]}
+    arts = list(MunshiAdapter(client=FakeMunshiClient(library=lib)).artifacts())
+    titles = {a.kind: a.title for a in arts}
+    assert titles["note"] == "why does torque vanish?"   # issue, not topic
+    assert titles["todo"] == "Make a worksheet"
+    assert titles["issue"] == "Projector broken"
+    assert titles["question"] == "A block slides down..."
+    assert titles["followup"] == "Khanak: call parent"
+
+
+def test_munshi_adapter_title_fallbacks():
+    # note with an empty issue falls back to topic; an unknown kind falls back
+    # across the generic keys (body); a raw string payload is used verbatim;
+    # an empty dict payload falls back to the kind.
+    t = "2026-06-12T11:00:00Z"
+    lib = {"people": [], "total": 4, "items": [
+        {"id": 1, "kind": "note", "status": "open", "ts": t,
+         "payload": {"topic": "optics", "issue": ""}},
+        {"id": 2, "kind": "mystery", "status": "open", "ts": t,
+         "payload": {"body": "from body"}},
+        {"id": 3, "kind": "note", "status": "open", "ts": t,
+         "payload": "raw string note"},
+        {"id": 4, "kind": "issue", "status": "open", "ts": t, "payload": {}},
+    ]}
+    arts = list(MunshiAdapter(client=FakeMunshiClient(library=lib)).artifacts())
+    by_uid = {a.uid: a.title for a in arts}
+    assert by_uid["munshi:1"] == "optics"            # empty issue -> topic
+    assert by_uid["munshi:2"] == "from body"         # unknown kind -> body
+    assert by_uid["munshi:3"] == "raw string note"   # string payload verbatim
+    assert by_uid["munshi:4"] == "issue"             # empty dict -> kind
 
 
 def test_munshi_adapter_title_falls_back_to_kind():

@@ -12,16 +12,46 @@ from ..clients import MunshiClient
 from .base import Adapter, Artifact
 
 
+# Live munshi payload schema (myProd/src/tools.ts insertItem calls): each item
+# kind stores its human-meaningful text under a kind-SPECIFIC key, never a
+# generic "text"/"body" field. Map each kind to its title key(s), most
+# descriptive first:
+#   note     -> {topic, issue, action}      (issue = the doubt, 1-2 lines)
+#   todo     -> {task}
+#   issue    -> {summary, source}
+#   question -> {stem, options, answer, ...}
+#   followup -> {note}
+_TITLE_KEYS_BY_KIND = {
+    "note": ("issue", "topic"),
+    "todo": ("task",),
+    "issue": ("summary",),
+    "question": ("stem",),
+    "followup": ("note",),
+}
+# Tried after the kind-specific keys, so an unknown/renamed kind still yields a
+# real title instead of collapsing to the bare kind. "text"/"body" are kept as a
+# last-ditch defensive fallback for any future generic payload.
+_TITLE_FALLBACK_KEYS = ("task", "summary", "stem", "note", "issue", "topic",
+                        "text", "body")
+
+
 def _title_from(item: dict) -> str:
-    """First non-empty line of the payload text, else the item kind."""
+    """First non-empty line of the kind-specific payload text, else the kind.
+
+    Reads the title from the live munshi per-kind payload key (see
+    `_TITLE_KEYS_BY_KIND`), falling back across the other known content keys,
+    then to the item kind. A string payload is used verbatim.
+    """
     payload = item.get("payload") or {}
-    text = ""
-    if isinstance(payload, dict):
-        text = str(payload.get("text") or payload.get("body") or "").strip()
-    elif isinstance(payload, str):
+    if isinstance(payload, str):
         text = payload.strip()
-    if text:
-        return text.splitlines()[0][:120]
+        return text.splitlines()[0][:120] if text else (item.get("kind") or "item")
+    if isinstance(payload, dict):
+        keys = _TITLE_KEYS_BY_KIND.get(item.get("kind"), ()) + _TITLE_FALLBACK_KEYS
+        for key in keys:
+            val = payload.get(key)
+            if isinstance(val, str) and val.strip():
+                return val.strip().splitlines()[0][:120]
     return item.get("kind") or "item"
 
 

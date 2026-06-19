@@ -24,7 +24,10 @@ class MunshiClient:
         return bool(self.api_url and self._secret)
 
     def _cookie(self) -> str:
-        # quote(..., safe="") matches JS encodeURIComponent for our charset.
+        # quote(..., safe="") mirrors JS encodeURIComponent. It over-encodes
+        # ! ' ( ) * (which encodeURIComponent leaves literal), but the munshi
+        # server decodeURIComponent's the cookie before comparing (index.ts),
+        # so both forms round-trip to the same secret — auth is unaffected.
         return "munshi=" + quote(self._secret, safe="")
 
     def library(self) -> dict:
