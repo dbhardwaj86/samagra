@@ -106,7 +106,13 @@ def api_tick(dry_run: bool = False):
 
 @app.post("/api/gate/{pipeline}/{decision}")
 def api_gate(pipeline: str, decision: str):
-    return scheduler.gate(pipeline, decision)
+    result = scheduler.gate(pipeline, decision)
+    # F-02: a refused gate decision (prereqs incomplete, not awaiting_gate, bad
+    # decision) is a conflict with current pipeline state — surface it as HTTP
+    # 409 instead of a 200 with a silent JSON error body.
+    if "error" in result:
+        raise HTTPException(status_code=409, detail=result["error"])
+    return result
 
 
 # -- safe local file opener ---------------------------------------------

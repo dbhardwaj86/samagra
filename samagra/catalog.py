@@ -41,17 +41,33 @@ def _fts_query(query: str) -> str:
 
 
 def refresh(verbose: bool = True) -> dict:
+    """Rebuild the catalog last-known-good safe.
+
+    Each adapter is collected into in-memory staging buffers BEFORE the live
+    tables are touched. The live ``catalog``/``catalog_fts``/``source_summary``
+    tables are only cleared and repopulated once every available adapter has
+    yielded its artifacts without error — the whole swap runs in a single
+    transaction. If any adapter raises while producing artifacts, nothing is
+    deleted: the previous good catalog survives, the failure is surfaced in the
+    returned per-source totals (the source maps to ``None``), and no completed
+    ``refreshed_at`` timestamp is written.
+    """
     con = connect()
     cur = con.cursor()
-    cur.execute("delete from catalog")
-    cur.execute("delete from catalog_fts")
-    cur.execute("delete from source_summary")
     now = _now()
-    totals: dict[str, int] = {}
+
+    staged_catalog: list[tuple] = []
+    staged_fts: list[tuple] = []
+    staged_summary: list[tuple] = []
+    totals: dict[str, int | None] = {}
+    failures: list[str] = []
+
     for ad in ALL_ADAPTERS:
         avail = ad.available()
-        n = 0
+        rows: list[tuple] = []
+        fts_rows: list[tuple] = []
         summ: dict = {}
+        failed = False
         if avail:
             try:
                 summ = ad.summary()
@@ -59,29 +75,69 @@ def refresh(verbose: bool = True) -> dict:
                 summ = {"error": str(exc)}
             try:
                 for art in ad.artifacts():
-                    cur.execute(
-                        "insert or replace into catalog values(?,?,?,?,?,?,?,?,?,?,?,?)",
-                        art.row(),
-                    )
-                    cur.execute(
-                        "insert into catalog_fts(uid,title,subject,chapter,kind,source) "
-                        "values(?,?,?,?,?,?)",
+                    rows.append(art.row())
+                    fts_rows.append(
                         (art.uid, art.title or "", art.subject or "",
-                         art.chapter or "", art.kind or "", art.source),
+                         art.chapter or "", art.kind or "", art.source)
                     )
-                    n += 1
             except Exception as exc:  # noqa: BLE001
+                # A failing adapter must NOT poison the live catalog. Record the
+                # failure, drop this adapter's partial rows, and continue
+                # collecting so the report is complete — but the global refresh
+                # is aborted (last-known-good preserved) at the end.
                 summ.setdefault("error", str(exc))
-        cur.execute(
-            "insert or replace into source_summary values(?,?,?,?,?,?)",
+                failed = True
+                rows = []
+                fts_rows = []
+        if failed:
+            failures.append(ad.name)
+            totals[ad.name] = None
+        else:
+            totals[ad.name] = len(rows)
+        staged_catalog.extend(rows)
+        staged_fts.extend(fts_rows)
+        staged_summary.append(
             (ad.name, ad.label, int(avail),
-             json.dumps(summ, ensure_ascii=False), n, now),
+             json.dumps(summ, ensure_ascii=False),
+             0 if failed else len(rows), now)
         )
-        totals[ad.name] = n
         if verbose:
-            print(f"  {ad.name:12} available={avail!s:5} artifacts={n:>6}  {summ}")
-    cur.execute("insert or replace into refresh_meta values('refreshed_at', ?)", (now,))
-    con.commit()
+            shown = "FAILED" if failed else f"{len(rows):>6}"
+            print(f"  {ad.name:12} available={avail!s:5} artifacts={shown}  {summ}")
+
+    if failures:
+        # Last-known-good: do not touch the live catalog at all.
+        con.rollback()
+        con.close()
+        if verbose:
+            print(f"  refresh ABORTED — adapters failed: {', '.join(failures)}; "
+                  "previous catalog preserved")
+        return totals
+
+    # All adapters succeeded — swap atomically into the live tables.
+    try:
+        cur.execute("delete from catalog")
+        cur.execute("delete from catalog_fts")
+        cur.execute("delete from source_summary")
+        cur.executemany(
+            "insert or replace into catalog values(?,?,?,?,?,?,?,?,?,?,?,?)",
+            staged_catalog,
+        )
+        cur.executemany(
+            "insert into catalog_fts(uid,title,subject,chapter,kind,source) "
+            "values(?,?,?,?,?,?)",
+            staged_fts,
+        )
+        cur.executemany(
+            "insert or replace into source_summary values(?,?,?,?,?,?)",
+            staged_summary,
+        )
+        cur.execute("insert or replace into refresh_meta values('refreshed_at', ?)", (now,))
+        con.commit()
+    except Exception:  # noqa: BLE001
+        con.rollback()
+        con.close()
+        raise
     con.close()
     return totals
 

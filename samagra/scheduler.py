@@ -133,21 +133,32 @@ def tick(dry_run: bool = False) -> dict:
 
 
 def gate(pipeline: str, decision: str) -> dict:
+    if decision not in ("approve", "reject"):
+        return {"error": f"unknown decision {decision!r}"}
     st = state.load(pipeline)
-    gates = [n for n, p in st["phases"].items() if p.get("gate")]
+    order = state.PIPELINES[pipeline]["phases"]
+    gates = [n for n in order if st["phases"][n].get("gate")]
+    # F-02: only act on a gate that is actually awaiting approval, and never on a
+    # gate whose prior phases are not all done. Selecting the first still-open
+    # gate (vs. the first `awaiting_gate`-or-`pending` one) prevents approving a
+    # gate before its prerequisite phases — which would let exports run from an
+    # invalid state.
     target = next((n for n in gates
-                   if st["phases"][n]["status"] in ("awaiting_gate", "pending")),
-                  gates[0] if gates else None)
+                   if st["phases"][n]["status"] not in ("done", "blocked")),
+                  None)
     if not target:
-        return {"error": f"{pipeline} has no gate"}
+        return {"error": f"{pipeline} has no open gate"}
+    if st["phases"][target]["status"] != "awaiting_gate":
+        return {"error": f"{pipeline}.{target} is not awaiting_gate"}
+    idx = order.index(target)
+    if any(st["phases"][p]["status"] != "done" for p in order[:idx]):
+        return {"error": f"{pipeline}.{target} prerequisites are incomplete"}
     if decision == "approve":
         state.set_phase(pipeline, target, "done", approved_at=_stamp())
         notify.notify("gate-approved", f'{pipeline}: "{target}" approved.')
-    elif decision == "reject":
+    else:  # reject
         state.set_phase(pipeline, target, "blocked")
         notify.notify("gate-rejected", f'{pipeline}: "{target}" rejected.')
-    else:
-        return {"error": f"unknown decision {decision!r}"}
     return {"pipeline": pipeline, "gate": target, "decision": decision}
 
 

@@ -7,9 +7,11 @@ Adopts the run-episode pattern: one JSON file per pipeline is the source of trut
 from __future__ import annotations
 
 import json
+import os
 import time
 
 from . import config
+from .lock import file_lock
 
 # Pipeline definitions: ordered phases, which phases are hard gates, and the
 # worker that owns each phase (role-specialized routing).
@@ -52,9 +54,10 @@ def _path(pipeline: str):
     return config.STATE_DIR / f"{pipeline}.orchestrator_state.json"
 
 
-def init(pipeline: str) -> dict:
+def _default(pipeline: str) -> dict:
+    """Build a fresh default state object in memory (no disk side effects)."""
     spec = PIPELINES[pipeline]
-    st = {
+    return {
         "pipeline": pipeline,
         "label": spec["label"],
         "created": _now(),
@@ -73,25 +76,47 @@ def init(pipeline: str) -> dict:
             for ph in spec["phases"]
         },
     }
+
+
+def init(pipeline: str) -> dict:
+    """Create and persist a fresh state object (explicit mutation)."""
+    st = _default(pipeline)
     save(st)
     return st
 
 
 def load(pipeline: str) -> dict:
+    """Return current state, or an in-memory default if none exists yet.
+
+    Read-only: a missing pipeline yields a default WITHOUT writing it to disk
+    (no GET-side write). Use ``init()``/``set_phase()`` to persist explicitly.
+    """
     p = _path(pipeline)
     if p.exists():
         return json.loads(p.read_text(encoding="utf-8"))
-    return init(pipeline)
+    return _default(pipeline)
 
 
 def save(st: dict) -> None:
+    """Persist state atomically under a single state lock.
+
+    Writes the JSON to a sibling ``*.tmp`` file then ``os.replace``s it into
+    place (atomic on POSIX and Windows), with the whole operation guarded by a
+    dedicated ``.state.lock`` so concurrent gate/tick/API writes cannot
+    interleave and truncate or lose updates.
+    """
     config.STATE_DIR.mkdir(parents=True, exist_ok=True)
     st["updated"] = _now()
-    _path(st["pipeline"]).write_text(
-        json.dumps(st, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
-    phases = " ".join(f'{k}:{v["status"]}' for k, v in st["phases"].items())
-    tracker_append(f'{st["updated"]} {st["pipeline"]} current={st.get("current")} {phases}')
+    payload = json.dumps(st, indent=2, ensure_ascii=False)
+    path = _path(st["pipeline"])
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    with file_lock(config.STATE_DIR / ".state.lock"):
+        tmp.write_text(payload, encoding="utf-8")
+        os.replace(tmp, path)
+        phases = " ".join(f'{k}:{v["status"]}' for k, v in st["phases"].items())
+        tracker_append(
+            f'{st["updated"]} {st["pipeline"]} current={st.get("current")} {phases}'
+        )
 
 
 def set_phase(pipeline: str, phase: str, status: str, **fields) -> dict:
