@@ -115,7 +115,17 @@ def tick(dry_run: bool = False) -> dict:
         ctx = nullcontext() if dry_run else file_lock(_sched_lock())
         with ctx:
             totals = {} if dry_run else catalog.refresh(verbose=False)
-            log.append(f"catalog: {('dry' if dry_run else sum(totals.values()))} artifacts")
+            # H3: catalog.refresh() maps a FAILED source to None (last-known-good
+            # preserved). Count only successful artifacts — never sum None — and
+            # surface which sources failed so degradation is visible, not hidden.
+            ok_count = sum(v for v in totals.values() if v is not None)
+            failed = [s for s, v in totals.items() if v is None]
+            log.append(f"catalog: {('dry' if dry_run else ok_count)} artifacts")
+            if failed:
+                log.append(f"catalog: {len(failed)} source(s) FAILED: {', '.join(failed)}")
+                events.append(("failure",
+                               f"catalog refresh: {len(failed)} source(s) failed "
+                               f"({', '.join(failed)}); previous catalog preserved."))
             counts = _reflect_textbook(dry_run, events)
             log.append(f'textbook: {counts["drafted"]}/{counts["total"]} drafted, '
                        f'{counts["approved"]} approved')

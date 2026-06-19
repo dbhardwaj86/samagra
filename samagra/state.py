@@ -85,16 +85,59 @@ def init(pipeline: str) -> dict:
     return st
 
 
-def load(pipeline: str) -> dict:
-    """Return current state, or an in-memory default if none exists yet.
+def _load_unlocked(pipeline: str) -> dict:
+    """Read state from disk (or an in-memory default) WITHOUT taking the lock.
 
-    Read-only: a missing pipeline yields a default WITHOUT writing it to disk
-    (no GET-side write). Use ``init()``/``set_phase()`` to persist explicitly.
+    Internal primitive: callers that already hold ``.state.lock`` use this to
+    read inside their critical section. ``load()`` wraps it for public reads.
     """
     p = _path(pipeline)
     if p.exists():
         return json.loads(p.read_text(encoding="utf-8"))
     return _default(pipeline)
+
+
+def load(pipeline: str) -> dict:
+    """Return current state, or an in-memory default if none exists yet.
+
+    Read-only: a missing pipeline yields a default WITHOUT writing it to disk
+    (no GET-side write). Use ``init()``/``set_phase()`` to persist explicitly.
+
+    The read is unlocked: ``os.replace`` makes every write land atomically, so a
+    concurrent reader always observes a complete old-or-new file, never a torn
+    one. Read-modify-write callers must use ``set_phase()`` (or hold the lock
+    and use ``_load_unlocked``) so their read and write stay in one lock span.
+    """
+    return _load_unlocked(pipeline)
+
+
+def _save_unlocked(st: dict) -> None:
+    """Persist state atomically WITHOUT taking the lock.
+
+    Internal primitive: assumes the caller already holds ``.state.lock``. Stamps
+    ``updated``, writes to a sibling ``*.tmp`` file, then ``os.replace``s it into
+    place (atomic on POSIX and Windows) and mirrors to the tracker. On any
+    failure of the write/replace, the leftover ``*.tmp`` is best-effort removed
+    so a crashed write does not litter ``STATE_DIR`` (Codex LOW durability nit).
+    """
+    config.STATE_DIR.mkdir(parents=True, exist_ok=True)
+    st["updated"] = _now()
+    payload = json.dumps(st, indent=2, ensure_ascii=False)
+    path = _path(st["pipeline"])
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    try:
+        tmp.write_text(payload, encoding="utf-8")
+        os.replace(tmp, path)
+    except Exception:
+        try:
+            tmp.unlink()
+        except FileNotFoundError:
+            pass
+        raise
+    phases = " ".join(f'{k}:{v["status"]}' for k, v in st["phases"].items())
+    tracker_append(
+        f'{st["updated"]} {st["pipeline"]} current={st.get("current")} {phases}'
+    )
 
 
 def save(st: dict) -> None:
@@ -105,37 +148,33 @@ def save(st: dict) -> None:
     dedicated ``.state.lock`` so concurrent gate/tick/API writes cannot
     interleave and truncate or lose updates.
     """
-    config.STATE_DIR.mkdir(parents=True, exist_ok=True)
-    st["updated"] = _now()
-    payload = json.dumps(st, indent=2, ensure_ascii=False)
-    path = _path(st["pipeline"])
-    tmp = path.with_suffix(path.suffix + ".tmp")
     with file_lock(config.STATE_DIR / ".state.lock"):
-        tmp.write_text(payload, encoding="utf-8")
-        os.replace(tmp, path)
-        phases = " ".join(f'{k}:{v["status"]}' for k, v in st["phases"].items())
-        tracker_append(
-            f'{st["updated"]} {st["pipeline"]} current={st.get("current")} {phases}'
-        )
+        _save_unlocked(st)
 
 
 def set_phase(pipeline: str, phase: str, status: str, **fields) -> dict:
     if status not in VALID_STATUS:
         raise ValueError(f"invalid status {status!r}")
-    st = load(pipeline)
-    ph = st["phases"][phase]
-    ph["status"] = status
-    if status == "in_progress" and not ph["started"]:
-        ph["started"] = _now()
-    if status in ("done", "failed"):
-        ph["finished"] = _now()
-    for k, v in fields.items():
-        ph[k] = v
-    order = PIPELINES[pipeline]["phases"]
-    st["current"] = next(
-        (p for p in order if st["phases"][p]["status"] != "done"), order[-1]
-    )
-    save(st)
+    # Whole read-modify-write under ONE ``.state.lock`` so two concurrent writers
+    # cannot load the same old JSON, mutate different phases, and have the later
+    # save clobber the earlier transition (the lost-update bug from Codex H2).
+    # ``file_lock`` is not reentrant, so we use the *unlocked* primitives here
+    # rather than the public ``load``/``save`` (which would re-acquire the lock).
+    with file_lock(config.STATE_DIR / ".state.lock"):
+        st = _load_unlocked(pipeline)
+        ph = st["phases"][phase]
+        ph["status"] = status
+        if status == "in_progress" and not ph["started"]:
+            ph["started"] = _now()
+        if status in ("done", "failed"):
+            ph["finished"] = _now()
+        for k, v in fields.items():
+            ph[k] = v
+        order = PIPELINES[pipeline]["phases"]
+        st["current"] = next(
+            (p for p in order if st["phases"][p]["status"] != "done"), order[-1]
+        )
+        _save_unlocked(st)
     return st
 
 

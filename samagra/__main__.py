@@ -10,7 +10,16 @@ from . import catalog, config, state
 def cmd_refresh(args) -> None:
     print(f"Refreshing SAMAGRA catalog -> {config.DATA_DB}")
     totals = catalog.refresh(verbose=True)
-    print(f"Done. {sum(totals.values())} artifacts across {len(totals)} sources.")
+    # H3: a FAILED source maps to None (last-known-good preserved). Count only
+    # successful artifacts — never sum None — and name any failed source(s).
+    ok_count = sum(v for v in totals.values() if v is not None)
+    failed = [s for s, v in totals.items() if v is None]
+    if failed:
+        print(f"Done. {ok_count} artifacts across {len(totals)} sources "
+              f"({len(failed)} failed: {', '.join(failed)}). "
+              "Previous catalog preserved for failed source(s).")
+    else:
+        print(f"Done. {ok_count} artifacts across {len(totals)} sources.")
 
 
 def cmd_status(args) -> None:

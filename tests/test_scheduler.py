@@ -1,7 +1,7 @@
 """Phase D scheduler/gate tests (use a tmp STATE_DIR; no real state touched)."""
 from __future__ import annotations
 
-from samagra import scheduler, state
+from samagra import catalog, notify, scheduler, state
 
 
 def test_gate_approve_marks_done(tmp_path, monkeypatch):
@@ -66,3 +66,36 @@ def test_tick_dry_run_returns_log(tmp_path, monkeypatch):
     res = scheduler.tick(dry_run=True)
     assert res.get("dry_run") is True
     assert isinstance(res.get("log"), list)
+
+
+def test_tick_survives_failed_adapter(tmp_path, monkeypatch):
+    """S-06 (Codex H3): a failed adapter must not crash a live tick.
+
+    ``catalog.refresh()`` maps a FAILED source to ``None`` in its totals dict.
+    ``tick()`` must count only the successful artifacts (5, not crash on the
+    ``None``) and surface the failed source ("bad") in the log and via a
+    ``failure`` notify event — never silently hide it.
+    """
+    monkeypatch.setattr(state.config, "STATE_DIR", tmp_path)
+    # Live refresh returns None for the failed source; tick must not sum it.
+    monkeypatch.setattr(catalog, "refresh", lambda verbose=False: {"good": 5, "bad": None})
+
+    # Capture notify events without touching any real channel.
+    notified: list = []
+    monkeypatch.setattr(notify, "notify",
+                        lambda event, message, *a, **k: notified.append((event, message)))
+
+    res = scheduler.tick(dry_run=False)  # NO exception must escape
+
+    assert "skipped" not in res, f"tick should run, got {res!r}"
+    log_text = "\n".join(res["log"])
+    # Only successful artifacts counted (5), and the failed source is named.
+    assert "5" in log_text, f"successful count (5) must appear in log:\n{log_text}"
+    assert "bad" in log_text, f"failed source must be surfaced in log:\n{log_text}"
+    # The failure is also raised as a notify event naming the failed source.
+    assert any(ev == "failure" and "bad" in msg for ev, msg in notified), (
+        f"expected a failure notify naming 'bad', got {notified!r}"
+    )
+    assert "failure" in res.get("events", []), (
+        f"failure event must be reported in res['events'], got {res!r}"
+    )
