@@ -16,6 +16,7 @@ import time
 from contextlib import nullcontext
 
 from . import catalog, config, notify, state
+from . import lock as lockmod
 from .lock import LockBusy, file_lock, is_busy
 
 EXPORT_BATCH = 3  # chapters exported per tick once approved (bounded)
@@ -107,7 +108,22 @@ def _run_pending_exports(dry: bool, counts: dict, events: list) -> int:
 
 
 def tick(dry_run: bool = False) -> dict:
-    if is_busy(_sched_lock()):
+    # OWN lock: present == busy (no auto-reclaim). If our scheduler lock exists,
+    # another tick holds it — skip. If it is OLDER than the stale threshold it is
+    # almost certainly a crashed run that never released; surface that and tell
+    # the operator to clear it with `samagra unlock` (and notify on a live run).
+    sched = _sched_lock()
+    if sched.exists():
+        try:
+            age = time.time() - sched.stat().st_mtime
+        except FileNotFoundError:
+            age = 0.0
+        if age >= lockmod.STALE_SECONDS:
+            msg = ("scheduler lock present and stale (likely a crashed run) — "
+                   "run `samagra unlock` to clear it")
+            if not dry_run:
+                notify.notify("failure", msg)
+            return {"skipped": msg}
         return {"skipped": "scheduler lock busy"}
     events: list = []
     log: list = []

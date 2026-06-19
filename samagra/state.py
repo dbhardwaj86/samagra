@@ -129,9 +129,12 @@ def _save_unlocked(st: dict) -> None:
         tmp.write_text(payload, encoding="utf-8")
         os.replace(tmp, path)
     except Exception:
+        # Best-effort temp cleanup must NOT mask the original write/replace
+        # error: swallow any OSError from the unlink (not just FileNotFoundError)
+        # and then re-raise the ORIGINAL exception (Codex LOW).
         try:
             tmp.unlink()
-        except FileNotFoundError:
+        except OSError:
             pass
         raise
     phases = " ".join(f'{k}:{v["status"]}' for k, v in st["phases"].items())

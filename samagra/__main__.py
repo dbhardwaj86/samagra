@@ -1,10 +1,10 @@
-"""SAMAGRA CLI: refresh | status | search | serve | tick | gate | export."""
+"""SAMAGRA CLI: refresh | status | search | serve | tick | gate | export | unlock."""
 from __future__ import annotations
 
 import argparse
 import sys
 
-from . import catalog, config, state
+from . import catalog, config, lock, state
 
 
 def cmd_refresh(args) -> None:
@@ -96,6 +96,24 @@ def cmd_export(args) -> None:
     lex.run(args.chapter, args.variant)
 
 
+def cmd_unlock(args) -> None:
+    """Manually clear SAMAGRA's OWN locks left behind by a crashed run.
+
+    Removes ``.scheduler.lock`` and ``.state.lock`` under ``config.STATE_DIR``.
+    Does NOT touch the foreign physics-textbook ``TEXTBOOK_LOCK`` — that belongs
+    to another system. Acquisition has no auto-reclaim, so this is the supported
+    recovery path when a crashed job leaves its lock present.
+    """
+    removed = []
+    for name in (".scheduler.lock", ".state.lock"):
+        if lock.clear(config.STATE_DIR / name):
+            removed.append(name)
+    if removed:
+        print("removed SAMAGRA lock(s): " + ", ".join(removed))
+    else:
+        print("no SAMAGRA locks present")
+
+
 def main() -> None:
     p = argparse.ArgumentParser(prog="samagra",
                                 description="SAMAGRA control plane")
@@ -139,6 +157,10 @@ def main() -> None:
     e.add_argument("--chapter", required=True)
     e.add_argument("--variant", choices=["thin", "thick", "both"], default="both")
     e.set_defaults(func=cmd_export)
+
+    sub.add_parser("unlock",
+                   help="clear SAMAGRA's own scheduler/state locks (crashed run)"
+                   ).set_defaults(func=cmd_unlock)
 
     args = p.parse_args()
     args.func(args)
