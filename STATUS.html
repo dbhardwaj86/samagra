@@ -57,7 +57,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
 </head>
 <body>
 <header class="top">
-  <h1>SAMAGRA</h1><span class="sub">Slice 1 done · Phase 0 (rename) done</span>
+  <h1>SAMAGRA</h1><span class="sub">Phase 0 done · Track A stabilize done · branch phase1-stabilize</span>
   <nav>
     <a href="#overview">Overview</a><a href="#phases">Phases</a>
     <a href="#samagra">SAMAGRA</a><a href="#arch">Architecture</a>
@@ -98,8 +98,17 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   approved design spec and a 34-task, four-phase implementation plan are committed and recorded
   (see <a href="#samagra">SAMAGRA roadmap</a> + <a href="#artifacts">Artifacts</a>).
   <strong>Phase 0 (rename) is done</strong> — PR #1 merged, the GitHub repo and Python package are now
-  <code>samagra</code>, <code>samagra.db</code> rebuilt to 7,044 artifacts, 11/11 tests green. Phase 1
-  (subsystem adapters) is next.</p>
+  <code>samagra</code>, <code>samagra.db</code> rebuilt to 7,044 artifacts, 11/11 tests green.</p>
+
+  <p><strong>2026-06-19 — Codex baseline review → Track A (stabilize) done.</strong> Before opening the
+  Phase 1 build, three read-only <code>gpt-5.5</code> Codex agents reviewed the whole codebase, the
+  vision/architecture, and the loop plan. The CEO reconciled them into a runbook (decisions D1–D8) whose
+  headline call was <em>stabilize before build</em>. Five TDD fix-loops (S-01…S-05) then closed six baseline
+  findings — test-harness isolation (F-14), atomic state writes + lock (F-07), atomic <code>O_EXCL</code>
+  scheduler lock (F-06), gate-prerequisite enforcement + <code>/api/gate</code> 409 (F-02), and last-known-good
+  refresh (F-09). The suite is now <strong>24/24 green</strong>, committed on branch
+  <code>phase1-stabilize</code> (not yet merged — Chairman-gated). The Phase 1 build chain
+  (P1-01→P1-07, read-only adapters) is next.</p>
 
   <h2 id="phases">Phase status — Slice 1 (built)</h2>
   <div class="grid">
@@ -114,8 +123,8 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   rename → adapters → governance → loop.</p>
   <div class="grid">
     <div class="card"><div class="n">0 <span class="badge ok">done</span></div><div class="l">Rename to <code>samagra</code> (repo + package); PR #1 merged</div></div>
-    <div class="card"><div class="n">1 <span class="badge todo">planned</span></div><div class="l">Read-only adapters — mycontentdev (cloud admin API) + munshi (<code>library()</code>); reflect state</div></div>
-    <div class="card"><div class="n">2 <span class="badge todo">planned</span></div><div class="l">Governance — <code>samagra.db</code> store, Assignments tab, blocking Codex pre-commit hook, agent worktrees, org SVG</div></div>
+    <div class="card"><div class="n">1 <span class="badge todo">build next</span></div><div class="l">Read-only adapters — mycontentdev + munshi (<code>library()</code>); reflect state. <strong>Track A stabilize (S-01–S-05) done</strong> on <code>phase1-stabilize</code>.</div></div>
+    <div class="card"><div class="n">2 <span class="badge todo">planned</span></div><div class="l">Governance — split <code>catalog.db</code>/<code>governance.db</code>, Assignments tab, Codex pre-commit (advisory-local + enforced-CI), agent worktrees, org SVG</div></div>
     <div class="card"><div class="n">3 <span class="badge todo">planned</span></div><div class="l">Active loop — munshi → proposed seed (w/ pointers) → board approve → capture API</div></div>
   </div>
   <p>Governance principle: only the three board agents — <strong>Claude-Deepak (CEO)</strong>,
@@ -181,19 +190,30 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   </table>
 
   <h2 id="tests">Tests</h2>
-  <p><span class="badge ok">11 / 11 passing</span> — adapters + catalog + state machine (spine), thin/thick render
-  (lectures), gate + tick (scheduler). Source-dependent tests skip cleanly in CI (GitHub Actions, Python 3.12).
-  SAMAGRA phases each ship their own TDD suite (adapters mock the HTTP clients — no live-prod calls in CI).</p>
+  <p><span class="badge ok">24 / 24 passing</span> (last run 2026-06-19) — spine + lectures + scheduler, plus
+  Track A: harness isolation, atomic state writes, atomic lock acquisition, gate-prereq enforcement +
+  <code>/api/gate</code> 409, and refresh last-known-good. The suite is now isolated from the real
+  <code>samagra.db</code> (autouse <code>conftest.py</code> fixture → real catalog byte-identical across runs).
+  Source-dependent tests skip cleanly in CI; SAMAGRA phases each ship their own TDD suite (HTTP mocked — no
+  live-prod calls).</p>
 
   <h2 id="decisions">Recent decisions</h2>
+  <div class="log"><div class="d">2026-06-19 · Codex baseline review → stabilize before build</div>
+    Three read-only <code>gpt-5.5</code> Codex passes (code / architecture / loop-plan) reconciled into
+    <code>docs/codex-reviews/PHASE1-loop-runbook.md</code> (decisions D1–D8). Track A fix-loops S-01–S-05
+    landed first (24/24 green) on branch <code>phase1-stabilize</code>; <code>McdClient.create_seed</code>
+    deferred to Phase 3 (Phase 1 ships read-only); munshi adapter stores refs/excerpt/hash, not full payload.</div>
   <div class="log"><div class="d">2026-06-19 · Phase 0 executed — package renamed to samagra</div>
     PR #1 squash-merged to <code>main</code>; GitHub repo and Python package are now <code>samagra</code>; env keys moved to the <code>SAMAGRA_*</code> namespace; <code>samagra.db</code> rebuilt to 7,044 artifacts; 11/11 tests green.</div>
   <div class="log"><div class="d">2026-06-19 · SAMAGRA — one phased plan, rename first</div>
     Build order locked: rename to <code>samagra</code> (Phase 0) → subsystem adapters → governance → active loop. 34 tasks across 4 phases; spec + plan committed and recorded to the cbm sidecar.</div>
   <div class="log"><div class="d">2026-06-19 · Reflect, don't duplicate</div>
     mycontentdev read via cloud admin API (<code>x-mcd-admin</code>); munshi via <code>driver.mjs library()</code> (cookie auth, <code>MUNSHI_SECRET</code>); SAMAGRA mirrors subsystem state + a thin board-review overlay — no parallel state machine.</div>
-  <div class="log"><div class="d">2026-06-19 · Governance mechanics</div>
-    Per-agent git worktrees (deepak/khanak/codex); markdown outbox files + <code>samagra.db</code> index + Assignments tab; pre-commit Codex review blocks on <code>severity==CRITICAL</code> with no escape hatch (fail-closed). Only board agents approve writes.</div>
+  <div class="log"><div class="d">2026-06-19 · Governance mechanics (pre-commit redesigned)</div>
+    Per-agent git worktrees (deepak/khanak/codex); markdown outbox + Assignments tab. <strong>Superseding the
+    earlier fail-closed design (D5):</strong> the Codex pre-commit hook is advisory-local (blocks only confirmed
+    <code>CRITICAL</code>, diff-hash cached, audited break-glass) with real enforcement in CI / branch protection;
+    the durable governance store splits from the rebuildable catalog (D6). Only board agents approve writes.</div>
   <div class="log"><div class="d">2026-06-18 · Greenfield control plane</div>
     SAMAGRA is a new repo orchestrating existing tools in place — not a rewrite. Spine + dashboard first.</div>
   <div class="log"><div class="d">2026-06-18 · Lectures: thin/thick, no PDF</div>
@@ -204,6 +224,10 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     <tr><th>Path</th><th>What</th></tr>
     <tr><td><code>docs/superpowers/specs/2026-06-19-samagra-evolution-design.md</code></td><td>approved SAMAGRA design spec (integration contracts verified)</td></tr>
     <tr><td><code>docs/superpowers/plans/2026-06-19-samagra-evolution.md</code></td><td>34-task, 4-phase SAMAGRA implementation plan (TDD)</td></tr>
+    <tr><td><code>docs/codex-reviews/PHASE1-loop-runbook.md</code></td><td>reconciled Codex review → decisions D1–D8 + Phase-1 loop backlog + Khanak prompt template</td></tr>
+    <tr><td><code>docs/codex-reviews/SAMAGRA-review-briefing.html</code></td><td>consolidated review briefing (3 gpt-5.5 agents)</td></tr>
+    <tr><td><code>docs/codex-reviews/01–03-*.report.md</code></td><td>raw Codex reports (adversarial code · architecture · loop-plan)</td></tr>
+    <tr><td><code>tests/conftest.py</code> + 5 new suites</td><td>Track A: harness-isolation, state-atomic, lock, refresh-safety, api-gate</td></tr>
     <tr><td><code>samagra/</code></td><td>package — adapters, catalog, state, scheduler, api, portal, lectures</td></tr>
     <tr><td><code>samagra.db</code></td><td>unified catalog (generated, gitignored)</td></tr>
     <tr><td><code>build/lectures/&lt;slug&gt;/</code></td><td>exported thin/thick HTML + DOCX</td></tr>
@@ -211,10 +235,15 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   </table>
 
   <h2 id="next">Next actions</h2>
-  <p>SAMAGRA Phase 0 (rename) is complete. The next action is Phase 1 (subsystem adapters); a few slice-1 items still need your input to switch on the unattended parts:</p>
+  <p>Phase 0 (rename) and Track A (stabilize, S-01–S-05) are done and committed on branch
+  <code>phase1-stabilize</code> (not merged — Chairman-gated). The next action is the Phase 1 build chain
+  (P1-01 read-only <code>McdClient</code> → P1-07); a Codex pre-merge review precedes the Chairman's merge to
+  <code>main</code>. A few slice-1 creds items remain to switch on the unattended parts:</p>
   <table>
     <tr><th>Item</th><th>Status</th><th>Action</th></tr>
-    <tr><td>SAMAGRA Phase 0 (rename)</td><td><span class="badge ok">done</span></td><td>PR #1 merged; repo + package renamed <code>samagra</code>; catalog rebuilt (7,044 artifacts); 11/11 green. Next: Phase 1 adapters.</td></tr>
+    <tr><td>Phase 0 (rename)</td><td><span class="badge ok">done</span></td><td>PR #1 merged; repo + package <code>samagra</code>; catalog 7,044 artifacts.</td></tr>
+    <tr><td>Track A — stabilize (S-01–S-05)</td><td><span class="badge ok">done</span></td><td>6 baseline findings fixed; 24/24 green; committed on <code>phase1-stabilize</code>. Pending: Codex pre-merge review → Chairman merge to <code>main</code>.</td></tr>
+    <tr><td>Phase 1 — build chain (P1-01→P1-07)</td><td><span class="badge todo">next</span></td><td>Read-only <code>McdClient</code>/<code>MunshiClient</code> + adapters + <code>mycontentdev</code> pipeline + <code>_reflect_mycontentdev</code>; TDD, HTTP mocked. <code>create_seed</code> deferred to Phase 3.</td></tr>
     <tr><td>Notification channels</td><td><span class="badge todo">creds</span></td><td>Set <code>TELEGRAM_BOT_TOKEN</code>/<code>CHAT_ID</code> + gmail <code>SMTP_PASS</code> in <code>.env</code>. Until then notifications are logged only.</td></tr>
     <tr><td>Google Docs export</td><td><span class="badge todo">creds</span></td><td>Set <code>GOOGLE_OAUTH_CLIENT</code> (Desktop OAuth JSON); HTML + DOCX already work.</td></tr>
   </table>
