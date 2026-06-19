@@ -1,8 +1,12 @@
 # SAMAGRA — Session Handoff & Planning Brief
 
 **Date:** 2026-06-18 · **Author:** Claude-Deepak (Opus 4.8), CEO · **For:** the *next* session
-**Status:** 🟡 PLANNING HANDOFF — nothing below is built yet. This exists so a fresh session
-can brainstorm + plan SAMAGRA properly with full context.
+**Status:** 🟢 SUPERSEDED (updated 2026-06-19) — this was the 2026-06-18 planning brief. The brainstorm
++ plan it asked for are done, and **Phase 0 (rename), Track A (stabilize) and Phase 1 (read-only
+mycontentdev + munshi adapters) are built + merged to `main`** (63/63 green). For current status see
+[`STATUS.html`](STATUS.html) / [`SUMMARY.html`](SUMMARY.html); for execution see the plan
+(`docs/superpowers/plans/2026-06-19-samagra-evolution.md`) + [`PHASE1-loop-runbook`](docs/codex-reviews/PHASE1-loop-runbook.md).
+The body below is preserved as the original brief.
 
 > **How to use this doc.** The owner explicitly chose: *"just write session handoffs with full
 > pointers to plan this fresh in a new session."* So **do not start building from this file.**

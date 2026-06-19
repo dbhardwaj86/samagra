@@ -17,10 +17,16 @@ phone + email notifications).
 | `claude-INSP-extract` | INSP / olympiad papers |
 | `pratyaksh-May-deploy` | 200+ simulations (read-only) |
 | HF Space `QuestionDB` | Online deployment target (later) |
+| `mycontentdev` (Phase 1) | Editorial seed pipeline — cloud admin API (read-only); reflects seed status |
+| `munshi` (Phase 1) | Phone/front-desk capture — `library()` over the Worker (read-only) |
+
+> Phase 1 added the last two as **network-backed** read-only sources (the rest are local). Both reflect
+> live state when credentials are present and skip cleanly otherwise — a failing/offline subsystem never
+> erases the catalog.
 
 ## Architecture (3 layers)
 
-1. **Source adapters** (`samagra/adapters/`) — read-only, each normalizes its source into a common `Artifact`.
+1. **Source adapters** (`samagra/adapters/`) — read-only, each normalizes its source into a common `Artifact`; network-backed sources are fronted by read-only HTTP clients in `samagra/clients/` (secret-safe).
 2. **Catalog + state** (`samagra/catalog.py`, `state.py`) — `samagra.db` unified catalog + a phase state machine.
 3. **Portal + API** (`samagra/api/`, `portal/`) — FastAPI + a UI forked from QX's browser.
 

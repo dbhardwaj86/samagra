@@ -1,5 +1,12 @@
 # SAMAGRA Evolution Implementation Plan
 
+> **▶ PROGRESS (updated 2026-06-19):** **Phase 0 (rename) ✅ · Track A (stabilize, S-01–S-09) ✅ · Phase 1
+> (subsystem adapters) ✅ — all merged to `main`, 63/63 green.** Phase 1 cleared an adversarial 42-agent
+> pre-merge review (one HIGH fixed — MUN-01, munshi per-kind title schema). `create_seed` deferred to
+> Phase 3 (D2/D9). Carried into Phase 2: refresh per-adapter isolation + stale visibility (F1/F4).
+> **▶ NEXT: Phase 2 (governance)** — Tasks 2.1→. Per-task checkboxes below are not individually ticked;
+> the per-phase banners are the tracker of record.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Evolve the verified TeachingOS slice-1 spine into **SAMAGRA** — a company-structured **control plane** (not an "OS" — see spec §1) — by renaming the package, adding read-only `mycontentdev` + `munshi` adapters, standing up the governance layer (per-agent worktrees, prompt outbox, Assignments tab, blocking pre-commit Codex review), and wiring the board-approved `munshi → mycontentdev` capture loop.
@@ -43,6 +50,8 @@ Every task below uses these verbatim. Do not invent alternative names.
 ---
 
 ## Phase 0 — Rename `teachingos` → `samagra`
+
+> **✅ COMPLETE (2026-06-19)** — repo + package renamed `samagra`, `samagra.db` rebuilt to 7,044 artifacts, merged to `main`.
 
 This phase merges the slice-1 PR, renames the GitHub repo, renames the Python package `teachingos/` → `samagra/`, and updates every identifier (imports, console script, `DATA_DB`, `TASK_NAME`, `TEACHINGOS_*` env keys) and the docs. It is **OPS/VERIFICATION-driven**, not test-first — every code edit is a mechanical find/replace verified by `grep` + a green pytest run + a catalog rebuild, not red-green TDD. The engineer has zero context: run every command from the repo root `C:\SandBox\claude_box\TeachingOS` using the project venv `.venv\Scripts\python`, on Windows PowerShell unless a step says Git-Bash.
 
@@ -828,6 +837,11 @@ Expected: push succeeds against `…/samagra.git`; the log shows the Phase 0 com
 ---
 
 ## Phase 1 — Subsystem adapters (mycontentdev + munshi)
+
+> **✅ COMPLETE (2026-06-19)** — built TDD in 8 tasks (1.1–1.8), adversarial 42-agent pre-merge review
+> (MUN-01 munshi-title schema bug found + fixed), **63/63 green**, fast-forward-merged to `main`.
+> `create_seed` NOT shipped (deferred to Phase 3 per D2/D9). Note: the Task 1.2 `create_seed` code/test
+> block below is superseded — it was intentionally NOT built. F1/F4 refresh hardening carried to Phase 2.
 
 This phase adds two read-only HTTP clients (`McdClient`, `MunshiClient`), two new source adapters (`McdAdapter`, `MunshiAdapter`) that normalize those subsystems into `Artifact` records, a new `"mycontentdev"` pipeline in the state machine, and a `_reflect_mycontentdev` scheduler reflector. Everything is read-only (no writes into any subsystem yet — `create_seed` is **deferred to Phase 3 per D2/D9**, not shipped in Phase 1). All tests MOCK the HTTP layer by injecting fake clients or monkeypatching `requests`; there are NO live-prod calls. All imports use the `samagra.*` package (post Phase-0 rename).
 
@@ -1902,6 +1916,9 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ---
 
 ## Phase 2 — Governance: store, Assignments tab, blocking Codex pre-commit hook, worktrees, org SVG
+
+> **▶ NEXT — build target (not started).** Also land the Phase-1 carry-ins here: refresh per-adapter
+> isolation + stale visibility (F1/F4) alongside the governance store's `stale`/`last_error` columns.
 
 **Files:**
 - **Create** `samagra/governance/__init__.py` — package marker for the governance store.

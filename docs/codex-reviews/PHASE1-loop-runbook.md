@@ -9,6 +9,16 @@
 > **This runbook is the source of truth for execution.** Where it disagrees with
 > agent 3's draft loop plan, this document wins (the deltas are decisions D1–D8 below).
 
+> **▶ STATUS (2026-06-19): PHASE 1 COMPLETE — merged to `main`.** Track A (stabilize, S-01–S-09)
+> and the Phase-1 build chain (read-only `McdClient`/`MunshiClient` + `Mcd`/`MunshiAdapter` +
+> `mycontentdev` pipeline + `_reflect_mycontentdev`) are built TDD and merged. An adversarial
+> 42-agent pre-merge review (every contract re-verified vs the live `mycontentdev`/`myProd` source)
+> returned **CHANGES-REQUESTED** for one HIGH defect — **MUN-01**: the munshi adapter read a
+> `payload.text/body` the live server never emits (titles are per-kind: `todo→task`, `issue→summary`,
+> `question→stem`, `followup→note`, `note→issue`). Fixed + locked with real-schema fixtures. **63/63
+> green.** D2 honored (`create_seed` deferred to Phase 3). Carried to Phase 2: refresh per-adapter
+> isolation + stale visibility (F1/F4). **Next: Phase 2 (governance).**
+
 ---
 
 ## 0. Reconciled decisions (CEO calls)
