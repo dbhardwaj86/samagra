@@ -160,16 +160,37 @@ def _audit_breakglass(diff_hash: str, reason: str) -> None:
 
 
 # -- verdict helpers -----------------------------------------------------
-def _criticals(findings: list[dict]) -> list[dict]:
-    return [f for f in findings if f.get("severity") == "CRITICAL"]
+def _emit(fn) -> None:
+    """Run a best-effort side-effect (printing / logging). Cosmetics must NEVER
+    change a verdict: once a block is decided it returns 1 even if its banner
+    fails to print. Swallow everything here so nothing on a decided path can be
+    caught by the outer never-wedge guard and silently downgrade the result."""
+    try:
+        fn()
+    except Exception as e:  # noqa: BLE001 - a side-effect must never flip a verdict
+        print(f"[codex-precommit] warning: side-effect failed: {e}",
+              file=sys.stderr)
 
 
-def _print_findings(findings: list[dict], header: str) -> None:
+def _criticals(findings) -> list[dict]:
+    # Tolerant of malformed entries (a cache or Codex payload could be junk):
+    # only dict findings with severity CRITICAL count.
+    if not isinstance(findings, list):
+        return []
+    return [f for f in findings
+            if isinstance(f, dict) and f.get("severity") == "CRITICAL"]
+
+
+def _print_findings(findings, header: str) -> None:
     print(f"\n=== SAMAGRA pre-commit: {header} ===", file=sys.stderr)
-    for f in findings:
-        print(f"  [{f.get('severity')}] {f.get('file')}:{f.get('line')} "
-              f"{f.get('issue')}", file=sys.stderr)
-    if not findings:
+    items = findings if isinstance(findings, list) else []
+    for f in items:
+        if isinstance(f, dict):
+            print(f"  [{f.get('severity')}] {f.get('file')}:{f.get('line')} "
+                  f"{f.get('issue')}", file=sys.stderr)
+        else:
+            print(f"  [?] {f!r}", file=sys.stderr)
+    if not items:
         print("  (no findings)", file=sys.stderr)
 
 
@@ -207,20 +228,23 @@ def _review_staged_diff_inner() -> int:
     # Audited break-glass: allow + log, overriding even a confirmed-CRITICAL.
     reason = os.environ.get("SAMAGRA_REVIEW_BREAKGLASS")
     if reason:
-        _audit_breakglass(dhash, reason)
-        print(f"\n=== SAMAGRA pre-commit: BREAK-GLASS (audited) ===\n"
-              f"  reason: {_sanitize_reason(reason)}\n"
-              f"  logged to state/review/breakglass.log", file=sys.stderr)
+        _emit(lambda: _audit_breakglass(dhash, reason))
+        _emit(lambda: print(
+            f"\n=== SAMAGRA pre-commit: BREAK-GLASS (audited) ===\n"
+            f"  reason: {_sanitize_reason(reason)}\n"
+            f"  logged to state/review/breakglass.log", file=sys.stderr))
         return 0
 
-    # Diff-hash cache: a previously-confirmed verdict is deterministic.
+    # Diff-hash cache: a previously-confirmed verdict is deterministic. A cached
+    # block must return 1 regardless of how malformed its stored findings are, so
+    # all emission is best-effort and the return is decided first.
     cache = _load_cache()
     cached = cache.get(dhash)
-    if cached:
+    if isinstance(cached, dict):
         if cached.get("verdict") == "block":
-            _print_findings(cached.get("findings", []),
-                            "COMMIT BLOCKED (cached confirmed-CRITICAL)")
-            _print_breakglass_help()
+            _emit(lambda: _print_findings(cached.get("findings", []),
+                                          "COMMIT BLOCKED (cached confirmed-CRITICAL)"))
+            _emit(_print_breakglass_help)
             return 1
         return 0
 
@@ -241,7 +265,7 @@ def _review_staged_diff_inner() -> int:
     crits = _criticals(findings)
     if not crits:
         if findings:
-            _print_findings(findings, "advisory findings (non-blocking)")
+            _emit(lambda: _print_findings(findings, "advisory findings (non-blocking)"))
         _remember(cache, dhash, {"verdict": "pass", "ts": _now()})
         return 0
 
@@ -250,24 +274,24 @@ def _review_staged_diff_inner() -> int:
     try:
         confirm = _review_once(diff)
     except Exception as e:  # noqa: BLE001 - confirm failure -> advisory, not block
-        _print_findings(crits, "UNCONFIRMED CRITICAL (confirm pass errored) "
-                               "— allowed")
+        _emit(lambda: _print_findings(crits, "UNCONFIRMED CRITICAL (confirm pass "
+                                             "errored) — allowed"))
         print(f"  confirm pass could not run: {e}", file=sys.stderr)
         return 0
 
     if _criticals(confirm):
         confirmed = crits + [c for c in _criticals(confirm) if c not in crits]
-        # Decide + announce the block BEFORE persisting, so nothing about the
-        # cache can affect the return value.
-        _print_findings(confirmed, "COMMIT BLOCKED (confirmed CRITICAL)")
-        _print_breakglass_help()
+        # Block is decided here; every side-effect below is best-effort so the
+        # return value can never be downgraded by a failing print or cache write.
+        _emit(lambda: _print_findings(confirmed, "COMMIT BLOCKED (confirmed CRITICAL)"))
+        _emit(_print_breakglass_help)
         _remember(cache, dhash, {"verdict": "block", "findings": confirmed,
                                  "ts": _now()})
         return 1
 
     # Confirm pass disagreed -> single-pass false positive -> advisory.
-    _print_findings(crits, "UNCONFIRMED CRITICAL (confirm pass disagreed) "
-                           "— allowed")
+    _emit(lambda: _print_findings(crits, "UNCONFIRMED CRITICAL (confirm pass "
+                                         "disagreed) — allowed"))
     _remember(cache, dhash, {"verdict": "pass", "ts": _now()})
     return 0
 

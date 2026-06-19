@@ -200,3 +200,17 @@ def test_confirmed_block_survives_save_cache_failure(monkeypatch):
 
     monkeypatch.setattr(precommit, "_save_cache", boom)
     assert precommit.review_staged_diff() == 1
+
+
+def test_cached_block_with_malformed_findings_still_blocks(monkeypatch):
+    # A cached block whose stored `findings` are malformed (non-dict) previously
+    # raised in _print_findings and got swallowed by the outer guard -> downgrade
+    # to allow. A cached verdict:"block" must return 1 regardless of findings shape.
+    diff = "diff --git a b"
+    dhash = precommit._diff_hash(diff)
+    monkeypatch.setattr(precommit, "get_staged_diff", lambda: diff)
+    monkeypatch.setattr(
+        precommit, "_load_cache",
+        lambda: {dhash: {"verdict": "block", "findings": ["not-a-dict"], "ts": []}})
+    monkeypatch.setattr(precommit, "dispatch_codex", _no_call)
+    assert precommit.review_staged_diff() == 1
