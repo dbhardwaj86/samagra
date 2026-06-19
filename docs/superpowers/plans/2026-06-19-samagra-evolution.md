@@ -1917,7 +1917,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 
 ## Phase 2 — Governance: store, Assignments tab, blocking Codex pre-commit hook, worktrees, org SVG
 
-> **▶ BUILT (2026-06-19) — reconciled to runbook D5/D6, suite 63 → 85 green, on `main`; pre-merge review + owner activation pending.**
+> **▶ BUILT (2026-06-19) — reconciled to runbook D5/D6, suite 63 → 92 green, on `main`; pre-merge Codex review found+fixed real defects (see `docs/codex-reviews/07-*`, `08-*`); owner activation pending.**
 > The task code below was stale against the authoritative runbook and was reconciled before building. **As-built deviations:**
 > - **D6 (Task 2.1, 2.5):** the governance store lives in its own durable **`config.GOVERNANCE_DB` (`governance.db`)**, NOT the
 >   catalog `samagra.db`. Added `SCHEMA_VERSION` (PRAGMA user_version) + a migration hook + a consistent `backup()`. The S-01

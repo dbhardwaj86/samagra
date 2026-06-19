@@ -3,7 +3,7 @@
 > **▶ STATUS:** The project is **SAMAGRA** (package `samagra`) — a company-structured agent org
 > folding in `mycontentdev` + `munshi`, with an advisory pre-commit Codex review and a CEO prompt-outbox.
 > **Phase 0 (rename), Track A (stabilize) and Phase 1 (read-only subsystem adapters) are merged to `main`
-> and pushed to `origin/main`.** **Phase 2 (governance) is now BUILT TDD on `main` (suite 63 → 85 green)**,
+> and pushed to `origin/main`.** **Phase 2 (governance) is now BUILT TDD on `main` (suite 63 → 92 green)**,
 > reconciled to the runbook: **D6** (governance state lives in its own durable `governance.db`, separate from
 > the rebuildable catalog `samagra.db`) and **D5** (the Codex pre-commit hook is **advisory-local** —
 > confirmed-CRITICAL only, diff-hash cached, audited break-glass, never wedges; real enforcement = CI). The
@@ -17,7 +17,7 @@
 (mycontentdev seeds, munshi `library()`) reflecting into the catalog, **+ Phase-2 governance**: durable
 `governance.db` store (assignments / events ledger / review overlay), `GET /api/assignments` + the
 Assignments portal tab, an advisory Codex pre-commit gate (`samagra/review/`), the committed
-`.githooks/pre-commit` shim, and per-agent board files (`board/{deepak,khanak,codex}/`). **85/85 tests pass.**
+`.githooks/pre-commit` shim, and per-agent board files (`board/{deepak,khanak,codex}/`). **92/92 tests pass.**
 
 ## Run it
 
@@ -64,7 +64,7 @@ QX `C:\SandBox\gpt_box\gpt-extract-ques` · textbook `C:\SandBox\gpt_box\physics
 ## Open / needs user consent
 
 **Phase-2 owner-gated (do in order — runbook §1):**
-1. **Pre-merge Codex review** — re-invoke Codex (Chief Architect) on the Phase-2 diff (range `4b9e949..HEAD`) before activation/merge.
+1. **Pre-merge Codex review** — DONE (gpt-5.5, xhigh): 2 rounds, both REQUEST-CHANGES, all findings fixed TDD (HIGH never-wedge + the confirmed-block downgrade regression + 2 MEDIUM + nits); a 3rd confirming pass is queued. Reports: `docs/codex-reviews/07-*`, `08-*`. Chairman gates the push once it's APPROVE.
 2. **Activate the hook** — `git config core.hooksPath .githooks` (applies to repo + every worktree). Needs `codex` on PATH or `CODEX_BIN`.
 3. **Create worktrees** — `git worktree add ../samagra-deepak -b agent/deepak` (and `-khanak`, `-codex`). Board files already committed.
 4. **Push** — push `main` to `origin` after the review passes.
