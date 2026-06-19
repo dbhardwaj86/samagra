@@ -64,7 +64,7 @@ QX `C:\SandBox\gpt_box\gpt-extract-ques` · textbook `C:\SandBox\gpt_box\physics
 ## Open / needs user consent
 
 **Phase-2 owner-gated (do in order — runbook §1):**
-1. **Pre-merge Codex review** — re-invoke Codex (Chief Architect) on the Phase-2 diff (9 commits, `80f464a..HEAD`) before activation/merge.
+1. **Pre-merge Codex review** — re-invoke Codex (Chief Architect) on the Phase-2 diff (range `4b9e949..HEAD`) before activation/merge.
 2. **Activate the hook** — `git config core.hooksPath .githooks` (applies to repo + every worktree). Needs `codex` on PATH or `CODEX_BIN`.
 3. **Create worktrees** — `git worktree add ../samagra-deepak -b agent/deepak` (and `-khanak`, `-codex`). Board files already committed.
 4. **Push** — push `main` to `origin` after the review passes.

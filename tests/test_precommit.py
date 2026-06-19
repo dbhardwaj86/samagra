@@ -119,3 +119,51 @@ def test_pass_verdict_is_cached_and_not_rerun(monkeypatch):
     assert precommit.review_staged_diff() == 0
     monkeypatch.setattr(precommit, "dispatch_codex", _no_call)
     assert precommit.review_staged_diff() == 0
+
+
+# --- never-wedge hardening (pre-merge review HIGH + LOW) ---
+
+def test_non_dict_cache_does_not_wedge(monkeypatch):
+    # A valid-but-wrong-shape cache (a JSON list) must be ignored, not crash.
+    cache_path = config.STATE_DIR / "review" / "diff_cache.json"
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    cache_path.write_text("[]", encoding="utf-8")
+    monkeypatch.setattr(precommit, "get_staged_diff", lambda: "diff --git a b")
+    monkeypatch.setattr(precommit, "dispatch_codex", _seq(_result([])))
+    assert precommit.review_staged_diff() == 0
+
+
+def test_unwritable_cache_does_not_wedge(monkeypatch):
+    # If the cache file can't be written (here: the path is a directory), a
+    # passing review must still allow the commit, not raise.
+    review_dir = config.STATE_DIR / "review"
+    review_dir.mkdir(parents=True, exist_ok=True)
+    (review_dir / "diff_cache.json").mkdir()  # write_text to a dir -> OSError
+    monkeypatch.setattr(precommit, "get_staged_diff", lambda: "diff --git a b")
+    monkeypatch.setattr(precommit, "dispatch_codex", _seq(_result([])))
+    assert precommit.review_staged_diff() == 0
+
+
+def test_unexpected_error_does_not_wedge(monkeypatch):
+    # The outer never-wedge guard absorbs any unexpected hook-logic error.
+    monkeypatch.setattr(precommit, "get_staged_diff", lambda: "diff --git a b")
+
+    def boom():
+        raise RuntimeError("unexpected hook bug")
+
+    monkeypatch.setattr(precommit, "_load_cache", boom)
+    monkeypatch.setattr(precommit, "dispatch_codex", _no_call)
+    assert precommit.review_staged_diff() == 0
+
+
+def test_breakglass_reason_is_sanitized(monkeypatch):
+    monkeypatch.setenv("SAMAGRA_REVIEW_BREAKGLASS", "line1\nline2\t" + "x" * 300)
+    monkeypatch.setattr(precommit, "get_staged_diff", lambda: "diff --git a b")
+    monkeypatch.setattr(precommit, "dispatch_codex", _no_call)
+    assert precommit.review_staged_diff() == 0
+    content = (config.STATE_DIR / "review" / "breakglass.log").read_text(encoding="utf-8")
+    assert content.count("\n") == 1                 # single audit line (no forged lines)
+    reason_field = content.rstrip("\n").split("\t")[-1]
+    assert reason_field.startswith("line1 line2 ")  # whitespace collapsed to spaces
+    assert len(reason_field) == 200                 # capped (raw reason was 300+ chars)
+    assert "x" * 300 not in content                 # the long run was truncated

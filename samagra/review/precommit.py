@@ -92,31 +92,55 @@ def _cache_path() -> Path:
 
 
 def _load_cache() -> dict:
+    # A corrupt OR wrong-shaped cache must never wedge a commit: return {} unless
+    # it is a dict whose entries are themselves dicts (verdict records). A valid
+    # but non-dict JSON value (e.g. `[]`) would otherwise blow up at `.get()`.
     p = _cache_path()
-    if p.exists():
-        try:
-            return json.loads(p.read_text(encoding="utf-8"))
-        except Exception:  # noqa: BLE001 - a corrupt cache must never wedge a commit
-            return {}
-    return {}
+    if not p.exists():
+        return {}
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001 - unreadable/corrupt cache -> ignore it
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    return {k: v for k, v in data.items() if isinstance(v, dict)}
 
 
 def _save_cache(cache: dict) -> None:
-    # Prune to the most recent entries by timestamp to bound growth.
+    # Best-effort: persisting the cache is an optimization, never a gate. A write
+    # failure (unwritable state/review) must NOT convert a verdict or wedge a
+    # commit, so swallow IO errors here rather than letting them propagate.
     if len(cache) > _CACHE_CAP:
         keep = sorted(cache.items(), key=lambda kv: kv[1].get("ts", ""))[-_CACHE_CAP:]
         cache = dict(keep)
-    _cache_path().write_text(json.dumps(cache, indent=2), encoding="utf-8")
+    try:
+        _cache_path().write_text(json.dumps(cache, indent=2), encoding="utf-8")
+    except OSError as e:
+        print(f"[codex-precommit] warning: could not write review cache: {e}",
+              file=sys.stderr)
 
 
 def _now() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
+def _sanitize_reason(reason: str) -> str:
+    # Audit lines are single-line + bounded: collapse whitespace (no forged
+    # extra lines) and cap length (don't echo a pasted secret in full).
+    one_line = " ".join(str(reason).split())
+    return one_line[:200]
+
+
 def _audit_breakglass(diff_hash: str, reason: str) -> None:
-    line = f"{_now()}\t{diff_hash[:12]}\t{reason}\n"
-    with (_review_dir() / "breakglass.log").open("a", encoding="utf-8") as fh:
-        fh.write(line)
+    # Best-effort: a logging failure must not wedge a break-glass commit.
+    line = f"{_now()}\t{diff_hash[:12]}\t{_sanitize_reason(reason)}\n"
+    try:
+        with (_review_dir() / "breakglass.log").open("a", encoding="utf-8") as fh:
+            fh.write(line)
+    except OSError as e:
+        print(f"[codex-precommit] warning: could not write break-glass log: {e}",
+              file=sys.stderr)
 
 
 # -- verdict helpers -----------------------------------------------------
@@ -140,7 +164,24 @@ def _review_once(diff: str) -> list[dict]:
 
 
 def review_staged_diff() -> int:
-    """Return 0 to allow the commit, 1 to block it (confirmed CRITICAL only)."""
+    """Return 0 to allow the commit, 1 to block it (confirmed CRITICAL only).
+
+    Outer never-wedge guard (D5): ANY unexpected error in the local hook logic is
+    advisory — it warns and ALLOWS the commit (returns 0). Only the deliberate
+    confirmed-CRITICAL path returns 1. Real enforcement lives in CI.
+    """
+    try:
+        return _review_staged_diff_inner()
+    except Exception as e:  # noqa: BLE001 - the local hook must never wedge a commit
+        print("\n=== SAMAGRA pre-commit: review error (advisory) ===",
+              file=sys.stderr)
+        print(f"  unexpected error in the local hook: {e!r}", file=sys.stderr)
+        print("  Commit ALLOWED locally — enforcement is in CI / branch "
+              "protection.", file=sys.stderr)
+        return 0
+
+
+def _review_staged_diff_inner() -> int:
     diff = get_staged_diff()
     if not diff.strip():
         return 0  # nothing staged -> nothing to review
@@ -152,8 +193,8 @@ def review_staged_diff() -> int:
     if reason:
         _audit_breakglass(dhash, reason)
         print(f"\n=== SAMAGRA pre-commit: BREAK-GLASS (audited) ===\n"
-              f"  reason: {reason}\n  logged to state/review/breakglass.log",
-              file=sys.stderr)
+              f"  reason: {_sanitize_reason(reason)}\n"
+              f"  logged to state/review/breakglass.log", file=sys.stderr)
         return 0
 
     # Diff-hash cache: a previously-confirmed verdict is deterministic.

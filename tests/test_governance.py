@@ -101,6 +101,14 @@ def test_set_assignment_status_rejects_unknown(conn):
         store.set_assignment_status(conn, "a1", "bogus")
 
 
+def test_set_status_on_missing_assignment_raises_and_writes_no_event(conn):
+    # The ledger is durable audit history — a status change for a nonexistent
+    # assignment must raise and must NOT append an orphan event.
+    with pytest.raises(ValueError):
+        store.set_assignment_status(conn, "ghost", "running")
+    assert store.list_events(conn) == []
+
+
 def test_append_event_standalone(conn):
     store.append_event(conn, actor="system", verb="bridge_scan",
                        subsystem="munshi", subsystem_ref="munshi:3",

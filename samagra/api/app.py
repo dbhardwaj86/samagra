@@ -99,8 +99,8 @@ def api_assignments():
     # Reads the DURABLE governance DB (governance.db, D6) — separate from the
     # rebuildable catalog. init_tables is idempotent + safe to call per request.
     conn = gstore.connect()
-    gstore.init_tables(conn)
     try:
+        gstore.init_tables(conn)  # inside try: a failed init must still close the conn
         return {"assignments": gstore.list_assignments(conn),
                 "events": gstore.list_events(conn)}
     finally:

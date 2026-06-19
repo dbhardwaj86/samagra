@@ -114,10 +114,15 @@ def set_assignment_status(conn, assignment_id, status) -> None:
     if status not in ASSIGNMENT_STATUS:
         raise ValueError(f"invalid assignment status {status!r}")
     now = _now()
-    conn.execute(
+    cur = conn.execute(
         "UPDATE assignments SET status=?, updated_at=? WHERE id=?",
         (status, now, assignment_id),
     )
+    # Don't write a status event for an assignment that does not exist — this is
+    # the durable audit ledger; an orphan event is false history.
+    if cur.rowcount != 1:
+        conn.rollback()
+        raise ValueError(f"unknown assignment {assignment_id!r}")
     append_event(conn, actor="system", verb=f"status:{status}",
                  assignment_id=assignment_id)
     conn.commit()
