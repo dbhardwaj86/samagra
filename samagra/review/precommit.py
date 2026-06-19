@@ -108,16 +108,32 @@ def _load_cache() -> dict:
 
 
 def _save_cache(cache: dict) -> None:
-    # Best-effort: persisting the cache is an optimization, never a gate. A write
-    # failure (unwritable state/review) must NOT convert a verdict or wedge a
-    # commit, so swallow IO errors here rather than letting them propagate.
-    if len(cache) > _CACHE_CAP:
-        keep = sorted(cache.items(), key=lambda kv: kv[1].get("ts", ""))[-_CACHE_CAP:]
-        cache = dict(keep)
+    # FULLY best-effort: persisting the cache is an optimization, never a gate.
+    # Nothing here — pruning, the sort key, JSON serialization, or IO — may raise,
+    # because a confirmed-CRITICAL block calls this BEFORE `return 1`; an exception
+    # escaping here would be swallowed by the outer guard and silently downgrade
+    # the block to allow. The sort key is coerced with str() so a malformed entry
+    # (e.g. a non-string `ts`) can't poison the prune.
     try:
+        if len(cache) > _CACHE_CAP:
+            keep = sorted(cache.items(),
+                          key=lambda kv: str(kv[1].get("ts", "")))[-_CACHE_CAP:]
+            cache = dict(keep)
         _cache_path().write_text(json.dumps(cache, indent=2), encoding="utf-8")
-    except OSError as e:
+    except Exception as e:  # noqa: BLE001 - cache persistence must never flip a verdict
         print(f"[codex-precommit] warning: could not write review cache: {e}",
+              file=sys.stderr)
+
+
+def _remember(cache: dict, dhash: str, entry: dict) -> None:
+    # Persist a verdict, best-effort. Belt-and-suspenders around _save_cache: even
+    # if a future _save_cache regressed and raised, the verdict (esp. a confirmed
+    # block returning 1) must still stand, so this can never propagate.
+    try:
+        cache[dhash] = entry
+        _save_cache(cache)
+    except Exception as e:  # noqa: BLE001 - verdict persistence is never a gate
+        print(f"[codex-precommit] warning: could not persist verdict: {e}",
               file=sys.stderr)
 
 
@@ -226,8 +242,7 @@ def _review_staged_diff_inner() -> int:
     if not crits:
         if findings:
             _print_findings(findings, "advisory findings (non-blocking)")
-        cache[dhash] = {"verdict": "pass", "ts": _now()}
-        _save_cache(cache)
+        _remember(cache, dhash, {"verdict": "pass", "ts": _now()})
         return 0
 
     # CRITICAL in pass 1 -> require a confirming second pass (the "confirmed" in
@@ -242,17 +257,18 @@ def _review_staged_diff_inner() -> int:
 
     if _criticals(confirm):
         confirmed = crits + [c for c in _criticals(confirm) if c not in crits]
-        cache[dhash] = {"verdict": "block", "findings": confirmed, "ts": _now()}
-        _save_cache(cache)
+        # Decide + announce the block BEFORE persisting, so nothing about the
+        # cache can affect the return value.
         _print_findings(confirmed, "COMMIT BLOCKED (confirmed CRITICAL)")
         _print_breakglass_help()
+        _remember(cache, dhash, {"verdict": "block", "findings": confirmed,
+                                 "ts": _now()})
         return 1
 
     # Confirm pass disagreed -> single-pass false positive -> advisory.
     _print_findings(crits, "UNCONFIRMED CRITICAL (confirm pass disagreed) "
                            "— allowed")
-    cache[dhash] = {"verdict": "pass", "ts": _now()}
-    _save_cache(cache)
+    _remember(cache, dhash, {"verdict": "pass", "ts": _now()})
     return 0
 
 

@@ -9,6 +9,8 @@ fail-closed assertions.)
 """
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from samagra import config
@@ -167,3 +169,34 @@ def test_breakglass_reason_is_sanitized(monkeypatch):
     assert reason_field.startswith("line1 line2 ")  # whitespace collapsed to spaces
     assert len(reason_field) == 200                 # capped (raw reason was 300+ chars)
     assert "x" * 300 not in content                 # the long run was truncated
+
+
+def test_confirmed_block_survives_malformed_cache(monkeypatch):
+    # A dict-shaped cache with non-string `ts`, over the prune cap, previously made
+    # _save_cache's sort raise TypeError -> swallowed by the outer guard ->
+    # confirmed CRITICAL downgraded to allow. It must now still block (return 1).
+    review_dir = config.STATE_DIR / "review"
+    review_dir.mkdir(parents=True, exist_ok=True)
+    poisoned = {f"h{i}": {"verdict": "pass", "ts": []}
+                for i in range(precommit._CACHE_CAP + 5)}
+    (review_dir / "diff_cache.json").write_text(json.dumps(poisoned), encoding="utf-8")
+    crit = [{"severity": "CRITICAL", "file": "x.py", "line": 3, "issue": "rm -rf"}]
+    monkeypatch.setattr(precommit, "get_staged_diff", lambda: "diff --git a b")
+    monkeypatch.setattr(precommit, "dispatch_codex",
+                        _seq(_result(crit), _result(crit)))
+    assert precommit.review_staged_diff() == 1
+
+
+def test_confirmed_block_survives_save_cache_failure(monkeypatch):
+    # Defense in depth: even if cache persistence itself raises, a confirmed
+    # CRITICAL must still block — the verdict is never gated on the cache write.
+    crit = [{"severity": "CRITICAL", "file": "x.py", "line": 3, "issue": "rm -rf"}]
+    monkeypatch.setattr(precommit, "get_staged_diff", lambda: "diff --git a b")
+    monkeypatch.setattr(precommit, "dispatch_codex",
+                        _seq(_result(crit), _result(crit)))
+
+    def boom(*a, **k):
+        raise TypeError("prune blew up")
+
+    monkeypatch.setattr(precommit, "_save_cache", boom)
+    assert precommit.review_staged_diff() == 1
