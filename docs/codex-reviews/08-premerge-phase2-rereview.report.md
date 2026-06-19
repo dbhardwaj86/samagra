@@ -12,11 +12,11 @@ The targeted fixes mostly hold, but the D5 hook still has a confirmed-CRITICAL d
 
 **New Findings**
 
-- [HIGH] [samagra/review/precommit.py](C:/SandBox/claude_box/TeachingOS/samagra/review/precommit.py:114) - `_save_cache` prune exception can downgrade confirmed CRITICAL to allow.  
-  Evidence: with 257 dict cache entries and mixed JSON-valid `ts` types (`"2026"` and `[]`), a two-pass confirmed CRITICAL returned `0` via the outer guard: `TypeError("'<' not supported between instances of 'list' and 'str'")`.  
+- [HIGH] [samagra/review/precommit.py](C:/SandBox/claude_box/TeachingOS/samagra/review/precommit.py:114) - `_save_cache` prune exception can downgrade confirmed CRITICAL to allow.
+  Evidence: with 257 dict cache entries and mixed JSON-valid `ts` types (`"2026"` and `[]`), a two-pass confirmed CRITICAL returned `0` via the outer guard: `TypeError("'<' not supported between instances of 'list' and 'str'")`.
   Fix: make `_save_cache()` fully best-effort, including pruning and JSON serialization, or normalize the sort key with `str(...)` and catch broad exceptions inside `_save_cache()`. Add a regression asserting confirmed CRITICAL still returns `1` when `_save_cache` raises a non-`OSError`.
 
-- [LOW] Status docs still claim `85/85` after five tests were added.  
+- [LOW] Status docs still claim `85/85` after five tests were added.
   Static test count is now 90, but `STATUS.html`, `HANDOFF.md`, `SUMMARY.html`, and the plan still say 85/85. Update the canonical status artifacts after the next real suite run.
 
 **Merge Checklist**

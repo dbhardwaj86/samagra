@@ -3,21 +3,23 @@
 > **▶ STATUS:** The project is **SAMAGRA** (package `samagra`) — a company-structured agent org
 > folding in `mycontentdev` + `munshi`, with an advisory pre-commit Codex review and a CEO prompt-outbox.
 > **Phase 0 (rename), Track A (stabilize) and Phase 1 (read-only subsystem adapters) are merged to `main`
-> and pushed to `origin/main`.** **Phase 2 (governance) is now BUILT TDD on `main` (suite 63 → 92 green)**,
+> and pushed to `origin/main`.** **Phase 2 (governance) is now BUILT TDD on `main` (suite 63 → 98 green)**,
 > reconciled to the runbook: **D6** (governance state lives in its own durable `governance.db`, separate from
 > the rebuildable catalog `samagra.db`) and **D5** (the Codex pre-commit hook is **advisory-local** —
 > confirmed-CRITICAL only, diff-hash cached, audited break-glass, never wedges; real enforcement = CI). The
 > plan's Phase-2 code was stale (it self-flagged `SUPERSEDED by D5/D9`) and was reconciled before building.
 > The live plan is under `docs/superpowers/` (original brief: [`SAMAGRA-HANDOFF.md`](SAMAGRA-HANDOFF.md)).
-> **Owner-gated & pending:** pre-merge Codex review of the Phase-2 diff → then hook activation
-> (`git config core.hooksPath .githooks`), the three agent worktrees, and push to origin. **Then: Phase 3 (active loop).**
+> **Pre-merge review: APPROVE** (Codex gpt-5.5/xhigh, 6 rounds + a CEO adversarial Workflow audit — see
+> `docs/codex-reviews/07–13` + `12-workflow-invariant-audit.md`; all findings fixed TDD).
+> **Owner-gated & pending:** hook activation (`git config core.hooksPath .githooks`), the three agent
+> worktrees, and push to origin. **Then: Phase 3 (active loop).**
 
 **Repo:** github.com/dbhardwaj86/samagra · branch `main` · local-first Python+FastAPI.
 **State:** Spine + portal + thin/thick exporter + semi-autonomous loop + two read-only subsystem adapters
 (mycontentdev seeds, munshi `library()`) reflecting into the catalog, **+ Phase-2 governance**: durable
 `governance.db` store (assignments / events ledger / review overlay), `GET /api/assignments` + the
 Assignments portal tab, an advisory Codex pre-commit gate (`samagra/review/`), the committed
-`.githooks/pre-commit` shim, and per-agent board files (`board/{deepak,khanak,codex}/`). **92/92 tests pass.**
+`.githooks/pre-commit` shim, and per-agent board files (`board/{deepak,khanak,codex}/`). **98/98 tests pass.**
 
 ## Run it
 
@@ -64,7 +66,7 @@ QX `C:\SandBox\gpt_box\gpt-extract-ques` · textbook `C:\SandBox\gpt_box\physics
 ## Open / needs user consent
 
 **Phase-2 owner-gated (do in order — runbook §1):**
-1. **Pre-merge Codex review** — DONE (gpt-5.5, xhigh): 2 rounds, both REQUEST-CHANGES, all findings fixed TDD (HIGH never-wedge + the confirmed-block downgrade regression + 2 MEDIUM + nits); a 3rd confirming pass is queued. Reports: `docs/codex-reviews/07-*`, `08-*`. Chairman gates the push once it's APPROVE.
+1. **Pre-merge Codex review** — **DONE → APPROVE** (gpt-5.5, xhigh): 6 rounds + a CEO adversarial Workflow audit. Caught a never-wedge HIGH, a recurring "outer guard downgrades a confirmed-CRITICAL block" class (5 ever-deeper instances: cache prune, malformed cached findings, broken-stderr warnings, pathological exception str/repr, and a finding's raising `__eq__` on the dedup), + 2 MEDIUM + nits — all fixed TDD (+11 invariant regressions, suite 98). R6 APPROVE-WITH-NITS (nit fixed). Reports `docs/codex-reviews/07–13` + `12-workflow-invariant-audit.md`. Chairman is clear to push.
 2. **Activate the hook** — `git config core.hooksPath .githooks` (applies to repo + every worktree). Needs `codex` on PATH or `CODEX_BIN`.
 3. **Create worktrees** — `git worktree add ../samagra-deepak -b agent/deepak` (and `-khanak`, `-codex`). Board files already committed.
 4. **Push** — push `main` to `origin` after the review passes.
