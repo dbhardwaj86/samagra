@@ -52,7 +52,13 @@ QUESTIONDB_URL = os.environ.get(
 )
 
 # --- SAMAGRA-owned data (all gitignored) ---
+# DATA_DB is the REBUILDABLE catalog (FTS5 index over the subsystems); it may be
+# deleted and rebuilt at will. GOVERNANCE_DB is the DURABLE governance store
+# (assignments / events ledger / review overlay) and must NEVER be deleted as a
+# "catalog reset" — runbook D6 splits the two so irreplaceable governance state
+# never shares a file with the throwaway index.
 DATA_DB = REPO_ROOT / "samagra.db"
+GOVERNANCE_DB = REPO_ROOT / "governance.db"
 STATE_DIR = REPO_ROOT / "state"
 BUILD_DIR = REPO_ROOT / "build"
 EXPORT_DIR = BUILD_DIR / "lectures"
