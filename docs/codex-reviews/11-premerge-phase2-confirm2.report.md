@@ -1,0 +1,9 @@
+**Verdict:** `REQUEST-CHANGES`. The R4 fix closes broken stderr, but not all exception-derived diagnostics: callers still interpolate exceptions before entering `_warn()`. That lets a pathological `Exception.__str__` downgrade a fresh confirmed block to `0`, and a pathological `Exception.__repr__` can make the outer advisory guard raise. Chairman should not push `main` until this is fixed.
+
+**Invariant check:** Counterexample found for item 1. Repro: monkeypatch `_save_cache` to raise an `Exception` subclass whose `__str__` raises; fresh two-pass CRITICAL prints the block banner, then [precommit.py](/C:/SandBox/claude_box/TeachingOS/samagra/review/precommit.py:145) formats `{e}` before `_warn()` and returns `0` via the outer guard. Counterexample found for item 2 as well: if the outer guard catches an exception whose `__repr__` raises, [precommit.py](/C:/SandBox/claude_box/TeachingOS/samagra/review/precommit.py:220) raises instead of returning `0`.
+
+**New findings:** CRITICAL: `_warn()` is non-raising only after its argument is constructed. Fix by changing diagnostic calls to avoid f-stringing caught exceptions outside the guarded print, e.g. make `_warn(*parts)` and call `_warn("... failed:", e)`, or add a safe exception formatter and use it at lines 134, 145, 166, 178, 220, 261, 280. Add regressions for confirmed block + bad `__str__`, and outer guard + bad `__repr__`.
+
+D6 split, `/api/assignments` connection close, orphan-event guard, and break-glass sanitization still look correct from source inspection. I could not confirm `95/95` locally: `python -m pytest -q -p no:cacheprovider` failed before collection because this sandbox has no usable temporary directory for pytest.
+
+**Merge checklist:** not clear to push. Must fix exception formatting around `_warn()` and add the two adversarial regressions above.
