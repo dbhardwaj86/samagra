@@ -294,9 +294,15 @@ def _review_staged_diff_inner() -> int:
         return 0
 
     if _criticals(confirm):
-        confirmed = crits + [c for c in _criticals(confirm) if c not in crits]
-        # Block is decided here; every side-effect below is best-effort so the
-        # return value can never be downgraded by a failing print or cache write.
+        # Block is DECIDED here. Every statement below must be non-throwing so the
+        # return value can't be downgraded. The dedup compares findings via `in`
+        # (which calls __eq__), and findings may be pathological dict subclasses
+        # with a raising __eq__/__hash__ — so guard it and fall back to the pass-1
+        # criticals on any failure. (Prints/cache below are already _emit/best-effort.)
+        try:
+            confirmed = crits + [c for c in _criticals(confirm) if c not in crits]
+        except Exception:  # noqa: BLE001 - a pathological finding must not downgrade a decided block
+            confirmed = crits
         _emit(lambda: _print_findings(confirmed, "COMMIT BLOCKED (confirmed CRITICAL)"))
         _emit(_print_breakglass_help)
         _remember(cache, dhash, {"verdict": "block", "findings": confirmed,

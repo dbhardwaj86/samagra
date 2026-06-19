@@ -289,3 +289,27 @@ def test_outer_guard_survives_exception_with_bad_repr(monkeypatch):
     monkeypatch.setattr(precommit, "_load_cache", boom)
     monkeypatch.setattr(precommit, "dispatch_codex", _no_call)
     assert precommit.review_staged_diff() == 0
+
+
+class _RaisingEqDict(dict):
+    """A finding that passes `isinstance(_, dict)` but raises when compared —
+    the dunder the side-effect guards don't touch (it's a comparison, not a print)."""
+
+    def __eq__(self, other):
+        raise RuntimeError("boom in __eq__")
+
+    def __hash__(self):
+        return 0
+
+
+def test_confirmed_block_survives_pathological_finding_eq(monkeypatch):
+    # A confirm-pass CRITICAL that is a dict subclass with a raising __eq__ passes
+    # _criticals' isinstance filter, so the block is DECIDED at `if _criticals(confirm)`.
+    # The dedup `c not in crits` then invokes __eq__ and would raise -> outer guard
+    # -> downgrade. The guarded dedup must keep the verdict at return 1.
+    crit_plain = [{"severity": "CRITICAL", "file": "x.py", "line": 3, "issue": "rm -rf"}]
+    bad = _RaisingEqDict(severity="CRITICAL", file="x.py", line=3, issue="rm -rf")
+    monkeypatch.setattr(precommit, "get_staged_diff", lambda: "diff --git a b")
+    monkeypatch.setattr(precommit, "dispatch_codex",
+                        _seq(_result(crit_plain), _result([bad])))
+    assert precommit.review_staged_diff() == 1
