@@ -15,7 +15,7 @@ import subprocess
 import time
 from contextlib import nullcontext
 
-from . import catalog, config, notify, state
+from . import catalog, clients, config, notify, state
 from . import lock as lockmod
 from .lock import LockBusy, file_lock, is_busy
 
@@ -66,6 +66,43 @@ def _reflect_textbook(dry: bool, events: list) -> dict:
         events.append(("gate-ready",
                        f'textbook: "approve" gate ready — {c["drafted"]}/{c["total"]} '
                        "chapters drafted+enriched, awaiting approval."))
+    return c
+
+
+def _mcd_status_counts(client) -> dict:
+    rows = client.query(
+        "SELECT id,type,title,status,created_at,updated_at "
+        "FROM seeds WHERE status != 'archived'"
+    )
+    total = len(rows)
+    statuses = [r.get("status") for r in rows]
+    return {
+        "total": total,
+        "draft_ready": sum(1 for s in statuses
+                           if s in ("draft_ready", "changes_requested")),
+        "done": sum(1 for s in statuses if s == "done"),
+    }
+
+
+def _reflect_mycontentdev(dry: bool, events: list, client=None) -> dict:
+    client = client or clients.McdClient()
+    if not client.available():
+        return {"skipped": "no mcd creds"}
+    c = _mcd_status_counts(client)
+    st = state.load("mycontentdev")
+    # All seeds done -> publish phase done.
+    if c["total"] and c["done"] >= c["total"] and st["phases"]["publish"]["status"] != "done":
+        if not dry:
+            state.set_phase("mycontentdev", "publish", "done",
+                            artifacts=[f'{c["done"]}/{c["total"]} done'])
+    # Any draft_ready/changes_requested -> review gate ready.
+    st = state.load("mycontentdev")
+    if c["draft_ready"] and st["phases"]["review"]["status"] in ("pending",):
+        if not dry:
+            state.set_phase("mycontentdev", "review", "awaiting_gate")
+        events.append(("gate-ready",
+                       f'mycontentdev: "review" gate ready — {c["draft_ready"]} '
+                       "seed(s) draft_ready, awaiting review."))
     return c
 
 
