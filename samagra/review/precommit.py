@@ -1,0 +1,232 @@
+"""Advisory pre-commit Codex review (runbook D5 — NOT fail-closed).
+
+Logic: get the staged diff, ask Codex to review it against a findings schema, and
+BLOCK the commit (exit 1) ONLY when a CRITICAL finding is *confirmed* — a second
+Codex pass over the same diff independently agrees. Everything else allows
+(exit 0). The verdict is cached by staged-diff hash so repeated commit attempts
+of the identical diff are deterministic and do not re-prompt Codex.
+
+D5 contract (supersedes the retired fail-closed / no-escape-hatch design):
+  * Advisory-local: a Codex that errors / times out / can't be found does NOT
+    wedge commits — it warns and allows. Real enforcement is CI / branch
+    protection.
+  * Confirmed-CRITICAL only: a lone (unconfirmed) CRITICAL is treated as
+    advisory, not blocking, to absorb single-pass false positives.
+  * Audited break-glass: SAMAGRA_REVIEW_BREAKGLASS="<reason>" allows the commit
+    and appends an audited line to state/review/breakglass.log.
+  * Empty diff -> allow without calling Codex. HIGH/MED/LOW print but never block.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+from .. import config
+from .codex_dispatch import dispatch_codex
+
+FINDINGS_SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["findings"],
+    "properties": {
+        "findings": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["severity", "file", "line", "issue"],
+                "properties": {
+                    "severity": {"enum": ["CRITICAL", "HIGH", "MED", "LOW"]},
+                    "file": {"type": "string"},
+                    "line": {"type": "integer"},
+                    "issue": {"type": "string"},
+                },
+            },
+        }
+    },
+}
+
+_PROMPT = """You are SAMAGRA's pre-commit code reviewer (Chief Architect / Codex).
+Review the following STAGED git diff. Report only real defects in the changed
+lines. Use severity CRITICAL only for: secret/credential leaks, destructive
+shell/SQL (rm -rf, DROP/DELETE without WHERE), command/SQL injection, or code
+that would corrupt data or break the build. Everything else is HIGH/MED/LOW.
+Return JSON matching the schema: {{"findings": [{{"severity","file","line","issue"}}]}}.
+Empty findings means the diff is safe to commit.
+
+=== STAGED DIFF ===
+{diff}
+=== END DIFF ===
+"""
+
+_CACHE_CAP = 256  # keep the most recent N verdicts; prune older on write.
+
+
+# -- git + hashing -------------------------------------------------------
+def get_staged_diff() -> str:
+    proc = subprocess.run(
+        ["git", "diff", "--cached", "--unified=3"],
+        capture_output=True, text=True, encoding="utf-8",
+    )
+    return proc.stdout or ""
+
+
+def _diff_hash(diff: str) -> str:
+    return hashlib.sha256(diff.encode("utf-8")).hexdigest()
+
+
+# -- durable side files (state/ is gitignored) ---------------------------
+def _review_dir() -> Path:
+    d = config.STATE_DIR / "review"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _cache_path() -> Path:
+    return _review_dir() / "diff_cache.json"
+
+
+def _load_cache() -> dict:
+    p = _cache_path()
+    if p.exists():
+        try:
+            return json.loads(p.read_text(encoding="utf-8"))
+        except Exception:  # noqa: BLE001 - a corrupt cache must never wedge a commit
+            return {}
+    return {}
+
+
+def _save_cache(cache: dict) -> None:
+    # Prune to the most recent entries by timestamp to bound growth.
+    if len(cache) > _CACHE_CAP:
+        keep = sorted(cache.items(), key=lambda kv: kv[1].get("ts", ""))[-_CACHE_CAP:]
+        cache = dict(keep)
+    _cache_path().write_text(json.dumps(cache, indent=2), encoding="utf-8")
+
+
+def _now() -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+
+def _audit_breakglass(diff_hash: str, reason: str) -> None:
+    line = f"{_now()}\t{diff_hash[:12]}\t{reason}\n"
+    with (_review_dir() / "breakglass.log").open("a", encoding="utf-8") as fh:
+        fh.write(line)
+
+
+# -- verdict helpers -----------------------------------------------------
+def _criticals(findings: list[dict]) -> list[dict]:
+    return [f for f in findings if f.get("severity") == "CRITICAL"]
+
+
+def _print_findings(findings: list[dict], header: str) -> None:
+    print(f"\n=== SAMAGRA pre-commit: {header} ===", file=sys.stderr)
+    for f in findings:
+        print(f"  [{f.get('severity')}] {f.get('file')}:{f.get('line')} "
+              f"{f.get('issue')}", file=sys.stderr)
+    if not findings:
+        print("  (no findings)", file=sys.stderr)
+
+
+def _review_once(diff: str) -> list[dict]:
+    result = dispatch_codex(_PROMPT.format(diff=diff), schema=FINDINGS_SCHEMA,
+                            timeout_s=90, max_attempts=2)
+    return result.parsed.get("findings") or []
+
+
+def review_staged_diff() -> int:
+    """Return 0 to allow the commit, 1 to block it (confirmed CRITICAL only)."""
+    diff = get_staged_diff()
+    if not diff.strip():
+        return 0  # nothing staged -> nothing to review
+
+    dhash = _diff_hash(diff)
+
+    # Audited break-glass: allow + log, overriding even a confirmed-CRITICAL.
+    reason = os.environ.get("SAMAGRA_REVIEW_BREAKGLASS")
+    if reason:
+        _audit_breakglass(dhash, reason)
+        print(f"\n=== SAMAGRA pre-commit: BREAK-GLASS (audited) ===\n"
+              f"  reason: {reason}\n  logged to state/review/breakglass.log",
+              file=sys.stderr)
+        return 0
+
+    # Diff-hash cache: a previously-confirmed verdict is deterministic.
+    cache = _load_cache()
+    cached = cache.get(dhash)
+    if cached:
+        if cached.get("verdict") == "block":
+            _print_findings(cached.get("findings", []),
+                            "COMMIT BLOCKED (cached confirmed-CRITICAL)")
+            _print_breakglass_help()
+            return 1
+        return 0
+
+    # Cache miss -> run the review. A Codex that cannot run is ADVISORY (D5):
+    # warn and allow; do NOT cache a transient failure, do NOT wedge.
+    try:
+        findings = _review_once(diff)
+    except Exception as e:  # noqa: BLE001 - CodexError or any failure is advisory
+        print("\n=== SAMAGRA pre-commit: review skipped (advisory) ===",
+              file=sys.stderr)
+        print(f"  Codex could not run: {e}", file=sys.stderr)
+        print("  Commit ALLOWED locally — enforcement is in CI / branch "
+              "protection.", file=sys.stderr)
+        print("  (Restore `codex` on PATH or set CODEX_BIN to re-enable the "
+              "local gate.)", file=sys.stderr)
+        return 0
+
+    crits = _criticals(findings)
+    if not crits:
+        if findings:
+            _print_findings(findings, "advisory findings (non-blocking)")
+        cache[dhash] = {"verdict": "pass", "ts": _now()}
+        _save_cache(cache)
+        return 0
+
+    # CRITICAL in pass 1 -> require a confirming second pass (the "confirmed" in
+    # confirmed-CRITICAL). If confirm errors or disagrees, treat as advisory.
+    try:
+        confirm = _review_once(diff)
+    except Exception as e:  # noqa: BLE001 - confirm failure -> advisory, not block
+        _print_findings(crits, "UNCONFIRMED CRITICAL (confirm pass errored) "
+                               "— allowed")
+        print(f"  confirm pass could not run: {e}", file=sys.stderr)
+        return 0
+
+    if _criticals(confirm):
+        confirmed = crits + [c for c in _criticals(confirm) if c not in crits]
+        cache[dhash] = {"verdict": "block", "findings": confirmed, "ts": _now()}
+        _save_cache(cache)
+        _print_findings(confirmed, "COMMIT BLOCKED (confirmed CRITICAL)")
+        _print_breakglass_help()
+        return 1
+
+    # Confirm pass disagreed -> single-pass false positive -> advisory.
+    _print_findings(crits, "UNCONFIRMED CRITICAL (confirm pass disagreed) "
+                           "— allowed")
+    cache[dhash] = {"verdict": "pass", "ts": _now()}
+    _save_cache(cache)
+    return 0
+
+
+def _print_breakglass_help() -> None:
+    print("  Fix the issue and re-commit. Emergency override (audited):",
+          file=sys.stderr)
+    print('    SAMAGRA_REVIEW_BREAKGLASS="<reason>" git commit ...',
+          file=sys.stderr)
+    print("  Inspect what would be reviewed: git diff --cached --unified=3",
+          file=sys.stderr)
+
+
+def main() -> None:
+    sys.exit(review_staged_diff())
+
+
+if __name__ == "__main__":
+    main()

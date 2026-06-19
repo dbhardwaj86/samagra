@@ -96,6 +96,12 @@ def cmd_export(args) -> None:
     lex.run(args.chapter, args.variant)
 
 
+def cmd_review_staged(args) -> None:
+    from .review.precommit import review_staged_diff
+
+    sys.exit(review_staged_diff())
+
+
 def cmd_unlock(args) -> None:
     """Manually clear SAMAGRA's OWN locks left behind by a crashed run.
 
@@ -161,6 +167,11 @@ def main() -> None:
     sub.add_parser("unlock",
                    help="clear SAMAGRA's own scheduler/state locks (crashed run)"
                    ).set_defaults(func=cmd_unlock)
+
+    sub.add_parser(
+        "review-staged",
+        help="advisory Codex review over the staged diff (0=allow, 1=confirmed-CRITICAL)",
+    ).set_defaults(func=cmd_review_staged)
 
     args = p.parse_args()
     args.func(args)
