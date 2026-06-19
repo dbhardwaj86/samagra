@@ -60,7 +60,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   <h1>SAMAGRA</h1><span class="sub">Phase 1 merged to main (63/63) · adversarial pre-merge review · Phase 2 next</span>
   <nav>
     <a href="#overview">Overview</a><a href="#phases">Phases</a>
-    <a href="#samagra">SAMAGRA</a><a href="#arch">Architecture</a>
+    <a href="#samagra">SAMAGRA</a><a href="#arch">Architecture</a><a href="#org">Org</a>
     <a href="#decisions">Decisions</a><a href="#next">Next</a>
   </nav>
   <button id="theme">◐</button>
@@ -75,6 +75,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   <a href="#arch">Architecture</a>
   <a href="#coverage">Source coverage</a>
   <a href="#workers">Worker routing</a>
+  <a href="#org">Org chart</a>
   <a href="#tests">Tests</a>
   <a href="#decisions">Decisions</a>
   <a href="#artifacts">Artifacts</a>
@@ -154,7 +155,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   <div class="grid">
     <div class="card"><div class="n">0 <span class="badge ok">done</span></div><div class="l">Rename to <code>samagra</code> (repo + package); PR #1 merged</div></div>
     <div class="card"><div class="n">1 <span class="badge ok">done</span></div><div class="l">Read-only adapters — mycontentdev + munshi (<code>library()</code>); reflect state. Built TDD, adversarial pre-merge review (MUN-01 fixed), merged to <code>main</code>. 63/63.</div></div>
-    <div class="card"><div class="n">2 <span class="badge todo">build next</span></div><div class="l">Governance — <code>samagra.db</code> store (assignments/events/review overlay), Assignments tab, Codex pre-commit (advisory-local + enforced-CI), agent worktrees, org SVG. <em>+ carry-in: refresh per-adapter isolation + stale visibility (F1/F4).</em></div></div>
+    <div class="card"><div class="n">2 <span class="badge todo">build next</span></div><div class="l">Governance — durable <code>governance.db</code> store (assignments/events/review overlay, D6), Assignments tab, Codex pre-commit (advisory-local + enforced-CI), agent worktrees, org SVG. <em>+ carry-in: refresh per-adapter isolation + stale visibility (F1/F4).</em></div></div>
     <div class="card"><div class="n">3 <span class="badge todo">planned</span></div><div class="l">Active loop — munshi → proposed seed (w/ pointers) → board approve → capture API</div></div>
   </div>
   <p>Governance principle: only the three board agents — <strong>Claude-Deepak (CEO)</strong>,
@@ -221,6 +222,105 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     <tr><td>Hermes</td><td>Chief of Staff (Ops &amp; Comms)</td><td>Cron + phone/Telegram notify + kanban</td></tr>
   </table>
 
+  <h2 id="org">Org chart</h2>
+  <p>SAMAGRA as a company: a three-agent board with review/approval authority, a
+  worker fleet that drafts (never self-approves), and the data/capture departments.</p>
+  <svg id="org-chart" viewBox="0 0 920 540" width="100%"
+       xmlns="http://www.w3.org/2000/svg" font-family="Inter, system-ui, sans-serif"
+       role="img" aria-label="SAMAGRA org chart">
+    <style>
+      #org-chart .box{rx:10;ry:10;stroke:#e3e3e8;stroke-width:1.5;fill:#fafafb}
+      #org-chart .boss{fill:#4f46e5;stroke:#4338ca}
+      #org-chart .board{fill:#eef0ff;stroke:#c7ccff}
+      #org-chart .worker{fill:#f4f6fb;stroke:#d7dce8}
+      #org-chart .dept{fill:#f7f7f5;stroke:#e6e6e0}
+      #org-chart .t{font-size:13px;font-weight:600;fill:#1c1c22}
+      #org-chart .tw{font-size:13px;font-weight:600;fill:#ffffff}
+      #org-chart .s{font-size:11px;fill:#6b6b76}
+      #org-chart .sw{font-size:11px;fill:#dfe1ff}
+      #org-chart .lbl{font-size:11px;font-weight:600;fill:#4f46e5;letter-spacing:.06em}
+      #org-chart line{stroke:#c7ccd6;stroke-width:1.5}
+    </style>
+
+    <!-- connectors: BOSS -> board -->
+    <line x1="460" y1="78" x2="460" y2="104"/>
+    <line x1="180" y1="118" x2="740" y2="118"/>
+    <line x1="180" y1="118" x2="180" y2="138"/>
+    <line x1="460" y1="118" x2="460" y2="138"/>
+    <line x1="740" y1="118" x2="740" y2="138"/>
+    <!-- board -> workers -->
+    <line x1="460" y1="210" x2="460" y2="240"/>
+    <line x1="160" y1="254" x2="760" y2="254"/>
+    <line x1="160" y1="254" x2="160" y2="274"/>
+    <line x1="460" y1="254" x2="460" y2="274"/>
+    <line x1="760" y1="254" x2="760" y2="274"/>
+    <!-- workers -> departments -->
+    <line x1="460" y1="346" x2="460" y2="378"/>
+
+    <!-- BOSS -->
+    <text class="lbl" x="460" y="28" text-anchor="middle">BOARD</text>
+    <rect class="box boss" x="360" y="40" width="200" height="40"/>
+    <text class="tw" x="460" y="58" text-anchor="middle">Deepak — the BOSS</text>
+    <text class="sw" x="460" y="73" text-anchor="middle">Founder &amp; Chairman · final publish gate</text>
+
+    <!-- board agents -->
+    <rect class="box board" x="80" y="138" width="200" height="58"/>
+    <text class="t" x="180" y="162" text-anchor="middle">Claude-Deepak</text>
+    <text class="s" x="180" y="178" text-anchor="middle">CEO · orchestrator,</text>
+    <text class="s" x="180" y="191" text-anchor="middle">outbox, gates, the loop</text>
+
+    <rect class="box board" x="360" y="138" width="200" height="58"/>
+    <text class="t" x="460" y="162" text-anchor="middle">Claude-Khanak</text>
+    <text class="s" x="460" y="178" text-anchor="middle">COO / CCO · production,</text>
+    <text class="s" x="460" y="191" text-anchor="middle">QA, enrichment fan-out</text>
+
+    <rect class="box board" x="640" y="138" width="200" height="58"/>
+    <text class="t" x="740" y="162" text-anchor="middle">Codex</text>
+    <text class="s" x="740" y="178" text-anchor="middle">Chief Architect ·</text>
+    <text class="s" x="740" y="191" text-anchor="middle">advisory pre-commit review</text>
+
+    <!-- workers -->
+    <text class="lbl" x="460" y="232" text-anchor="middle">WORKERS — drafts only, never self-approve</text>
+    <rect class="box worker" x="60" y="274" width="200" height="58"/>
+    <text class="t" x="160" y="298" text-anchor="middle">Gemini + NotebookLM</text>
+    <text class="s" x="160" y="316" text-anchor="middle">Director, Research &amp; Media</text>
+
+    <rect class="box worker" x="360" y="274" width="200" height="58"/>
+    <text class="t" x="460" y="298" text-anchor="middle">Grok</text>
+    <text class="s" x="460" y="316" text-anchor="middle">Director, Realtime Intel &amp; Imagery</text>
+
+    <rect class="box worker" x="660" y="274" width="200" height="58"/>
+    <text class="t" x="760" y="298" text-anchor="middle">Hermes</text>
+    <text class="s" x="760" y="316" text-anchor="middle">Chief of Staff (Ops &amp; Comms)</text>
+
+    <!-- departments -->
+    <text class="lbl" x="460" y="370" text-anchor="middle">DEPARTMENTS — data / capture surfaces</text>
+    <rect class="box dept" x="40" y="392" width="120" height="40"/>
+    <text class="t" x="100" y="412" text-anchor="middle">munshi</text>
+    <text class="s" x="100" y="426" text-anchor="middle">Front Desk</text>
+    <rect class="box dept" x="170" y="392" width="120" height="40"/>
+    <text class="t" x="230" y="412" text-anchor="middle">mycontentdev</text>
+    <text class="s" x="230" y="426" text-anchor="middle">Editorial</text>
+    <rect class="box dept" x="300" y="392" width="120" height="40"/>
+    <text class="t" x="360" y="412" text-anchor="middle">QX</text>
+    <text class="s" x="360" y="426" text-anchor="middle">Question Bank</text>
+    <rect class="box dept" x="430" y="392" width="120" height="40"/>
+    <text class="t" x="490" y="412" text-anchor="middle">physics-textbook</text>
+    <text class="s" x="490" y="426" text-anchor="middle">Lectures</text>
+    <rect class="box dept" x="560" y="392" width="120" height="40"/>
+    <text class="t" x="620" y="412" text-anchor="middle">booklets</text>
+    <text class="s" x="620" y="426" text-anchor="middle">Print / Proofing</text>
+    <rect class="box dept" x="690" y="392" width="100" height="40"/>
+    <text class="t" x="740" y="412" text-anchor="middle">INSP</text>
+    <text class="s" x="740" y="426" text-anchor="middle">Olympiad</text>
+    <rect class="box dept" x="40" y="442" width="120" height="40"/>
+    <text class="t" x="100" y="462" text-anchor="middle">pratyaksh</text>
+    <text class="s" x="100" y="476" text-anchor="middle">Sims · read-only</text>
+    <rect class="box dept" x="170" y="442" width="120" height="40"/>
+    <text class="t" x="230" y="462" text-anchor="middle">GN-OCR</text>
+    <text class="s" x="230" y="476" text-anchor="middle">Handwriting</text>
+  </svg>
+
   <h2 id="tests">Tests</h2>
   <p><span class="badge ok">63 / 63 passing</span> (last run 2026-06-19) — the 34-test Track A baseline
   (spine + lectures + scheduler; harness isolation, atomic state writes, gate-prereq enforcement +
@@ -230,8 +330,8 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   URL/header/cookie shape, never-log-secret, hermetic), <code>test_subsystem_adapters.py</code> (12 —
   <code>Artifact</code> mapping, per-kind munshi titles vs the live schema, dismissed-skip, registration),
   and <code>test_reflect_mycontentdev.py</code> (8 — pipeline entry + reflector status mapping, gate branches,
-  dry-run). The suite is isolated from the real <code>samagra.db</code> (autouse <code>conftest.py</code>);
-  every subsystem HTTP client is MOCKED — no live-prod calls in CI.</p>
+  dry-run). The suite is isolated from the real <code>samagra.db</code> and <code>governance.db</code>
+  (autouse <code>conftest.py</code>); every subsystem HTTP client is MOCKED — no live-prod calls in CI.</p>
 
   <h2 id="decisions">Recent decisions</h2>
   <div class="log"><div class="d">2026-06-19 · Phase 1 built + adversarial pre-merge review → merged to main</div>
@@ -292,7 +392,8 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     <tr><td><code>samagra/clients/{mcd_client,munshi_client}.py</code></td><td>Phase 1 — read-only subsystem HTTP clients (secret-safe)</td></tr>
     <tr><td><code>samagra/adapters/{mcd,munshi}.py</code> + 3 test suites</td><td>Phase 1 — subsystem adapters + <code>mycontentdev</code> pipeline + <code>_reflect_mycontentdev</code> (TDD, HTTP mocked)</td></tr>
     <tr><td><code>samagra/</code></td><td>package — adapters, clients, catalog, state, scheduler, api, portal, lectures</td></tr>
-    <tr><td><code>samagra.db</code></td><td>unified catalog (generated, gitignored)</td></tr>
+    <tr><td><code>samagra.db</code></td><td>unified catalog — rebuildable FTS5 index (generated, gitignored)</td></tr>
+    <tr><td><code>governance.db</code></td><td>Phase 2 — durable governance store: assignments / events / review overlay (D6; schema_version + backup; gitignored)</td></tr>
     <tr><td><code>build/lectures/&lt;slug&gt;/</code></td><td>exported thin/thick HTML + DOCX</td></tr>
     <tr><td><code>state/*.orchestrator_state.json</code></td><td>pipeline state + tracker.txt + notifications.log</td></tr>
   </table>
@@ -301,8 +402,8 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   <p>Phase 0 (rename), the vision fold (D9–D12), Track A (stabilize, S-01–S-09) and now <strong>Phase 1
   (subsystem adapters)</strong> are all <strong>merged to <code>main</code> and pushed to <code>origin/main</code></strong>
   (in sync). Suite 63/63. The next
-  build is <strong>Phase 2 — governance</strong>: the <code>samagra.db</code> store (assignments / events /
-  review overlay), the Assignments portal tab, the advisory-local Codex pre-commit hook, per-agent worktrees,
+  build is <strong>Phase 2 — governance</strong>: the durable <code>governance.db</code> store (assignments / events /
+  review overlay, D6), the Assignments portal tab, the advisory-local Codex pre-commit hook, per-agent worktrees,
   and the org-chart SVG — landing the carried-in refresh hardening (F1 per-adapter isolation + F4 stale
   visibility) alongside its <code>stale</code> column. A few slice-1 creds items remain to switch on the
   unattended parts:</p>
