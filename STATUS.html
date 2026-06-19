@@ -57,7 +57,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
 </head>
 <body>
 <header class="top">
-  <h1>SAMAGRA</h1><span class="sub">Phase 2 (governance) built — 98/98 green · reconciled to D5/D6 · pre-merge review APPROVE · owner push + activation pending</span>
+  <h1>SAMAGRA</h1><span class="sub">Phase 2 (governance) SHIPPED — 98/98 green · review APPROVE · pushed to origin/main · hook active · worktrees created · next: Phase 3</span>
   <nav>
     <a href="#overview">Overview</a><a href="#phases">Phases</a>
     <a href="#samagra">SAMAGRA</a><a href="#arch">Architecture</a><a href="#org">Org</a>
@@ -155,7 +155,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   <div class="grid">
     <div class="card"><div class="n">0 <span class="badge ok">done</span></div><div class="l">Rename to <code>samagra</code> (repo + package); PR #1 merged</div></div>
     <div class="card"><div class="n">1 <span class="badge ok">done</span></div><div class="l">Read-only adapters — mycontentdev + munshi (<code>library()</code>); reflect state. Built TDD, adversarial pre-merge review (MUN-01 fixed), merged to <code>main</code>. 63/63.</div></div>
-    <div class="card"><div class="n">2 <span class="badge ok">built · 98/98</span></div><div class="l">Governance — durable <code>governance.db</code> store (assignments/events/review overlay, D6), Assignments tab, advisory-local Codex pre-commit (confirmed-CRITICAL + diff-hash cache + break-glass, D5), org SVG. Built TDD on <code>main</code>; pre-merge review <strong>APPROVE</strong>; <em>pending owner-gated hook install &amp; worktrees + push.</em></div></div>
+    <div class="card"><div class="n">2 <span class="badge ok">built · 98/98</span></div><div class="l">Governance — durable <code>governance.db</code> store (assignments/events/review overlay, D6), Assignments tab, advisory-local Codex pre-commit (confirmed-CRITICAL + diff-hash cache + break-glass, D5), org SVG. Built TDD on <code>main</code>; pre-merge review <strong>APPROVE</strong>; <strong>shipped</strong> — pushed to <code>origin/main</code>, hook active, worktrees created.</div></div>
     <div class="card"><div class="n">3 <span class="badge todo">planned</span></div><div class="l">Active loop — munshi → proposed seed (w/ pointers) → board approve → capture API</div></div>
   </div>
   <p>Governance principle: only the three board agents — <strong>Claude-Deepak (CEO)</strong>,
@@ -443,10 +443,11 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   <strong>merged to <code>main</code> and pushed to <code>origin/main</code></strong>. <strong>Phase 2 —
   governance</strong> is now <strong>built TDD on <code>main</code> (suite 63 → 98 green)</strong>, reconciled
   to runbook <strong>D5</strong> (advisory-local hook) and <strong>D6</strong> (durable <code>governance.db</code>),
-  and has <strong>passed pre-merge Codex review (6 rounds + an adversarial Workflow audit → APPROVE)</strong>.
-  The immediate next step is the <strong>Chairman-gated owner-only actions</strong> (hook activation, worktrees,
-  push to origin). Then <strong>Phase 3 — the active loop</strong> (munshi → proposed seed → board approve →
-  capture API). The carried-in refresh hardening
+  has <strong>passed pre-merge Codex review (6 rounds + an adversarial Workflow audit → APPROVE)</strong>, and
+  is now <strong>SHIPPED</strong> — pushed to <code>origin/main</code>, the advisory hook is active
+  (<code>core.hooksPath=.githooks</code>), and the three agent worktrees exist. The next build is
+  <strong>Phase 3 — the active loop</strong> (munshi → proposed seed → board approve → capture API);
+  reconcile its plan section vs the runbook first, as Phase 2 needed. The carried-in refresh hardening
   (F1 per-adapter isolation + F4 stale visibility / <code>stale</code> column) remains to be folded in.
   Owner-gated &amp; creds items:</p>
   <table>
@@ -457,9 +458,9 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     <tr><td>Push <code>main</code> → origin</td><td><span class="badge ok">done</span></td><td>Pushed 2026-06-19 — <code>origin/main</code> holds the full Phase-1 work; repo and origin in sync.</td></tr>
     <tr><td>Phase 2 — governance (build)</td><td><span class="badge ok">built · 98/98</span></td><td>Durable <code>governance.db</code> store (D6) + Assignments tab (live-verified) + advisory Codex pre-commit (D5) + board <code>AGENTS.md</code>/outboxes + org SVG. TDD on <code>main</code> (range <code>4b9e949..HEAD</code>).</td></tr>
     <tr><td>Phase 2 — pre-merge Codex review</td><td><span class="badge ok">APPROVE</span></td><td>Codex (gpt-5.5/xhigh) 6 rounds + a CEO adversarial Workflow audit; caught a never-wedge HIGH, a recurring confirmed-block downgrade class, 2 MEDIUM + nits — all fixed TDD. R6 APPROVE-WITH-NITS (nit fixed). Reports <code>07–13</code> + <code>12-workflow-invariant-audit.md</code>.</td></tr>
-    <tr><td>Activate pre-commit hook</td><td><span class="badge todo">owner</span></td><td>Owner-gated: <code>git config core.hooksPath .githooks</code> (applies to repo + all worktrees). Needs <code>codex</code> on PATH or <code>CODEX_BIN</code>.</td></tr>
-    <tr><td>Create agent worktrees</td><td><span class="badge todo">owner</span></td><td>Owner-gated: <code>git worktree add ../samagra-{deepak,khanak,codex} -b agent/{…}</code>. Board files already committed.</td></tr>
-    <tr><td>Push <code>main</code> → origin (Phase 2)</td><td><span class="badge todo">owner</span></td><td>Owner-gated: review is APPROVE — push the Phase-2 commits (<code>4b9e949..HEAD</code>) when ready.</td></tr>
+    <tr><td>Activate pre-commit hook</td><td><span class="badge ok">done</span></td><td><code>core.hooksPath=.githooks</code> set — every commit + worktree now runs the advisory gate (<code>codex</code> 0.140.0 on PATH).</td></tr>
+    <tr><td>Create agent worktrees</td><td><span class="badge ok">done</span></td><td><code>../samagra-{deepak,khanak,codex}</code> on <code>agent/{deepak,khanak,codex}</code>.</td></tr>
+    <tr><td>Push <code>main</code> → origin (Phase 2)</td><td><span class="badge ok">done</span></td><td>Pushed 2026-06-19 — <code>origin/main</code> holds Phase 2 through <code>da9cab3</code> (this session's tracker-sync commit is local-only; push next session).</td></tr>
     <tr><td>Phase 3 — active loop</td><td><span class="badge todo">planned</span></td><td>munshi item → classify → proposed seed (w/ FTS5 pointers) → board approve → capture API. Requires live munshi creds in <code>.env</code>.</td></tr>
     <tr><td>Notification channels</td><td><span class="badge todo">creds</span></td><td>Set <code>TELEGRAM_BOT_TOKEN</code>/<code>CHAT_ID</code> + gmail <code>SMTP_PASS</code> in <code>.env</code>. Until then notifications are logged only.</td></tr>
     <tr><td>Google Docs export</td><td><span class="badge todo">creds</span></td><td>Set <code>GOOGLE_OAUTH_CLIENT</code> (Desktop OAuth JSON); HTML + DOCX already work.</td></tr>

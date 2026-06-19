@@ -11,8 +11,11 @@
 > The live plan is under `docs/superpowers/` (original brief: [`SAMAGRA-HANDOFF.md`](SAMAGRA-HANDOFF.md)).
 > **Pre-merge review: APPROVE** (Codex gpt-5.5/xhigh, 6 rounds + a CEO adversarial Workflow audit — see
 > `docs/codex-reviews/07–13` + `12-workflow-invariant-audit.md`; all findings fixed TDD).
-> **Owner-gated & pending:** hook activation (`git config core.hooksPath .githooks`), the three agent
-> worktrees, and push to origin. **Then: Phase 3 (active loop).**
+> **Phase 2 SHIPPED (2026-06-19):** pushed to `origin/main` (repo + origin in sync at `da9cab3`); the advisory
+> hook is ACTIVE (`core.hooksPath=.githooks`, so every commit + worktree now runs it — `codex` 0.140.0 on PATH);
+> the three agent worktrees exist (`../samagra-{deepak,khanak,codex}` on `agent/{deepak,khanak,codex}`).
+> **Next: Phase 3 (active loop)** — first reconcile its plan section vs the runbook (as Phase 2 needed), then
+> TDD it; it needs live `MUNSHI_API_URL`/`MUNSHI_SECRET` in `.env`. Carried-in: F1/F4 refresh hardening.
 
 **Repo:** github.com/dbhardwaj86/samagra · branch `main` · local-first Python+FastAPI.
 **State:** Spine + portal + thin/thick exporter + semi-autonomous loop + two read-only subsystem adapters
@@ -65,11 +68,11 @@ QX `C:\SandBox\gpt_box\gpt-extract-ques` · textbook `C:\SandBox\gpt_box\physics
 
 ## Open / needs user consent
 
-**Phase-2 owner-gated (do in order — runbook §1):**
-1. **Pre-merge Codex review** — **DONE → APPROVE** (gpt-5.5, xhigh): 6 rounds + a CEO adversarial Workflow audit. Caught a never-wedge HIGH, a recurring "outer guard downgrades a confirmed-CRITICAL block" class (5 ever-deeper instances: cache prune, malformed cached findings, broken-stderr warnings, pathological exception str/repr, and a finding's raising `__eq__` on the dedup), + 2 MEDIUM + nits — all fixed TDD (+11 invariant regressions, suite 98). R6 APPROVE-WITH-NITS (nit fixed). Reports `docs/codex-reviews/07–13` + `12-workflow-invariant-audit.md`. Chairman is clear to push.
-2. **Activate the hook** — `git config core.hooksPath .githooks` (applies to repo + every worktree). Needs `codex` on PATH or `CODEX_BIN`.
-3. **Create worktrees** — `git worktree add ../samagra-deepak -b agent/deepak` (and `-khanak`, `-codex`). Board files already committed.
-4. **Push** — push `main` to `origin` after the review passes.
+**Phase-2 owner-gated — ALL DONE (2026-06-19):**
+1. **Pre-merge Codex review → APPROVE** (gpt-5.5, xhigh): 6 rounds + a CEO adversarial Workflow audit. Caught a never-wedge HIGH, a recurring "outer guard downgrades a confirmed-CRITICAL block" class (5 ever-deeper instances: cache prune, malformed cached findings, broken-stderr warnings, pathological exception str/repr, and a finding's raising `__eq__` on the dedup), + 2 MEDIUM + nits — all fixed TDD (+11 invariant regressions, suite 98). Reports `docs/codex-reviews/07–13` + `12-workflow-invariant-audit.md`.
+2. **Hook ACTIVE** — `core.hooksPath=.githooks` set; every commit + worktree now runs the advisory gate (`codex` 0.140.0 on PATH).
+3. **Worktrees created** — `../samagra-{deepak,khanak,codex}` on `agent/{deepak,khanak,codex}`.
+4. **Pushed** — `origin/main` holds Phase 2 through `da9cab3`. (NOTE: this end-of-session tracker-sync commit is local-only/unpushed — `git push origin main` it at the start of the next session.)
 
 **Creds (slice-1, unchanged):**
 5. **Notification creds** — fill `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` + gmail `SMTP_PASS` in `.env`.
