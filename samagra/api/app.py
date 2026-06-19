@@ -18,6 +18,7 @@ from starlette.requests import Request
 import samagra
 from .. import catalog, config, scheduler, state
 from ..adapters import get_adapter
+from ..governance import store as gstore
 from ..lectures import render as lecture_render
 
 PORTAL = Path(__file__).resolve().parent.parent / "portal"
@@ -91,6 +92,19 @@ def api_questions(q: str = "", subject: str | None = None,
 @app.get("/api/pipelines")
 def api_pipelines():
     return {"pipelines": state.all_states()}
+
+
+@app.get("/api/assignments")
+def api_assignments():
+    # Reads the DURABLE governance DB (governance.db, D6) — separate from the
+    # rebuildable catalog. init_tables is idempotent + safe to call per request.
+    conn = gstore.connect()
+    gstore.init_tables(conn)
+    try:
+        return {"assignments": gstore.list_assignments(conn),
+                "events": gstore.list_events(conn)}
+    finally:
+        conn.close()
 
 
 @app.post("/api/refresh")

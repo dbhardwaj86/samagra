@@ -134,3 +134,20 @@ def test_list_events_limit(conn):
     for i in range(5):
         store.append_event(conn, actor="system", verb=f"v{i}")
     assert len(store.list_events(conn, limit=3)) == 3
+
+
+def test_api_assignments_endpoint():
+    # Exercise the route function directly (repo convention, see test_api_gate.py)
+    # so the suite needs no extra HTTP dependency. The autouse isolate_data_db
+    # fixture already repoints GOVERNANCE_DB at a per-test temp file, so the
+    # endpoint and this test share the same DB.
+    c = store.connect()
+    store.init_tables(c)
+    store.add_assignment(c, id="a1", agent="khanak",
+                         outbox_path="board/khanak/outbox/x.md")
+    c.close()
+    from samagra.api import app as api
+
+    body = api.api_assignments()
+    assert "assignments" in body and "events" in body
+    assert any(a["id"] == "a1" for a in body["assignments"])
