@@ -154,4 +154,13 @@ describe("Rail (CH3 samagra chrome fidelity)", () => {
     fireEvent.click(screen.getByRole("button", { name: /terminal/i }));
     expect(onOpen).toHaveBeenCalledWith("terminal");
   });
+
+  // --- right-click → dock-icon context menu (README §Context menus) ---
+  it("dispatches onAppContextMenu with the app id on right-click", () => {
+    const onAppContextMenu = vi.fn();
+    render(<Rail onOpen={() => {}} onAppContextMenu={onAppContextMenu} />);
+    fireEvent.contextMenu(screen.getByRole("button", { name: /terminal/i }));
+    expect(onAppContextMenu).toHaveBeenCalledTimes(1);
+    expect(onAppContextMenu.mock.calls[0][0]).toBe("terminal");
+  });
 });

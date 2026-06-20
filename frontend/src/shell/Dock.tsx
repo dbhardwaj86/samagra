@@ -16,11 +16,13 @@ import AppIcon from "../components/AppIcon";
 export interface DockProps {
   /** Open-or-focus an app — wired to the WM store's `openApp`. */
   onOpen: (id: AppId) => void;
+  /** Right-click a launcher → the dock-icon context menu (README §Context menus). */
+  onAppContextMenu?: (id: AppId, x: number, y: number) => void;
   /** Active theme — drives the dock glass + per-app tile colours (defaults aqua). */
   theme?: Theme;
 }
 
-export default function Dock({ onOpen, theme = "aqua" }: DockProps) {
+export default function Dock({ onOpen, onAppContextMenu, theme = "aqua" }: DockProps) {
   const t = THEMES[theme];
 
   return (
@@ -60,6 +62,11 @@ export default function Dock({ onOpen, theme = "aqua" }: DockProps) {
             // gives the hover tooltip without adding a second label match.
             title={app.name}
             onClick={() => onOpen(id)}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onAppContextMenu?.(id, e.clientX, e.clientY);
+            }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = "translateY(-7px) scale(1.12)";
             }}

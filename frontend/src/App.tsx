@@ -10,6 +10,16 @@
 // This is a THIN shell — all window math lives in lib/wm/* (via the WM store) and all
 // theme tokens in themes/.
 //
+// Right-click context menus (README §Context menus) work in ALL THREE themes. The
+// shell owns one menu whose items depend on WHERE the right-click landed:
+//   - desktop (bare shell background): New Terminal · Open Dashboard · Appearance
+//     (theme radio) · Tile windows · Switch device · Close all windows.
+//   - window title bar (any theme): Bring to front · Maximize/Restore · Minimize · Close.
+//   - dock / rail icon: Open · Close window.
+// The console taskbar's running-window buttons reuse the window menu. The menu surface
+// itself is theme-driven (ContextMenu reads the active theme tokens) so it is correct
+// under aqua / console / samagra.
+//
 // Cross-branch build invariant (division §1 †): open windows render ONLY through a
 // runtime-resolved lazy import of `apps/<App>/index.tsx`. There is NO static import
 // of any app module (including khanak-owned Clock/Notes/Snake), so this file
@@ -25,7 +35,7 @@ import {
   type ComponentType,
 } from "react";
 import { useStore } from "zustand";
-import type { AppId, WindowState } from "./types/contracts";
+import type { AppId, Theme, WindowState } from "./types/contracts";
 import { APPS } from "./registry";
 import { getTheme } from "./themes";
 import { createWindowManagerStore } from "./stores/windowManager";
@@ -65,6 +75,13 @@ const APP_DIR: Record<AppId, string> = {
   snake: "Snake",
 };
 
+// Appearance radio rows for the desktop menu (README §Context menus — theme checks).
+const THEME_OPTIONS: ReadonlyArray<{ id: Theme; label: string }> = [
+  { id: "aqua", label: "Aqua" },
+  { id: "console", label: "Console" },
+  { id: "samagra", label: "Samagra" },
+];
+
 const lazyCache = new Map<AppId, ComponentType>();
 
 /** Lazy app component, resolved at render time (never at build time). */
@@ -90,11 +107,12 @@ function fmtClock(d: Date): string {
   return `${h}:${String(m).padStart(2, "0")} ${ap}`;
 }
 
-interface MenuState {
-  winId: string;
-  x: number;
-  y: number;
-}
+// The open context menu is one of three kinds, discriminated by where the right-click
+// landed; `menuItems` builds the rows for the active kind (README §Context menus).
+type MenuState =
+  | { kind: "window"; winId: string; x: number; y: number }
+  | { kind: "app"; appId: AppId; x: number; y: number }
+  | { kind: "desktop"; x: number; y: number };
 
 export default function App() {
   const windows = useStore(wmStore, (s) => s.windows);
@@ -105,8 +123,12 @@ export default function App() {
   const focus = useStore(wmStore, (s) => s.focus);
   const move = useStore(wmStore, (s) => s.move);
   const resize = useStore(wmStore, (s) => s.resize);
+  const tile = useStore(wmStore, (s) => s.tile);
 
   const theme = useStore(themeStore, (s) => s.theme);
+  const device = useStore(themeStore, (s) => s.device);
+  const setTheme = useStore(themeStore, (s) => s.setTheme);
+  const setDevice = useStore(themeStore, (s) => s.setDevice);
   const t = getTheme(theme); // fallback-guarded index (advisory HIGH #4)
   const isConsole = t.kind === "console";
   const isSamagra = t.kind === "samagra";
@@ -121,9 +143,36 @@ export default function App() {
     return () => clearInterval(t);
   }, []);
 
-  const openContextMenu = useCallback((id: string, x: number, y: number) => {
-    setMenu({ winId: id, x, y });
+  // Context-menu openers — one per right-click surface (README §Context menus).
+  const openWindowMenu = useCallback((id: string, x: number, y: number) => {
+    setMenu({ kind: "window", winId: id, x, y });
   }, []);
+  const openAppMenu = useCallback((appId: AppId, x: number, y: number) => {
+    setMenu({ kind: "app", appId, x, y });
+  }, []);
+  const openDesktopMenu = useCallback((x: number, y: number) => {
+    setStartOpen(false);
+    setMenu({ kind: "desktop", x, y });
+  }, []);
+
+  // Close every open window / every window of one app (desktop + dock-icon menus).
+  // Snapshot the ids first so closing (which mutates `windows`) can't skip any.
+  const closeAll = useCallback(() => {
+    wmStore
+      .getState()
+      .windows.map((w) => w.id)
+      .forEach((id) => closeApp(id));
+  }, [closeApp]);
+  const closeWindowsOf = useCallback(
+    (appId: AppId) => {
+      wmStore
+        .getState()
+        .windows.filter((w) => w.app === appId)
+        .map((w) => w.id)
+        .forEach((id) => closeApp(id));
+    },
+    [closeApp],
+  );
 
   // Active = the top-most (highest z) non-minimized window.
   const active = useMemo<WindowState | null>(() => {
@@ -162,13 +211,76 @@ export default function App() {
 
   const menuItems = useMemo<ContextMenuItem[]>(() => {
     if (!menu) return [];
-    const id = menu.winId;
+    const close = () => setMenu(null);
+
+    // Window / taskbar-button menu (README §Context menus — window\title bar).
+    if (menu.kind === "window") {
+      const win = windows.find((w) => w.id === menu.winId);
+      if (!win) return [];
+      return [
+        { label: "Bring to front", onSelect: () => { focus(win.id); close(); } },
+        { label: win.max ? "Restore" : "Maximize", onSelect: () => { toggleMax(win.id); close(); } },
+        { label: "Minimize", onSelect: () => { minimize(win.id); close(); } },
+        { divider: true },
+        { label: "Close", danger: true, onSelect: () => { closeApp(win.id); close(); } },
+      ];
+    }
+
+    // Dock / rail icon menu (README §Context menus — dock icon).
+    if (menu.kind === "app") {
+      const appId = menu.appId;
+      const hasWindow = windows.some((w) => w.app === appId);
+      return [
+        { label: "Open", icon: appId, onSelect: () => { openApp(appId); close(); } },
+        {
+          label: "Close window",
+          danger: true,
+          disabled: !hasWindow,
+          onSelect: () => { closeWindowsOf(appId); close(); },
+        },
+      ];
+    }
+
+    // Desktop menu (README §Context menus — desktop).
     return [
-      { label: "Minimize", onSelect: () => { minimize(id); setMenu(null); } },
-      { label: "Maximize", onSelect: () => { toggleMax(id); setMenu(null); } },
-      { label: "Close", danger: true, onSelect: () => { closeApp(id); setMenu(null); } },
+      { label: "New Terminal", icon: "terminal", onSelect: () => { openApp("terminal"); close(); } },
+      { label: "Open Dashboard", icon: "dashboard", onSelect: () => { openApp("dashboard"); close(); } },
+      { divider: true },
+      { header: "Appearance" },
+      ...THEME_OPTIONS.map((o) => ({
+        label: o.label,
+        checked: theme === o.id,
+        onSelect: () => { setTheme(o.id); close(); },
+      })),
+      { divider: true },
+      { label: "Tile windows", disabled: windows.length === 0, onSelect: () => { tile(); close(); } },
+      {
+        label: device === "mobile" ? "Switch to PC" : "Switch to Mobile",
+        onSelect: () => { setDevice(device === "mobile" ? "pc" : "mobile"); close(); },
+      },
+      {
+        label: "Close all windows",
+        danger: true,
+        disabled: windows.length === 0,
+        onSelect: () => { closeAll(); close(); },
+      },
     ];
-  }, [menu, minimize, toggleMax, closeApp]);
+  }, [
+    menu,
+    windows,
+    focus,
+    toggleMax,
+    minimize,
+    closeApp,
+    openApp,
+    closeWindowsOf,
+    theme,
+    setTheme,
+    device,
+    setDevice,
+    tile,
+    closeAll,
+  ]);
 
   return (
     <div
@@ -176,6 +288,14 @@ export default function App() {
       onClick={() => {
         setMenu(null);
         setStartOpen(false);
+      }}
+      onContextMenu={(e) => {
+        // Only a right-click on the BARE desktop background opens the desktop menu;
+        // right-clicks that originate on a window / dock / rail / taskbar handle their
+        // own context menu (or none) and must not be overridden here.
+        if (e.target !== e.currentTarget) return;
+        e.preventDefault();
+        openDesktopMenu(e.clientX, e.clientY);
       }}
       style={{
         position: "fixed",
@@ -207,7 +327,7 @@ export default function App() {
             onClose={closeApp}
             onMinimize={minimize}
             onToggleMax={toggleMax}
-            onContextMenu={openContextMenu}
+            onContextMenu={openWindowMenu}
             onMove={move}
             onResize={resize}
           >
@@ -219,7 +339,8 @@ export default function App() {
       })}
 
       {/* Theme-driven dock chrome (FD1): console → bottom Taskbar + Start menu;
-          samagra → left Rail; aqua → bottom-center floating Dock. */}
+          samagra → left Rail; aqua → bottom-center floating Dock. Each launcher
+          surface also dispatches a right-click → the dock-icon menu. */}
       {isConsole ? (
         <Taskbar
           theme={theme}
@@ -229,18 +350,18 @@ export default function App() {
           startOpen={startOpen}
           onToggleStart={() => setStartOpen((v) => !v)}
           onSelectWindow={selectWindow}
-          onWindowContextMenu={openContextMenu}
+          onWindowContextMenu={openWindowMenu}
           onOpenClock={() => openApp("clock")}
         >
           {startOpen && <StartMenu theme={theme} onOpen={handleOpen} />}
         </Taskbar>
       ) : isSamagra ? (
-        <Rail theme={theme} onOpen={openApp} running={runningApps} />
+        <Rail theme={theme} onOpen={openApp} running={runningApps} onAppContextMenu={openAppMenu} />
       ) : (
-        <Dock theme={theme} onOpen={openApp} />
+        <Dock theme={theme} onOpen={openApp} onAppContextMenu={openAppMenu} />
       )}
 
-      {menu && <ContextMenu x={menu.x} y={menu.y} items={menuItems} />}
+      {menu && <ContextMenu x={menu.x} y={menu.y} items={menuItems} theme={theme} />}
     </div>
   );
 }

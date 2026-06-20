@@ -35,7 +35,7 @@ describe("terminal dispatch", () => {
     expect(out).toContain("settings");
   });
   it("whoami is exact", () => {
-    expect(dispatch("whoami", ctx).lines.map((l) => l.t).join("")).toContain("devesh — Founder & Chairman");
+    expect(dispatch("whoami", ctx).lines.map((l) => l.t).join("")).toContain("Deepak Bhardwaj — Founder & Chairman");
   });
   it("sudo easter egg errors with the board line", () => {
     const r = dispatch("sudo rm", ctx);
@@ -52,8 +52,8 @@ describe("terminal dispatch", () => {
   // ── Prototype-fidelity guards (proto.md §4.1–§4.2) ─────────────────────────
   const text = (cmd: string) => dispatch(cmd, ctx).lines.map((l) => l.t).join("\n");
 
-  it("prompt constant is devesh@samagra:~$ (proto §4.1)", () => {
-    expect(PROMPT).toBe("devesh@samagra:~$");
+  it("prompt constant is deepak@samagra:~$ (proto §4.1 — chairman login)", () => {
+    expect(PROMPT).toBe("deepak@samagra:~$");
   });
   it("help lists every documented verb (proto §4.2)", () => {
     const out = text("help");

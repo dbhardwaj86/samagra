@@ -22,13 +22,15 @@ import Icon from "../components/Icon";
 export interface RailProps {
   /** Open-or-focus an app — wired to the WM store's `openApp`. */
   onOpen: (id: AppId) => void;
+  /** Right-click a launcher → the dock-icon context menu (README §Context menus). */
+  onAppContextMenu?: (id: AppId, x: number, y: number) => void;
   /** Ids of apps with at least one open window — drives the running tint + accent bar. */
   running?: AppId[];
   /** Active theme — the rail is a samagra-only dock; tokens default to samagra. */
   theme?: Theme;
 }
 
-export default function Rail({ onOpen, running = [], theme = "samagra" }: RailProps) {
+export default function Rail({ onOpen, onAppContextMenu, running = [], theme = "samagra" }: RailProps) {
   const t = THEMES[theme];
   const isRunning = (id: AppId) => running.includes(id);
 
@@ -102,6 +104,11 @@ export default function Rail({ onOpen, running = [], theme = "samagra" }: RailPr
               aria-label={app.name}
               title={app.name}
               onClick={() => onOpen(id)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onAppContextMenu?.(id, e.clientX, e.clientY);
+              }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.color = t.accent;
                 e.currentTarget.style.background = hexA(t.accent, 0.1);

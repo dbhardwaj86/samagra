@@ -8,10 +8,10 @@
 //   • Root: JetBrains Mono 12.5px, background = the active theme's termPalette.bg.
 //   • Output: flex 1 / overflow auto / padding 12px 14px / lineHeight 1.5 / fg.
 //     Each line is whiteSpace pre-wrap; an `in` line renders the literal prompt
-//     `devesh@samagra:~$ ` span (prompt color) + the typed body span (fg color);
+//     `deepak@samagra:~$ ` span (prompt color) + the typed body span (fg color);
 //     other lines take their LineClass color (fg/dim/accent/ok/err).
 //   • Input row: padding 10px 14px / gap 8 / 1px top border; the prompt label
-//     `devesh@samagra:~$` (prompt color, nowrap) + a borderless transparent input
+//     `deepak@samagra:~$` (prompt color, nowrap) + a borderless transparent input
 //     (fg text, accent caret), fontFamily inherit / fontSize 12.5.
 //
 // Two contracts are pinned:
@@ -19,7 +19,7 @@
 //      `openApp('snake')` effect → the WM store gains a snake window.
 //   2. FIDELITY (AP3, new): the exact documented tokens/markup — JetBrains Mono /
 //      12.5px, the per-theme palette (FD1) driving bg/fg/prompt/caret across aqua,
-//      console AND samagra, the `devesh@samagra:~$` prompt, the input-row chrome,
+//      console AND samagra, the `deepak@samagra:~$` prompt, the input-row chrome,
 //      and a real FD2 <svg> terminal glyph (NEVER a letter badge). Per-pixel parity
 //      is a separate human pass.
 import { fireEvent, render, screen, within } from "@testing-library/react";
@@ -116,7 +116,7 @@ describe("Terminal (behaviour — the effect runner)", () => {
     const echoed = screen.getByTestId("term-echo-0");
     // The prompt label is the verbatim literal in the prompt color; the typed body
     // takes the fg color (the prototype's two-span split, FD1).
-    const promptSpan = within(echoed).getByText("devesh@samagra:~$");
+    const promptSpan = within(echoed).getByText("deepak@samagra:~$");
     expect(promptSpan).toHaveStyle({ color: termPalette.aqua.prompt }); // #7dd3fc
     const bodySpan = within(echoed).getByText("whoami");
     expect(bodySpan).toHaveStyle({ color: termPalette.aqua.fg }); // #e5e7eb
@@ -214,10 +214,10 @@ describe("Terminal (fidelity — output area)", () => {
 // FIDELITY — input row chrome + prompt (AP3 + FD1).                           //
 // -------------------------------------------------------------------------- //
 describe("Terminal (fidelity — input row + prompt)", () => {
-  it("renders the literal devesh@samagra:~$ prompt in the prompt color (FD1)", () => {
+  it("renders the literal deepak@samagra:~$ prompt in the prompt color (FD1)", () => {
     render(<Terminal />);
     const prompt = screen.getByTestId("term-prompt");
-    expect(prompt).toHaveTextContent("devesh@samagra:~$");
+    expect(prompt).toHaveTextContent("deepak@samagra:~$");
     // FD1: the prompt label color is the active theme's palette prompt, nowrap.
     expect(prompt).toHaveStyle({
       color: termPalette.aqua.prompt, // #7dd3fc

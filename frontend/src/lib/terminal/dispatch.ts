@@ -16,8 +16,8 @@ import type {
 } from "../../types/contracts";
 import { parse } from "./parser";
 
-/** Shell prompt (proto.md §4.1). */
-export const PROMPT = "devesh@samagra:~$";
+/** Shell prompt (proto.md §4.1 — chairman login). */
+export const PROMPT = "deepak@samagra:~$";
 
 /** Result of dispatching one command line. */
 export interface DispatchResult {
@@ -108,7 +108,7 @@ function cmdCatalog(): TermLine[] {
 function cmdAgents(): TermLine[] {
   return [
     line("BOARD", "accent"),
-    line(pad("Devesh", 18) + "Founder & Chairman", "fg"),
+    line(pad("Deepak Bhardwaj", 18) + "Founder & Chairman", "fg"),
     line(pad("Claude-Deepak", 18) + "CEO — substrate & engine", "fg"),
     line(pad("Claude-Khanak", 18) + "CTO — leaf apps & UX", "fg"),
     line(pad("Codex", 18) + "Reviewer — pre-merge gate", "fg"),
@@ -253,7 +253,7 @@ export function dispatch(input: string, ctx: TermCtx): DispatchResult {
     case "about":
       return { lines: cmdAbout(), effects: [] };
     case "whoami":
-      return { lines: [line("devesh — Founder & Chairman", "fg")], effects: [] };
+      return { lines: [line("Deepak Bhardwaj — Founder & Chairman", "fg")], effects: [] };
     case "date":
       return { lines: [line(new Date().toString(), "fg")], effects: [] };
     case "echo":

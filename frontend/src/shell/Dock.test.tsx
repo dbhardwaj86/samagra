@@ -115,6 +115,22 @@ describe("Dock (CH1 aqua chrome fidelity)", () => {
     expect(onOpen).toHaveBeenCalledWith("terminal");
   });
 
+  // --- right-click → dock-icon context menu (README §Context menus) ---
+  it("dispatches onAppContextMenu with the app id on right-click", () => {
+    const onAppContextMenu = vi.fn();
+    render(<Dock onOpen={() => {}} onAppContextMenu={onAppContextMenu} />);
+    fireEvent.contextMenu(screen.getByRole("button", { name: /terminal/i }));
+    expect(onAppContextMenu).toHaveBeenCalledTimes(1);
+    expect(onAppContextMenu.mock.calls[0][0]).toBe("terminal");
+  });
+
+  it("does not throw on right-click when no onAppContextMenu is wired", () => {
+    render(<Dock onOpen={() => {}} />);
+    expect(() =>
+      fireEvent.contextMenu(screen.getByRole("button", { name: /dashboard/i })),
+    ).not.toThrow();
+  });
+
   // --- theme correctness (FD1): under samagra, the dock glass + per-app gradient
   // both follow the samagra tokens; no aqua dockBg bleeds through.
   it("paints the dock glass from samagra tokens when the active theme is samagra", () => {

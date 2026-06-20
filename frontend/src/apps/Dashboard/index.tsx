@@ -191,7 +191,7 @@ export default function Dashboard() {
           </span>
           <div>
             <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: V.text }}>
-              Good morning, Devesh
+              Good morning, Deepak
             </div>
             <div style={{ fontSize: 13, color: V.muted, marginTop: 2 }}>
               SAMAGRA control plane · Phase 0 done · Phase 1 (adapters) next

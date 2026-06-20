@@ -12,10 +12,10 @@
 //   • Root: JetBrains Mono 12.5px, background = the ACTIVE theme's termPalette.bg.
 //   • Output: flex 1 / overflow auto / padding 12px 14px / lineHeight 1.5 / fg.
 //     Each line is whiteSpace pre-wrap / wordBreak break-word; an `in` line renders
-//     the literal prompt `devesh@samagra:~$ ` span (prompt color) + the typed body
+//     the literal prompt `deepak@samagra:~$ ` span (prompt color) + the typed body
 //     span (fg color); other lines take their LineClass color (fg/dim/accent/ok/err).
 //   • Input row: padding 10px 14px / gap 8 / 1px top border (hex(fg,0.12)) /
-//     background hex(fg,0.02); the prompt label `devesh@samagra:~$` (prompt color,
+//     background hex(fg,0.02); the prompt label `deepak@samagra:~$` (prompt color,
 //     nowrap) + a borderless transparent input (fg text, accent caret), fontFamily
 //     inherit / fontSize 12.5.
 //
@@ -193,9 +193,9 @@ export default function Terminal() {
           return lines.map((ln, i) =>
           ln.c === "in" ? (
             // `in` line — the prototype's prompt-prefix split (.dc.html L839): a
-            // prompt-color `devesh@samagra:~$` span + the typed body in fg. The
+            // prompt-color `deepak@samagra:~$` span + the typed body in fg. The
             // single separating space leads the body span so the prompt text node
-            // stays the exact literal `devesh@samagra:~$`.
+            // stays the exact literal `deepak@samagra:~$`.
             <div
               key={i}
               data-testid={`term-echo-${echoN++}`}

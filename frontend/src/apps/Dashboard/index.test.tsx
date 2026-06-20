@@ -146,7 +146,7 @@ describe("Dashboard (behaviour — useApi + headline)", () => {
 describe("Dashboard (fidelity — greeting + tests pill)", () => {
   it("renders the greeting header and sub-line verbatim", async () => {
     render(<Dashboard />);
-    expect(await screen.findByText("Good morning, Devesh")).toBeInTheDocument();
+    expect(await screen.findByText("Good morning, Deepak")).toBeInTheDocument();
     expect(
       screen.getByText(/SAMAGRA control plane · Phase 0 done · Phase 1 \(adapters\) next/),
     ).toBeInTheDocument();
