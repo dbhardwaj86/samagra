@@ -109,6 +109,20 @@ QX `C:\SandBox\gpt_box\gpt-extract-ques` · textbook `C:\SandBox\gpt_box\physics
    `GET /api/org` via static `samagra/org.py`). **No new creds needed for E1** (the GUI reads existing
    `/api/*`); E2's mcd/munshi apps render graceful creds-gated empty states.
 
+   **Human visual-fidelity sign-off (E1 boundary — owner-run, RUBRIC §6).** Per spec §7.4/§10-item-9 and
+   `docs/superpowers/loops/RUBRIC.md` §6, pixel & interaction parity is a **human QA pass, never a loop
+   gate** — run once per surface with `npm run dev` (Vite :5173) or a built `samagra serve`, against the
+   extracted prototype + `screenshots/`. The owner (deepak) signs each row here. **Status: all rows
+   PENDING** (logic green, build green — *not yet* "looks right"). Eight surfaces:
+   - [ ] **E1.18 Aqua shell** — top bar **30px** (wordmark · active title · status pill · live clock); Dock bottom-center **radius 20** + hover lift; WindowFrame **radius 13**, left traffic-lights, **38px** title bar, double-click maximize; ContextMenu **width 216**; work-area framing `{8,36,vw-16,vh-122}`.
+   - [ ] **E1.19 Dashboard** — hero-stat layout, pipeline-bar density, board + recent-activity spacing.
+   - [ ] **E1.20 Settings** — Appearance / Device / Integration row styling; pill active vs needs-creds states.
+   - [ ] **E1.21 Terminal** — prompt rendering, line-class colors from `termPalette`, welcome banner.
+   - [ ] **E1.22 Clock** — hand sweep, ring depletion, chime, tab visuals.
+   - [ ] **E1.23 Notes/To-dos** — list/editor split, "● Autosaved" footer, filter chrome.
+   - [ ] **E1.24 Snake** — movement feel, speed ramp, death visuals, D-pad.
+   - [ ] **E1.25 Components** — Pill/Card/Chip/IconButton accent + spacing parity.
+
 **Phase-2 owner-gated — ALL DONE (2026-06-19):**
 1. **Pre-merge Codex review → APPROVE** (gpt-5.5, xhigh): 6 rounds + a CEO adversarial Workflow audit. Caught a never-wedge HIGH, a recurring "outer guard downgrades a confirmed-CRITICAL block" class (5 ever-deeper instances: cache prune, malformed cached findings, broken-stderr warnings, pathological exception str/repr, and a finding's raising `__eq__` on the dedup), + 2 MEDIUM + nits — all fixed TDD (+11 invariant regressions, suite 98). Reports `docs/codex-reviews/07–13` + `12-workflow-invariant-audit.md`.
 2. **Hook ACTIVE** — `core.hooksPath=.githooks` set; every commit + worktree now runs the advisory gate (`codex` 0.140.0 on PATH).

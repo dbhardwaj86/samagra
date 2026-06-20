@@ -373,6 +373,11 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   the suite grew to <strong>102</strong> with <code>test_serve_seam.py</code> (the Vite-<code>dist/</code>
   mount + SPA fallback + <code>api/*</code> 404 guard + 503-if-unbuilt). A Windows pytest-temp symlink-cleanup
   race at teardown is cosmetic (run with <code>--basetemp</code> to silence it); no test fails.</p>
+  <p class="lede"><strong>Human visual-fidelity sign-off (RUBRIC §6) — owner-run, separate from the loop.</strong>
+  Pixel &amp; interaction parity is a human QA pass, <strong>never</strong> a loop completion signal. The
+  eight E1 surfaces (aqua shell · Dashboard · Settings · Terminal · Clock · Notes · Snake · components) are
+  signed off per-surface in <code>HANDOFF.md</code> — <strong>all rows currently <span class="badge todo">pending</span></strong>
+  (logic green + build green; not yet "looks right"). The loops sign "green", never "looks right".</p>
   <p class="lede">Backend detail (unchanged from Phase 2): the 34-test Track A baseline
   (spine + lectures + scheduler; harness isolation, atomic state writes, gate-prereq enforcement +
   <code>/api/gate</code> 409, refresh last-known-good, refresh-failure caller safety, state read-modify-write
