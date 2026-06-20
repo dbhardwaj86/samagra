@@ -31,6 +31,9 @@
 > 32 files + `vite build` writing `dist/` — and the backend `pytest` suite at 102/102 green (incl.
 > `test_serve_seam.py`).** Linchpin held: all real behaviour lives in pure-TS headless-testable modules;
 > **pixel/interaction fidelity is a separate human QA pass** (owner-run, never a loop completion signal).
+> **Gate re-verified 2026-06-20 (E1.26 boundary):** independent re-run from `e1/samagra-os` confirms
+> frontend `npm run verify` clean (166 Vitest / 32 files + `tsc` + lint + `vite build`) and backend
+> `pytest` 102/102 (0 failures / 0 errors, rc=0) — pointer files in sync.
 > **Next = E2** (data/control apps — read-only wiring over the existing `/api/*` contract; one hard backend
 > gap = `GET /api/org`).
 > **Phase 3 (active loop) is PARKED** (plan complete, resumes after the Experience track; will need live
