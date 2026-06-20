@@ -19,23 +19,31 @@
 > an OS-style windowing GUI (17 apps · 3 themes · 2 device modes) in React + TypeScript + Vite, served by
 > FastAPI. Own spec + phased plan + agent division + two autonomous loop scripts under `docs/superpowers/`
 > (spec `specs/2026-06-20-samagra-os-experience-design.md`; plan `plans/2026-06-20-samagra-os.md`; division
-> `plans/2026-06-20-samagra-os-division.md`; loops `loops/{deepak,khanak}-loop.js` + `RUBRIC.md`). **E1**
-> (shell + aqua + OS utilities) is the immediate build, split file-disjoint between **claude-deepak**
-> (substrate / `lib/` engines / chrome / Dashboard·Settings·Terminal / serve seam) and **claude-khanak**
-> (Clock·Notes·Snake leaf apps + components), each driven by a long-running
-> build → test+coverage → Codex-review → iterate-against-rubric → commit loop, continuous-engine-publication
-> merge model. Linchpin: pure-TS headless-testable modules; pixel fidelity is a separate human pass. Plan +
-> loops cleared an adversarial multi-agent review (re-verify APPROVE). **Loops authored, NOT launched —
-> owner-gated.**
+> `plans/2026-06-20-samagra-os-division.md`; loops `loops/{deepak,khanak}-loop.js` + `RUBRIC.md`).
+> **E1 (shell + aqua theme + OS utilities) is BUILT + GREEN on branch `e1/samagra-os` (2026-06-20).**
+> The full `frontend/` app (React 18 + TS + Vite) shipped TDD across E1.1–E1.25: the bootstrap + frozen
+> 17-app registry, every pure `lib/` engine (`wm/{geometry,zorder}`, `snake/{engine,cell}`,
+> `clock/{analog,stopwatch,timer,world}`, `terminal/{parser,dispatch}`, `notes/model`, `persistence`), the
+> `windowManager`/`theme` Zustand stores (thin over `lib/`), the aqua chrome shell (top bar · dock · window
+> frame · context menu), the six OS-utility apps (Dashboard · Settings · Terminal · Clock · Notes · Snake) +
+> shared leaf components, and the FastAPI serve seam (Vite `dist/` + SPA fallback, jinja portal route retired).
+> **E1.26 green gate (this commit): `npm run verify` clean — lint + `tsc --noEmit` + 166 Vitest tests across
+> 32 files + `vite build` writing `dist/` — and the backend `pytest` suite at 102/102 green (incl.
+> `test_serve_seam.py`).** Linchpin held: all real behaviour lives in pure-TS headless-testable modules;
+> **pixel/interaction fidelity is a separate human QA pass** (owner-run, never a loop completion signal).
+> **Next = E2** (data/control apps — read-only wiring over the existing `/api/*` contract; one hard backend
+> gap = `GET /api/org`).
 > **Phase 3 (active loop) is PARKED** (plan complete, resumes after the Experience track; will need live
 > `MUNSHI_API_URL`/`MUNSHI_SECRET` in `.env`). Carried into Phase 3: F1/F4 refresh hardening.
 
-**Repo:** github.com/dbhardwaj86/samagra · branch `main` · local-first Python+FastAPI.
+**Repo:** github.com/dbhardwaj86/samagra · branch `e1/samagra-os` (E1 build) · local-first Python+FastAPI.
 **State:** Spine + portal + thin/thick exporter + semi-autonomous loop + two read-only subsystem adapters
 (mycontentdev seeds, munshi `library()`) reflecting into the catalog, **+ Phase-2 governance**: durable
 `governance.db` store (assignments / events ledger / review overlay), `GET /api/assignments` + the
 Assignments portal tab, an advisory Codex pre-commit gate (`samagra/review/`), the committed
-`.githooks/pre-commit` shim, and per-agent board files (`board/{deepak,khanak,codex}/`). **98/98 tests pass.**
+`.githooks/pre-commit` shim, and per-agent board files (`board/{deepak,khanak,codex}/`), **+ SAMAGRA OS E1**:
+the `frontend/` React+TS+Vite windowing shell (aqua theme · WM · six OS utilities on tested pure-TS engines)
+served by FastAPI from `frontend/dist/`. **Backend 102/102 pytest green; frontend 166/166 Vitest green.**
 
 ## Run it
 
@@ -51,6 +59,15 @@ set PYTHONPATH=%CD%                 # or: export PYTHONPATH=$(pwd) in bash
 .venv\Scripts\python -m uvicorn samagra.api.app:app --port 8799   # http://127.0.0.1:8799
 ```
 
+```bash
+# SAMAGRA OS (E1) frontend — from frontend/
+cd frontend
+npm install                      # first run only (generates node_modules from tracked lockfile)
+npm run dev                      # Vite :5173, proxies /api,/lecture,/open -> uvicorn :8799
+npm run verify                   # the E1 gate: lint + tsc --noEmit + vitest run + vite build
+npm run build                    # writes frontend/dist/ (FastAPI serves it at / with an SPA fallback)
+```
+
 ## Layout (source of truth)
 
 - `samagra/adapters/` — read-only source adapters → common `Artifact` (incl. Phase 1 `mcd.py`, `munshi.py`).
@@ -64,7 +81,8 @@ set PYTHONPATH=%CD%                 # or: export PYTHONPATH=$(pwd) in bash
 - `samagra/scheduler.py` — `tick()`, `gate()`, Task Scheduler installer.
 - `samagra/notify.py` — Telegram + email (creds-gated, always logs `state/notifications.log`).
 - `samagra/lectures/` — `render.py` (content.json→HTML), `thin.py`, `export.py` (HTML/DOCX/GDocs), `gdocs.py`.
-- `samagra/api/app.py` + `samagra/portal/` — FastAPI + forked-QX UI.
+- `samagra/api/app.py` — FastAPI; serves the Vite build at `/` (mounts `frontend/dist/assets`, SPA fallback `GET /{full_path}` declared LAST, 404s `api/*`, 503 if not built); `/api/*`, `/lecture/{slug}`, `/open` are a frozen contract.
+- `frontend/` — **SAMAGRA OS E1** (React 18 + TS + Vite; own `package.json`, lockfile tracked, `dist/` gitignored). `src/lib/**` = pure headless-testable engines (WM geometry/z-order, snake, clock, terminal, notes, persistence) each co-located with a `*.test.ts`; `src/stores/**` = thin Zustand over `lib/`; `src/shell/**` = aqua chrome; `src/apps/**` = the six OS utilities; `src/registry.ts` = the frozen 17-app table.
 
 ## Sources (read-only, paths in samagra/config.py / .env)
 
@@ -81,12 +99,15 @@ QX `C:\SandBox\gpt_box\gpt-extract-ques` · textbook `C:\SandBox\gpt_box\physics
 
 ## Open / needs user consent
 
-**SAMAGRA OS (Experience track) — owner-gated to LAUNCH (2026-06-20):**
-0. **Launch the two build loops.** The E1 spec / plan / division / loop scripts are authored + review-APPROVED
-   but **not launched**. Launching kicks off hours of autonomous TDD across the two agent worktrees. Order:
-   start **deepak's** bootstrap loop first (it publishes the substrate khanak rebases onto), then **khanak's**.
-   See `docs/superpowers/loops/README.md`. **No new creds needed for E1** (the GUI reads existing `/api/*`).
-   Pixel/interaction fidelity is a separate human QA pass after the loops drain.
+**SAMAGRA OS (Experience track):**
+0. **E1 BUILT + GREEN (2026-06-20) on `e1/samagra-os`.** The full `frontend/` app shipped TDD (E1.1–E1.25)
+   and cleared the E1.26 green gate: `npm run verify` clean (lint + `tsc` + 166 Vitest + `vite build`) and
+   backend `pytest` 102/102 (incl. `test_serve_seam.py`). **Owner to-do now:** (a) the **human visual-fidelity
+   QA pass** over the aqua shell + six apps (pixel/interaction parity — outside any loop, never a loop gate);
+   (b) the merge/integration decision for `e1/samagra-os` (see `superpowers:finishing-a-development-branch`).
+   **Next build = E2** (data/control apps — read-only wiring over `/api/*`; one hard backend gap =
+   `GET /api/org` via static `samagra/org.py`). **No new creds needed for E1** (the GUI reads existing
+   `/api/*`); E2's mcd/munshi apps render graceful creds-gated empty states.
 
 **Phase-2 owner-gated — ALL DONE (2026-06-19):**
 1. **Pre-merge Codex review → APPROVE** (gpt-5.5, xhigh): 6 rounds + a CEO adversarial Workflow audit. Caught a never-wedge HIGH, a recurring "outer guard downgrades a confirmed-CRITICAL block" class (5 ever-deeper instances: cache prune, malformed cached findings, broken-stderr warnings, pathological exception str/repr, and a finding's raising `__eq__` on the dedup), + 2 MEDIUM + nits — all fixed TDD (+11 invariant regressions, suite 98). Reports `docs/codex-reviews/07–13` + `12-workflow-invariant-audit.md`.

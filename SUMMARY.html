@@ -350,16 +350,17 @@
     <!-- WHERE -->
     <section id="where">
       <p class="eyebrow">05 · Where we are</p>
-      <h2>The governance layer is live. Next: a proper control room.</h2>
+      <h2>The control room is taking shape. Its first floor is built.</h2>
       <div class="phases">
         <div class="ph"><span class="s done">done</span><div class="n">Rename</div><div class="d">Now called SAMAGRA, end to end.</div></div>
         <div class="ph"><span class="s done">done</span><div class="n">Stabilize</div><div class="d">Foundation hardened. 34 / 34 tests green.</div></div>
         <div class="ph"><span class="s done">done</span><div class="n">Read two tools</div><div class="d">Watching mycontentdev + munshi. Read-only. 63 / 63.</div></div>
         <div class="ph"><span class="s done">done</span><div class="n">Governance</div><div class="d">Assignments, reviews, the code gate. 98 / 98. Reviewed, shipped, and switched on.</div></div>
-        <div class="ph"><span class="s now">next</span><div class="n">The control room</div><div class="d">One OS-style screen for the whole operation.</div></div>
-        <div class="ph"><span class="s later">later</span><div class="n">The one write</div><div class="d">Turn a phone note into a draft idea. (Now after the control room.)</div></div>
+        <div class="ph"><span class="s done">done</span><div class="n">Control room — first floor</div><div class="d">The OS-style screen + windows, dock, and built-in apps (clock, notes, terminal…). Built and green: 166 / 166.</div></div>
+        <div class="ph"><span class="s now">next</span><div class="n">Wire in the real apps</div><div class="d">Show each tool — pipelines, questions, lectures — inside the new screen.</div></div>
+        <div class="ph"><span class="s later">later</span><div class="n">The one write</div><div class="d">Turn a phone note into a draft idea. (After the control room.)</div></div>
       </div>
-      <p class="muted" style="margin-top:22px">Today: the governance layer is built — a place to track who's assigned what, a record of every decision, and a code gate that asks a reviewer before risky changes land. The gate is <strong>advisory</strong>: it warns and can be overridden with a logged reason, and a broken reviewer never blocks work — only the human publish step is ever a hard stop. It's tested (98 / 98), has passed an independent code review (the reviewer found several real corner-case bugs in the gate itself, which were fixed and locked with tests), and is now <strong>live</strong> — the gate runs on every commit and the three agent workspaces are set up. <strong>New direction (20 Jun):</strong> before the single write, we're building the <strong>control room</strong> — SAMAGRA OS, an OS-style screen (windows, a dock, and small built-in apps like a clock, notes and a terminal) that shows the whole operation at a glance. It's planned in full detail and split between two agents to build; the single write comes right after.</p>
+      <p class="muted" style="margin-top:22px">Earlier: the governance layer was built and switched on — a place to track who's assigned what, a record of every decision, and an advisory code gate that asks a reviewer before risky changes land (it warns, can be overridden with a logged reason, and a broken reviewer never blocks work; only the human publish step is ever a hard stop). <strong>Now (20 Jun): the control room's first floor is built.</strong> SAMAGRA OS — an OS-style screen with windows, a dock, and small built-in apps (a clock, notes, a terminal, a calculator-style settings panel, a game) — is up and running on tested foundations. The trick that makes it solid: every piece of real behaviour (how windows move and stack, how the clock and game tick, how the terminal reads commands) lives in small, separately-tested building blocks, so the screen is checked by <strong>166 automated tests, all green</strong>, on top of the backend's 102. What's left here is a <strong>human look-and-feel pass</strong> — a person eyeballing that it looks and feels right, which no test can judge. <strong>Next:</strong> wire the real tools — pipelines, questions, lectures, the org chart — into the new screen. The single write (a phone note → a draft idea) comes after that.</p>
     </section>
 
     <!-- DECIDED -->
@@ -392,7 +393,7 @@
     <section id="next">
       <p class="eyebrow">07 · What's next</p>
       <div class="next">
-        <p class="big">The governance layer is built, green (98 / 98), reviewed, and live. New top priority: the <strong>control room</strong> — SAMAGRA OS, an OS-style screen for the whole operation — is fully planned and split between two agents to build. The single write (a phone note → a draft idea for approval) comes right after.</p>
+        <p class="big">The <strong>control room's first floor is built</strong> — SAMAGRA OS, an OS-style screen with windows, a dock and built-in apps, green on 166 / 166 tests (plus the backend's 102). Left here: a human look-and-feel pass. Next: <strong>wire the real tools</strong> — pipelines, questions, lectures, the org chart — into the new screen. The single write (a phone note → a draft idea for approval) comes after that.</p>
       </div>
     </section>
 

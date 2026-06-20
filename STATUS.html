@@ -58,7 +58,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
 </head>
 <body>
 <header class="top">
-  <h1>SAMAGRA</h1><span class="sub">Phase 2 SHIPPED · 98/98 green — <strong>new priority: SAMAGRA OS (Experience track / GUI), E1 next</strong> · backend active-loop (Phase 3) parked</span>
+  <h1>SAMAGRA</h1><span class="sub">SAMAGRA OS <strong>E1 SHIPPED</strong> · frontend 166/166 + backend 102/102 green — <strong>next: E2 (data/control apps)</strong> · backend active-loop (Phase 3) parked</span>
   <nav>
     <a href="#overview">Overview</a><a href="#phases">Phases</a>
     <a href="#samagra">SAMAGRA</a><a href="#experience">OS GUI</a><a href="#arch">Architecture</a><a href="#org">Org</a>
@@ -171,11 +171,12 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   <p class="lede">The new top priority: replace the plain tabbed portal with <strong>SAMAGRA OS</strong> — an
   OS-style windowing GUI control plane (17 apps · 3 themes · 2 device modes), built in React + TypeScript +
   Vite and served by FastAPI. It has its own spec + phased plan + agent division + autonomous loop scripts
-  under <code>docs/superpowers/</code>. The backend active loop (Phase 3) is
-  <span class="badge park">parked</span> until this lands.</p>
+  under <code>docs/superpowers/</code>. <strong>E1 (shell + aqua + six OS utilities) is now SHIPPED</strong>
+  — built TDD on <code>e1/samagra-os</code> and green across the full gate. The backend active loop (Phase 3)
+  is <span class="badge park">parked</span> until the Experience track lands.</p>
   <div class="grid">
-    <div class="card"><div class="n">E1 <span class="badge todo">next</span></div><div class="l">Shell + Aqua theme + OS utilities — window manager, dock/top-bar, Dashboard · Settings · Terminal · Clock · Notes · Snake. ~27 TDD tasks.</div></div>
-    <div class="card"><div class="n">E2 <span class="badge park">planned</span></div><div class="l">Data/control apps — Pipelines · Assignments · Org · Questions · Lectures · Booklets · INSP · Sims · mycontentdev · Munshi · Activity.</div></div>
+    <div class="card"><div class="n">E1 <span class="badge ok">shipped · 166/166</span></div><div class="l">Shell + Aqua theme + OS utilities — window manager, dock/top-bar, Dashboard · Settings · Terminal · Clock · Notes · Snake + FastAPI serve seam. Built TDD (E1.1–E1.25) on <code>e1/samagra-os</code>; green gate clean (lint + <code>tsc</code> + 166 Vitest + <code>vite build</code>; backend 102/102). Human pixel QA = separate owner pass.</div></div>
+    <div class="card"><div class="n">E2 <span class="badge todo">next</span></div><div class="l">Data/control apps — Pipelines · Assignments · Org · Questions · Lectures · Booklets · INSP · Sims · mycontentdev · Munshi · Activity. Read-only wiring over <code>/api/*</code>; one backend gap = <code>GET /api/org</code>.</div></div>
     <div class="card"><div class="n">E3 <span class="badge park">planned</span></div><div class="l">console + samagra themes · mobile device mode.</div></div>
   </div>
   <p><strong>Linchpin architecture:</strong> all real behaviour lives in pure-TypeScript modules
@@ -193,8 +194,16 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   merge model. Artifacts: <code>specs/2026-06-20-samagra-os-experience-design.md</code>,
   <code>plans/2026-06-20-samagra-os.md</code>, <code>plans/2026-06-20-samagra-os-division.md</code>,
   <code>loops/{deepak,khanak}-loop.js</code> + <code>RUBRIC.md</code>. The plan + loops cleared an adversarial
-  multi-agent review (re-verify <strong>APPROVE</strong>). <strong>Loops authored; not yet launched
-  (owner-gated).</strong></p>
+  multi-agent review (re-verify <strong>APPROVE</strong>). <strong>E1 delivered:</strong> the <code>frontend/</code>
+  app shipped TDD (E1.1–E1.25) — bootstrap + frozen 17-app <code>registry.ts</code>, every pure
+  <code>lib/</code> engine (WM geometry/z-order, Snake, Clock, Terminal parser/dispatch, Notes model,
+  persistence) each with a co-located Vitest, the <code>windowManager</code>/<code>theme</code> Zustand stores,
+  the aqua chrome shell, the six OS-utility apps + shared components, and the FastAPI serve seam (Vite
+  <code>dist/</code> + SPA fallback, jinja portal route retired). <strong>E1.26 green gate:</strong>
+  <code>npm run verify</code> clean (lint + <code>tsc&nbsp;--noEmit</code> + <strong>166 Vitest tests / 32
+  files</strong> + <code>vite build</code>) and backend <strong>pytest 102/102</strong> (incl.
+  <code>test_serve_seam.py</code>). Pixel/interaction fidelity is a <strong>separate human QA pass</strong>
+  (owner-run, never a loop gate).</p>
 
   <h2 id="arch">Architecture</h2>
   <div class="diagram">
@@ -353,7 +362,18 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   </svg>
 
   <h2 id="tests">Tests</h2>
-  <p><span class="badge ok">98 / 98 passing</span> (last run 2026-06-19) — the 34-test Track A baseline
+  <p><span class="badge ok">frontend 166 / 166</span> <span class="badge ok">backend 102 / 102</span>
+  (last run 2026-06-20). <strong>SAMAGRA OS E1 — frontend:</strong> 166 Vitest tests across 32 files —
+  the pure <code>lib/</code> engines (WM geometry 14 · z-order 4 · snake engine 8 + cell 2 · clock
+  analog 6 / stopwatch 4 / timer 6 / world 2 · terminal parser 5 + dispatch 24 · notes model 11 ·
+  persistence 10), the frozen registry (3), the <code>windowManager</code> (16) / <code>theme</code> (5)
+  stores, the aqua themes token map (3), plus RTL smoke tests over the shell (TopBar · Dock · WindowFrame ·
+  ContextMenu), the six apps and the shared components — all green under <code>vitest run</code>, with
+  <code>tsc --noEmit</code> + <code>eslint</code> + <code>vite build</code> clean. <strong>Backend:</strong>
+  the suite grew to <strong>102</strong> with <code>test_serve_seam.py</code> (the Vite-<code>dist/</code>
+  mount + SPA fallback + <code>api/*</code> 404 guard + 503-if-unbuilt). A Windows pytest-temp symlink-cleanup
+  race at teardown is cosmetic (run with <code>--basetemp</code> to silence it); no test fails.</p>
+  <p class="lede">Backend detail (unchanged from Phase 2): the 34-test Track A baseline
   (spine + lectures + scheduler; harness isolation, atomic state writes, gate-prereq enforcement +
   <code>/api/gate</code> 409, refresh last-known-good, refresh-failure caller safety, state read-modify-write
   under one lock, provably single-holder lock) plus <strong>29 new Phase-1 tests</strong> across three
@@ -373,6 +393,23 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   the decided-block path; <code>dispatch_codex</code> + git mocked).</p>
 
   <h2 id="decisions">Recent decisions</h2>
+  <div class="log"><div class="d">2026-06-20 · SAMAGRA OS — E1 SHIPPED (shell + aqua + six OS utilities)</div>
+    The full <code>frontend/</code> app (React 18 + TypeScript + Vite) was built TDD across tasks E1.1–E1.25
+    and cleared the <strong>E1.26 green gate</strong>. The <em>linchpin</em> held: all real behaviour lives in
+    pure, headlessly-testable TypeScript — the window-manager math (<code>lib/wm/geometry</code> work-area /
+    openRect cascade / clamps / maximize / reclamp / tile, <code>lib/wm/zorder</code>), the Snake engine +
+    cell sizing, the Clock analog/stopwatch/timer/world math, the Terminal parser + effect-returning dispatch,
+    the Notes/Todos model, and the localStorage layer — each asserting verbatim <code>proto.md</code> constants
+    via a co-located Vitest. The <code>windowManager</code>/<code>theme</code> Zustand stores stay thin over
+    <code>lib/</code>; the aqua chrome shell (top bar · dock · window frame · context menu), the six OS-utility
+    apps (Dashboard · Settings · Terminal · Clock · Notes · Snake) and shared leaf components are thin visual
+    wrappers; and the FastAPI serve seam now mounts the Vite <code>dist/</code> with an SPA fallback (the jinja
+    portal route retired, <code>/api/*</code> frozen). Gate: <code>npm run verify</code> clean (lint +
+    <code>tsc&nbsp;--noEmit</code> + <strong>166 Vitest tests across 32 files</strong> + <code>vite build</code>)
+    and backend <strong>pytest 102/102</strong> green (incl. <code>test_serve_seam.py</code>) on branch
+    <code>e1/samagra-os</code>. <strong>Pixel/interaction fidelity is a separate human QA pass</strong>
+    (owner-run, never a loop completion signal). <strong>Next = E2</strong> (data/control apps — read-only
+    wiring over the existing <code>/api/*</code> contract; one hard backend gap = <code>GET /api/org</code>).</div>
   <div class="log"><div class="d">2026-06-20 · New top priority — SAMAGRA OS (Experience track); active loop parked</div>
     The owner re-prioritised: replace the plain tabbed portal with <strong>SAMAGRA OS</strong>, an OS-style
     windowing GUI (17 apps · 3 themes · 2 device modes) in React + TS + Vite, as its own <strong>Experience
@@ -464,6 +501,9 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   <h2 id="artifacts">Artifacts produced</h2>
   <table>
     <tr><th>Path</th><th>What</th></tr>
+    <tr><td><code>frontend/</code> (React + TS + Vite app)</td><td>SAMAGRA OS E1 — windowing shell, aqua theme, six OS utilities; pure-TS engines in <code>src/lib/**</code> (each with a co-located Vitest), Zustand stores, aqua chrome, apps + components</td></tr>
+    <tr><td><code>samagra/api/app.py</code> + <code>tests/test_serve_seam.py</code></td><td>FastAPI serve seam — mounts Vite <code>dist/</code>, SPA fallback (404s <code>api/*</code>, 503 if unbuilt); jinja portal route retired</td></tr>
+    <tr><td><code>docs/superpowers/specs/2026-06-20-samagra-os-experience-design.md</code> + <code>plans/2026-06-20-samagra-os.md</code></td><td>SAMAGRA OS Experience-track spec + phased plan (E1 in full TDD detail; E2/E3 skeletons)</td></tr>
     <tr><td><code>docs/superpowers/specs/2026-06-19-samagra-evolution-design.md</code></td><td>approved SAMAGRA design spec (integration contracts verified)</td></tr>
     <tr><td><code>docs/superpowers/plans/2026-06-19-samagra-evolution.md</code></td><td>34-task, 4-phase SAMAGRA implementation plan (TDD)</td></tr>
     <tr><td><code>docs/codex-reviews/PHASE1-loop-runbook.md</code></td><td>reconciled Codex review → decisions D1–D8 + Phase-1 loop backlog + Khanak prompt template</td></tr>
@@ -489,9 +529,13 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   has <strong>passed pre-merge Codex review (6 rounds + an adversarial Workflow audit → APPROVE)</strong>, and
   is now <strong>SHIPPED</strong> — pushed to <code>origin/main</code>, the advisory hook is active
   (<code>core.hooksPath=.githooks</code>), and the three agent worktrees exist.
-  <strong>On 2026-06-20 the owner re-prioritised: the next build is the
-  <a href="#experience">SAMAGRA OS Experience track (E1)</a></strong> — its spec, plan, division and two
-  autonomous loop scripts are authored under <code>docs/superpowers/</code> and await an owner "go" to launch.
+  <strong>On 2026-06-20 the owner re-prioritised to the
+  <a href="#experience">SAMAGRA OS Experience track</a>, and E1 is now SHIPPED</strong> — the
+  <code>frontend/</code> React+TS+Vite shell (aqua theme + WM + six OS utilities on tested pure-TS engines) +
+  the FastAPI serve seam, built TDD and green across the full gate (frontend 166/166 + backend 102/102) on
+  <code>e1/samagra-os</code>. Owner to-do: the <strong>human pixel/interaction QA pass</strong> and the
+  merge/integration decision for the branch; then <strong>E2</strong> (data/control apps — read-only wiring
+  over <code>/api/*</code>; one backend gap = <code>GET /api/org</code>).
   <strong>Phase 3 — the active loop</strong> (munshi → proposed seed → board approve → capture API) is now
   <span class="badge park">parked</span> (plan complete, resumes after the Experience track); reconcile its
   plan vs the runbook when it returns. The carried-in refresh hardening (F1 per-adapter isolation + F4 stale
@@ -507,8 +551,10 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     <tr><td>Activate pre-commit hook</td><td><span class="badge ok">done</span></td><td><code>core.hooksPath=.githooks</code> set — every commit + worktree now runs the advisory gate (<code>codex</code> 0.140.0 on PATH).</td></tr>
     <tr><td>Create agent worktrees</td><td><span class="badge ok">done</span></td><td><code>../samagra-{deepak,khanak,codex}</code> on <code>agent/{deepak,khanak,codex}</code>.</td></tr>
     <tr><td>Push <code>main</code> → origin (Phase 2)</td><td><span class="badge ok">done</span></td><td>Pushed 2026-06-19 — <code>origin/main</code> holds Phase 2 through <code>da9cab3</code> (this session's tracker-sync commit is local-only; push next session).</td></tr>
-    <tr><td>SAMAGRA OS — E1 (shell + aqua + utilities)</td><td><span class="badge todo">next</span></td><td>React+TS+Vite GUI replacing the portal. Spec + ~27-task TDD plan + deepak/khanak division + two loop scripts authored &amp; review-APPROVED. <strong>Owner-gated: launch the loops.</strong></td></tr>
-    <tr><td>SAMAGRA OS — E2 / E3</td><td><span class="badge park">planned</span></td><td>E2 data/control apps; E3 console + samagra themes + mobile. Skeletoned in the plan.</td></tr>
+    <tr><td>SAMAGRA OS — E1 (shell + aqua + utilities)</td><td><span class="badge ok">shipped · 166/166</span></td><td>React+TS+Vite GUI replacing the portal. Built TDD (E1.1–E1.25) on <code>e1/samagra-os</code>; E1.26 green gate clean (lint + <code>tsc</code> + 166 Vitest + <code>vite build</code>; backend 102/102). Pure-TS engines + aqua shell + six apps + serve seam.</td></tr>
+    <tr><td>SAMAGRA OS — E1 human pixel QA + branch merge</td><td><span class="badge todo">owner</span></td><td>Visual/interaction fidelity pass over the aqua shell + six apps (outside any loop), then the merge/integration decision for <code>e1/samagra-os</code> (<code>finishing-a-development-branch</code>).</td></tr>
+    <tr><td>SAMAGRA OS — E2 (data/control apps)</td><td><span class="badge todo">next</span></td><td>Eleven read-only apps over <code>/api/*</code>; one hard backend gap = <code>GET /api/org</code> (static <code>samagra/org.py</code>). Skeletoned in the plan; expand to full TDD detail at the boundary.</td></tr>
+    <tr><td>SAMAGRA OS — E3</td><td><span class="badge park">planned</span></td><td>console + samagra themes + mobile device mode (re-skin only; tokens already authored forward-compat). Skeletoned in the plan.</td></tr>
     <tr><td>Phase 3 — active loop (backend)</td><td><span class="badge park">parked</span></td><td>Deprioritised 2026-06-20 for the Experience track; plan complete, resumes after. Will need live munshi creds in <code>.env</code>.</td></tr>
     <tr><td>Notification channels</td><td><span class="badge todo">creds</span></td><td>Set <code>TELEGRAM_BOT_TOKEN</code>/<code>CHAT_ID</code> + gmail <code>SMTP_PASS</code> in <code>.env</code>. Until then notifications are logged only.</td></tr>
     <tr><td>Google Docs export</td><td><span class="badge todo">creds</span></td><td>Set <code>GOOGLE_OAUTH_CLIENT</code> (Desktop OAuth JSON); HTML + DOCX already work.</td></tr>
