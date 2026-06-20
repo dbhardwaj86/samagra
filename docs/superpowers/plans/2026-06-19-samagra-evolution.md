@@ -1,11 +1,14 @@
 # SAMAGRA Evolution Implementation Plan
 
-> **▶ PROGRESS (updated 2026-06-19):** **Phase 0 (rename) ✅ · Track A (stabilize, S-01–S-09) ✅ · Phase 1
-> (subsystem adapters) ✅ — all merged to `main`, 63/63 green.** Phase 1 cleared an adversarial 42-agent
-> pre-merge review (one HIGH fixed — MUN-01, munshi per-kind title schema). `create_seed` deferred to
-> Phase 3 (D2/D9). Carried into Phase 2: refresh per-adapter isolation + stale visibility (F1/F4).
-> **▶ NEXT: Phase 2 (governance)** — Tasks 2.1→. Per-task checkboxes below are not individually ticked;
-> the per-phase banners are the tracker of record.
+> **▶ PROGRESS (updated 2026-06-20):** **Phase 0 ✅ · Track A ✅ · Phase 1 ✅ · Phase 2 (governance) ✅ SHIPPED**
+> — all merged + pushed to `origin/main`; suite **98/98 green**; advisory Codex hook active; agent worktrees created.
+> **▶ Phase 3 (active loop) is now PARKED** (deprioritised, not cancelled — see the banner at the Phase 3
+> heading below). On **2026-06-20** the owner re-prioritised the roadmap: the immediate next build is the
+> **SAMAGRA OS Experience track** (the windowing GUI), which has its own spec + plan + division + loop scripts
+> under `docs/superpowers/` (see [`plans/2026-06-20-samagra-os.md`](2026-06-20-samagra-os.md)). Phase 3's plan
+> below is **complete and unchanged** and resumes once the Experience track (E1→) lands. Carried into Phase 3:
+> refresh per-adapter isolation + stale visibility (F1/F4). Per-task checkboxes below are not individually
+> ticked; the per-phase banners are the tracker of record.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -3194,6 +3197,12 @@ Expected: a clean tree, full suite green — Phase 2 governance layer complete (
 ---
 
 ## Phase 3 — Active loop (munshi item → classify → proposed seed payload with exact pointers → board-review assignment → on approval, create seed via capture API)
+
+> **⏸ PARKED (2026-06-20) — deprioritised, not cancelled.** On 2026-06-20 the owner re-prioritised the
+> roadmap: the immediate next build is the **SAMAGRA OS Experience track** (windowing GUI) under
+> [`docs/superpowers/plans/2026-06-20-samagra-os.md`](2026-06-20-samagra-os.md). This Phase-3 plan is
+> **complete and unchanged** and resumes once the Experience track (E1→) lands. Nothing below is obsolete —
+> it remains the authoritative spec for the single write path when work returns to the backend track.
 
 This phase wires the only write path in SAMAGRA. It reads munshi items (via the Phase-1 `MunshiAdapter`), classifies each as `content` vs `ops`, builds an exact `POST /api/seeds` payload (with corpus pointers resolved from the FTS5 catalog) for content items, queues each as a board-review assignment (`status='in-review'`, never writing to mycontentdev), and — only after a board agent flips the assignment to `approved` — creates the seed via `McdClient.create_seed`. `scan` is strictly read-only; `submit` refuses any non-approved assignment. All HTTP clients are mocked in tests; no live-prod calls in CI.
 

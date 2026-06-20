@@ -15,8 +15,20 @@
 > commits after it are local-ahead until the next `git push origin main`); the advisory
 > hook is ACTIVE (`core.hooksPath=.githooks`, so every commit + worktree now runs it — `codex` 0.140.0 on PATH);
 > the three agent worktrees exist (`../samagra-{deepak,khanak,codex}` on `agent/{deepak,khanak,codex}`).
-> **Next: Phase 3 (active loop)** — first reconcile its plan section vs the runbook (as Phase 2 needed), then
-> TDD it; it needs live `MUNSHI_API_URL`/`MUNSHI_SECRET` in `.env`. Carried-in: F1/F4 refresh hardening.
+> **▶ NEW TOP PRIORITY (2026-06-20): SAMAGRA OS — the Experience track.** Replace the plain tabbed portal with
+> an OS-style windowing GUI (17 apps · 3 themes · 2 device modes) in React + TypeScript + Vite, served by
+> FastAPI. Own spec + phased plan + agent division + two autonomous loop scripts under `docs/superpowers/`
+> (spec `specs/2026-06-20-samagra-os-experience-design.md`; plan `plans/2026-06-20-samagra-os.md`; division
+> `plans/2026-06-20-samagra-os-division.md`; loops `loops/{deepak,khanak}-loop.js` + `RUBRIC.md`). **E1**
+> (shell + aqua + OS utilities) is the immediate build, split file-disjoint between **claude-deepak**
+> (substrate / `lib/` engines / chrome / Dashboard·Settings·Terminal / serve seam) and **claude-khanak**
+> (Clock·Notes·Snake leaf apps + components), each driven by a long-running
+> build → test+coverage → Codex-review → iterate-against-rubric → commit loop, continuous-engine-publication
+> merge model. Linchpin: pure-TS headless-testable modules; pixel fidelity is a separate human pass. Plan +
+> loops cleared an adversarial multi-agent review (re-verify APPROVE). **Loops authored, NOT launched —
+> owner-gated.**
+> **Phase 3 (active loop) is PARKED** (plan complete, resumes after the Experience track; will need live
+> `MUNSHI_API_URL`/`MUNSHI_SECRET` in `.env`). Carried into Phase 3: F1/F4 refresh hardening.
 
 **Repo:** github.com/dbhardwaj86/samagra · branch `main` · local-first Python+FastAPI.
 **State:** Spine + portal + thin/thick exporter + semi-autonomous loop + two read-only subsystem adapters
@@ -68,6 +80,13 @@ QX `C:\SandBox\gpt_box\gpt-extract-ques` · textbook `C:\SandBox\gpt_box\physics
 - Don't write to `physics-textbook/queue.json` — SAMAGRA tracks approvals in its own `state/`.
 
 ## Open / needs user consent
+
+**SAMAGRA OS (Experience track) — owner-gated to LAUNCH (2026-06-20):**
+0. **Launch the two build loops.** The E1 spec / plan / division / loop scripts are authored + review-APPROVED
+   but **not launched**. Launching kicks off hours of autonomous TDD across the two agent worktrees. Order:
+   start **deepak's** bootstrap loop first (it publishes the substrate khanak rebases onto), then **khanak's**.
+   See `docs/superpowers/loops/README.md`. **No new creds needed for E1** (the GUI reads existing `/api/*`).
+   Pixel/interaction fidelity is a separate human QA pass after the loops drain.
 
 **Phase-2 owner-gated — ALL DONE (2026-06-19):**
 1. **Pre-merge Codex review → APPROVE** (gpt-5.5, xhigh): 6 rounds + a CEO adversarial Workflow audit. Caught a never-wedge HIGH, a recurring "outer guard downgrades a confirmed-CRITICAL block" class (5 ever-deeper instances: cache prune, malformed cached findings, broken-stderr warnings, pathological exception str/repr, and a finding's raising `__eq__` on the dedup), + 2 MEDIUM + nits — all fixed TDD (+11 invariant regressions, suite 98). Reports `docs/codex-reviews/07–13` + `12-workflow-invariant-audit.md`.

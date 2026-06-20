@@ -42,6 +42,7 @@ p{margin:10px 0}
 .badge{display:inline-block;border-radius:999px;font-size:11px;padding:2px 9px;border:1px solid var(--line);}
 .badge.ok{color:var(--ok);border-color:var(--ok);background:rgba(22,163,74,.08);}
 .badge.todo{color:var(--warn);border-color:var(--warn);background:rgba(217,119,6,.08);}
+.badge.park{color:var(--muted);border-color:var(--line);background:rgba(100,116,132,.10);}
 table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px;background:var(--panel);
   border:1px solid var(--line);border-radius:10px;overflow:hidden;}
 th,td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;}
@@ -57,10 +58,10 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
 </head>
 <body>
 <header class="top">
-  <h1>SAMAGRA</h1><span class="sub">Phase 2 (governance) SHIPPED — 98/98 green · review APPROVE · pushed to origin/main · hook active · worktrees created · next: Phase 3</span>
+  <h1>SAMAGRA</h1><span class="sub">Phase 2 SHIPPED · 98/98 green — <strong>new priority: SAMAGRA OS (Experience track / GUI), E1 next</strong> · backend active-loop (Phase 3) parked</span>
   <nav>
     <a href="#overview">Overview</a><a href="#phases">Phases</a>
-    <a href="#samagra">SAMAGRA</a><a href="#arch">Architecture</a><a href="#org">Org</a>
+    <a href="#samagra">SAMAGRA</a><a href="#experience">OS GUI</a><a href="#arch">Architecture</a><a href="#org">Org</a>
     <a href="#decisions">Decisions</a><a href="#next">Next</a>
   </nav>
   <button id="theme">◐</button>
@@ -72,6 +73,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   <a href="#overview">Overview</a>
   <a href="#phases">Phase status</a>
   <a href="#samagra">SAMAGRA roadmap</a>
+  <a href="#experience">SAMAGRA OS (GUI)</a>
   <a href="#arch">Architecture</a>
   <a href="#coverage">Source coverage</a>
   <a href="#workers">Worker routing</a>
@@ -156,7 +158,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     <div class="card"><div class="n">0 <span class="badge ok">done</span></div><div class="l">Rename to <code>samagra</code> (repo + package); PR #1 merged</div></div>
     <div class="card"><div class="n">1 <span class="badge ok">done</span></div><div class="l">Read-only adapters — mycontentdev + munshi (<code>library()</code>); reflect state. Built TDD, adversarial pre-merge review (MUN-01 fixed), merged to <code>main</code>. 63/63.</div></div>
     <div class="card"><div class="n">2 <span class="badge ok">built · 98/98</span></div><div class="l">Governance — durable <code>governance.db</code> store (assignments/events/review overlay, D6), Assignments tab, advisory-local Codex pre-commit (confirmed-CRITICAL + diff-hash cache + break-glass, D5), org SVG. Built TDD on <code>main</code>; pre-merge review <strong>APPROVE</strong>; <strong>shipped</strong> — pushed to <code>origin/main</code>, hook active, worktrees created.</div></div>
-    <div class="card"><div class="n">3 <span class="badge todo">planned</span></div><div class="l">Active loop — munshi → proposed seed (w/ pointers) → board approve → capture API</div></div>
+    <div class="card"><div class="n">3 <span class="badge park">parked</span></div><div class="l">Active loop — munshi → proposed seed (w/ pointers) → board approve → capture API. <strong>Deprioritised 2026-06-20</strong> for the Experience track; plan complete, resumes after SAMAGRA OS.</div></div>
   </div>
   <p>Governance principle: only the three board agents — <strong>Claude-Deepak (CEO)</strong>,
   <strong>Claude-Khanak (COO / CCO)</strong>, <strong>Codex (Chief Architect &amp; Code-Review Lead)</strong> —
@@ -164,6 +166,35 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   final publish gate. Workers (Gemini+NotebookLM, Grok, Hermes) produce drafts only.
   Spec: <code>docs/superpowers/specs/2026-06-19-samagra-evolution-design.md</code> ·
   Plan: <code>docs/superpowers/plans/2026-06-19-samagra-evolution.md</code> (34 tasks).</p>
+
+  <h2 id="experience">SAMAGRA OS — Experience track <span class="badge ok">NEW · 2026-06-20</span></h2>
+  <p class="lede">The new top priority: replace the plain tabbed portal with <strong>SAMAGRA OS</strong> — an
+  OS-style windowing GUI control plane (17 apps · 3 themes · 2 device modes), built in React + TypeScript +
+  Vite and served by FastAPI. It has its own spec + phased plan + agent division + autonomous loop scripts
+  under <code>docs/superpowers/</code>. The backend active loop (Phase 3) is
+  <span class="badge park">parked</span> until this lands.</p>
+  <div class="grid">
+    <div class="card"><div class="n">E1 <span class="badge todo">next</span></div><div class="l">Shell + Aqua theme + OS utilities — window manager, dock/top-bar, Dashboard · Settings · Terminal · Clock · Notes · Snake. ~27 TDD tasks.</div></div>
+    <div class="card"><div class="n">E2 <span class="badge park">planned</span></div><div class="l">Data/control apps — Pipelines · Assignments · Org · Questions · Lectures · Booklets · INSP · Sims · mycontentdev · Munshi · Activity.</div></div>
+    <div class="card"><div class="n">E3 <span class="badge park">planned</span></div><div class="l">console + samagra themes · mobile device mode.</div></div>
+  </div>
+  <p><strong>Linchpin architecture:</strong> all real behaviour lives in pure-TypeScript modules
+  (window geometry / z-order / tile math, the Snake engine, Clock/Timer math, the Terminal command parser,
+  the Notes/Todos model, the localStorage layer) that are <strong>unit-testable headlessly</strong>
+  (Vitest + branch-coverage + <code>tsc</code> + <code>vite build</code> gates); React components stay thin
+  visual wrappers. Pixel/interaction fidelity is a <strong>separate human QA pass</strong>, never inside an
+  autonomous loop.</p>
+  <p><strong>Two-agent execution.</strong> E1's headless tasks are split file-disjoint across two worktrees so
+  the branches merge without conflict: <strong>claude-deepak</strong> owns the substrate (bootstrap, all
+  <code>lib/</code> engines, stores, themes, aqua chrome, Dashboard/Settings/Terminal, the FastAPI serve seam);
+  <strong>claude-khanak</strong> owns the self-contained leaf apps (Clock/Notes/Snake wrappers + shared
+  components). Each runs a long-running <strong>loop</strong> (build → test + coverage → Codex review →
+  iterate-against-rubric → commit) gated by the active advisory Codex hook, with a continuous-engine-publication
+  merge model. Artifacts: <code>specs/2026-06-20-samagra-os-experience-design.md</code>,
+  <code>plans/2026-06-20-samagra-os.md</code>, <code>plans/2026-06-20-samagra-os-division.md</code>,
+  <code>loops/{deepak,khanak}-loop.js</code> + <code>RUBRIC.md</code>. The plan + loops cleared an adversarial
+  multi-agent review (re-verify <strong>APPROVE</strong>). <strong>Loops authored; not yet launched
+  (owner-gated).</strong></p>
 
   <h2 id="arch">Architecture</h2>
   <div class="diagram">
@@ -342,6 +373,18 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   the decided-block path; <code>dispatch_codex</code> + git mocked).</p>
 
   <h2 id="decisions">Recent decisions</h2>
+  <div class="log"><div class="d">2026-06-20 · New top priority — SAMAGRA OS (Experience track); active loop parked</div>
+    The owner re-prioritised: replace the plain tabbed portal with <strong>SAMAGRA OS</strong>, an OS-style
+    windowing GUI (17 apps · 3 themes · 2 device modes) in React + TS + Vite, as its own <strong>Experience
+    track</strong>. The backend <strong>active loop (Phase 3) is parked</strong> (plan complete, resumes
+    after). A spec + a ~47-task phased plan (E1 in full TDD detail) + a file-disjoint deepak/khanak division +
+    two autonomous loop scripts + a rubric were authored via an <strong>ultracode multi-agent workflow</strong>
+    (11 agents) and hardened by an <strong>adversarial pass</strong> that caught + fixed real defects: a loop
+    infinite-loop guard, a gameable-rubric coverage gate, a codex-PATH preflight, a premature-integration gate,
+    a broken cross-branch merge model (continuous engine publication adopted), and plan fidelity gaps
+    (digital-clock noon/midnight edge, the 880 Hz timer constant). Re-verify <strong>APPROVE</strong>. Linchpin:
+    pure-TS headless-testable modules; pixel fidelity is a separate human pass. <strong>Loops authored, not
+    launched (owner-gated).</strong></div>
   <div class="log"><div class="d">2026-06-19 · Phase 2 pre-merge review → APPROVE (clear to push)</div>
     Codex (Chief Architect, gpt-5.5/xhigh) reviewed the Phase-2 diff against the as-built D5/D6 contract over
     <strong>6 rounds</strong>, each catching a real defect in the exact contracts Phase 2 guarantees. R1: a
@@ -445,11 +488,14 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   to runbook <strong>D5</strong> (advisory-local hook) and <strong>D6</strong> (durable <code>governance.db</code>),
   has <strong>passed pre-merge Codex review (6 rounds + an adversarial Workflow audit → APPROVE)</strong>, and
   is now <strong>SHIPPED</strong> — pushed to <code>origin/main</code>, the advisory hook is active
-  (<code>core.hooksPath=.githooks</code>), and the three agent worktrees exist. The next build is
-  <strong>Phase 3 — the active loop</strong> (munshi → proposed seed → board approve → capture API);
-  reconcile its plan section vs the runbook first, as Phase 2 needed. The carried-in refresh hardening
-  (F1 per-adapter isolation + F4 stale visibility / <code>stale</code> column) remains to be folded in.
-  Owner-gated &amp; creds items:</p>
+  (<code>core.hooksPath=.githooks</code>), and the three agent worktrees exist.
+  <strong>On 2026-06-20 the owner re-prioritised: the next build is the
+  <a href="#experience">SAMAGRA OS Experience track (E1)</a></strong> — its spec, plan, division and two
+  autonomous loop scripts are authored under <code>docs/superpowers/</code> and await an owner "go" to launch.
+  <strong>Phase 3 — the active loop</strong> (munshi → proposed seed → board approve → capture API) is now
+  <span class="badge park">parked</span> (plan complete, resumes after the Experience track); reconcile its
+  plan vs the runbook when it returns. The carried-in refresh hardening (F1 per-adapter isolation + F4 stale
+  visibility / <code>stale</code> column) remains to be folded in. Owner-gated &amp; creds items:</p>
   <table>
     <tr><th>Item</th><th>Status</th><th>Action</th></tr>
     <tr><td>Phase 0 (rename)</td><td><span class="badge ok">done</span></td><td>repo + package <code>samagra</code>; catalog 7,044 artifacts.</td></tr>
@@ -461,7 +507,9 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     <tr><td>Activate pre-commit hook</td><td><span class="badge ok">done</span></td><td><code>core.hooksPath=.githooks</code> set — every commit + worktree now runs the advisory gate (<code>codex</code> 0.140.0 on PATH).</td></tr>
     <tr><td>Create agent worktrees</td><td><span class="badge ok">done</span></td><td><code>../samagra-{deepak,khanak,codex}</code> on <code>agent/{deepak,khanak,codex}</code>.</td></tr>
     <tr><td>Push <code>main</code> → origin (Phase 2)</td><td><span class="badge ok">done</span></td><td>Pushed 2026-06-19 — <code>origin/main</code> holds Phase 2 through <code>da9cab3</code> (this session's tracker-sync commit is local-only; push next session).</td></tr>
-    <tr><td>Phase 3 — active loop</td><td><span class="badge todo">planned</span></td><td>munshi item → classify → proposed seed (w/ FTS5 pointers) → board approve → capture API. Requires live munshi creds in <code>.env</code>.</td></tr>
+    <tr><td>SAMAGRA OS — E1 (shell + aqua + utilities)</td><td><span class="badge todo">next</span></td><td>React+TS+Vite GUI replacing the portal. Spec + ~27-task TDD plan + deepak/khanak division + two loop scripts authored &amp; review-APPROVED. <strong>Owner-gated: launch the loops.</strong></td></tr>
+    <tr><td>SAMAGRA OS — E2 / E3</td><td><span class="badge park">planned</span></td><td>E2 data/control apps; E3 console + samagra themes + mobile. Skeletoned in the plan.</td></tr>
+    <tr><td>Phase 3 — active loop (backend)</td><td><span class="badge park">parked</span></td><td>Deprioritised 2026-06-20 for the Experience track; plan complete, resumes after. Will need live munshi creds in <code>.env</code>.</td></tr>
     <tr><td>Notification channels</td><td><span class="badge todo">creds</span></td><td>Set <code>TELEGRAM_BOT_TOKEN</code>/<code>CHAT_ID</code> + gmail <code>SMTP_PASS</code> in <code>.env</code>. Until then notifications are logged only.</td></tr>
     <tr><td>Google Docs export</td><td><span class="badge todo">creds</span></td><td>Set <code>GOOGLE_OAUTH_CLIENT</code> (Desktop OAuth JSON); HTML + DOCX already work.</td></tr>
   </table>
