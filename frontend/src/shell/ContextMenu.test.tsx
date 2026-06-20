@@ -52,6 +52,22 @@ describe("ContextMenu (CH1 aqua chrome fidelity)", () => {
     expect(row.style.borderRadius).toBe("8px");
   });
 
+  // --- row weight (renderMenu L912): rows are fontWeight 500. The button must
+  // inherit the menu family/size WITHOUT a `font` shorthand clobbering the weight. ---
+  it("keeps menu rows at the prototype's 500 weight (font shorthand must not reset it)", () => {
+    render(<ContextMenu x={10} y={10} items={items} />);
+    const row = screen.getByText("Minimize").closest('[role="menuitem"]') as HTMLElement;
+    // the row weight survives at 500 (a `font: "inherit"` shorthand would have reset
+    // it back to the inherited 400 — this is the regression the advisory caught).
+    expect(row.style.fontWeight).toBe("500");
+    // family/size still inherit from the menu container onto the <button>
+    expect(row.style.fontFamily).toBe("inherit");
+    expect(row.style.fontSize).toBe("inherit");
+    // jsdom recomposes the shorthand getter from the longhands; the 500 weight must
+    // be reflected there too (never collapsed to a bare "inherit" that drops weight).
+    expect(row.style.font).toContain("500");
+  });
+
   it("tints a danger item with the prototype danger color #ef4444", () => {
     render(<ContextMenu x={10} y={10} items={items} />);
     const close = screen.getByText("Close").closest('[role="menuitem"]') as HTMLElement;

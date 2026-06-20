@@ -142,8 +142,13 @@ export default function ContextMenu({ x, y, items, theme = "aqua" }: ContextMenu
               cursor: item.disabled ? "default" : "pointer",
               opacity: item.disabled ? 0.45 : 1,
               color,
+              // Inherit the menu's family/size onto the <button> (buttons carry a UA
+              // default font) WITHOUT the `font` shorthand — the shorthand would
+              // reset font-weight back to the inherited value and defeat the
+              // prototype's 500-weight rows (renderMenu L912). Set longhands instead.
+              fontFamily: "inherit",
+              fontSize: "inherit",
               fontWeight: 500,
-              font: "inherit",
             }}
           >
             {item.icon ? (
