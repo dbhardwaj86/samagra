@@ -32,3 +32,10 @@ __pycache__/
 
 # --- codex review run logs (keep reports + runbook, drop raw run logs) ---
 docs/codex-reviews/*.log
+
+# --- frontend (node / vite) ---
+node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/coverage/
+*.tsbuildinfo
