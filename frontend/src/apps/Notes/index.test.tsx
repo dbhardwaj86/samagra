@@ -410,3 +410,73 @@ describe("Notes (fidelity — to-do rows + checkbox)", () => {
     expect(save).toHaveBeenCalledWith(KEYS.todos, expect.any(Array));
   });
 });
+
+// -------------------------------------------------------------------------- //
+// A11Y — to-do checkbox keyboard semantics (codex MED).                       //
+// The prototype renders the row + checkbox as plain <div>s (.dc.html L733),   //
+// so a faithful port inherits a real accessibility gap: pointer-only toggle.  //
+// We close it WITHOUT touching the AP5 visual tokens — the checkbox keeps its //
+// exact 20×20 markup but gains role=checkbox + aria-checked/-label, becomes   //
+// focusable (tabIndex=0), and toggles on Enter/Space (the headless residue    //
+// still being the save('samagra.todos') write).                               //
+// -------------------------------------------------------------------------- //
+describe("Notes (a11y — to-do checkbox keyboard)", () => {
+  it("exposes each todo checkbox as role=checkbox with aria-checked mirroring done + the task as its name", () => {
+    gotoTodos();
+    const list = screen.getByTestId("todos-list");
+    const boxes = within(list).getAllByRole("checkbox");
+    expect(boxes.length).toBeGreaterThan(0);
+    for (const box of boxes) {
+      const row = box.closest("[data-testid='todo-row']")!;
+      const done = row.getAttribute("data-done") === "true";
+      // aria-checked reflects the row's done state…
+      expect(box).toHaveAttribute("aria-checked", String(done));
+      // …and the accessible name is the task text (the row's todo-text).
+      const text = within(row as HTMLElement).getByTestId("todo-text").textContent!;
+      expect(box).toHaveAccessibleName(text);
+    }
+  });
+
+  it("makes the checkbox keyboard-focusable (tabIndex=0)", () => {
+    gotoTodos();
+    const box = within(screen.getByTestId("todos-list")).getAllByRole("checkbox")[0];
+    expect(box).toHaveAttribute("tabindex", "0");
+    box.focus();
+    expect(box).toHaveFocus();
+  });
+
+  it("toggles an active todo to done on Enter, persisting via save('samagra.todos')", () => {
+    gotoTodos();
+    const list = screen.getByTestId("todos-list");
+    const activeRow = within(list)
+      .getAllByTestId("todo-row")
+      .find((r) => r.getAttribute("data-done") === "false")!;
+    const text = within(activeRow).getByTestId("todo-text").textContent!;
+    const box = within(activeRow).getByRole("checkbox", { name: text });
+    expect(box).toHaveAttribute("aria-checked", "false");
+
+    fireEvent.keyDown(box, { key: "Enter" });
+
+    expect(save).toHaveBeenCalledWith(
+      KEYS.todos,
+      expect.arrayContaining([expect.objectContaining({ text, done: true })]),
+    );
+  });
+
+  it("toggles a todo on Space, persisting via save('samagra.todos')", () => {
+    gotoTodos();
+    const list = screen.getByTestId("todos-list");
+    const activeRow = within(list)
+      .getAllByTestId("todo-row")
+      .find((r) => r.getAttribute("data-done") === "false")!;
+    const text = within(activeRow).getByTestId("todo-text").textContent!;
+    const box = within(activeRow).getByRole("checkbox", { name: text });
+
+    fireEvent.keyDown(box, { key: " " });
+
+    expect(save).toHaveBeenCalledWith(
+      KEYS.todos,
+      expect.arrayContaining([expect.objectContaining({ text, done: true })]),
+    );
+  });
+});

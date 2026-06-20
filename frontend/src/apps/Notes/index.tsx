@@ -563,9 +563,25 @@ export default function Notes() {
                   }}
                 >
                   {/* 20×20 r6 checkbox — 2px border; filled accent + white <svg>
-                      check when done, else transparent + muted border (FD1/FD2). */}
+                      check when done, else transparent + muted border (FD1/FD2).
+                      The prototype renders this as a plain <div> (.dc.html L733);
+                      we keep the identical AP5 markup but add the checkbox role +
+                      keyboard toggle so it is reachable without a pointer (codex
+                      MED). Pointer clicks still toggle via the row's onClick, so the
+                      keydown stops propagation to avoid any double-fire. */}
                   <div
                     data-testid="todo-checkbox"
+                    role="checkbox"
+                    aria-checked={t.done}
+                    aria-label={t.text}
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onToggleTodo(t.id);
+                      }
+                    }}
                     style={{
                       width: 20,
                       height: 20,
