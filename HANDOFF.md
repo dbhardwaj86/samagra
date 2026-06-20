@@ -20,8 +20,13 @@
 > FastAPI. Own spec + phased plan + agent division + two autonomous loop scripts under `docs/superpowers/`
 > (spec `specs/2026-06-20-samagra-os-experience-design.md`; plan `plans/2026-06-20-samagra-os.md`; division
 > `plans/2026-06-20-samagra-os-division.md`; loops `loops/{deepak,khanak}-loop.js` + `RUBRIC.md`).
-> **E1 (shell + aqua theme + OS utilities) is BUILT + GREEN on branch `e1/samagra-os` (2026-06-20), and a
-> 3-theme + icon fidelity layer has now landed on top of it.**
+> **E1 (shell + ALL 3 themes + OS utilities) is BUILT, fidelity-passed, and MERGED to `main` (2026-06-20,
+> `06d88a3`, fast-forward; 96 files / ~19k insertions).** On top of the fidelity layer the main session added
+> draggable/resizable windows, the advisory HIGH#4 theme-index guard, Notes to-do keyboard a11y, and the
+> owner's two asks: the **chairman renamed Devesh → Deepak Bhardwaj** (Dashboard greeting, terminal prompt
+> `deepak@samagra:~$`, board + `whoami`) and **right-click context menus for all 3 themes** (desktop · window ·
+> dock-icon; theme-driven surface, verified live in aqua/console/samagra). **NOT yet pushed — `main` is ahead
+> of `origin/main` by 48 (push owner-gated).**
 > The full `frontend/` app (React 18 + TS + Vite) shipped TDD across E1.1–E1.25: the bootstrap + frozen
 > 17-app registry, every pure `lib/` engine (`wm/{geometry,zorder}`, `snake/{engine,cell}`,
 > `clock/{analog,stopwatch,timer,world}`, `terminal/{parser,dispatch}`, `notes/model`, `persistence`), the
@@ -37,19 +42,20 @@
 > (Close/Minimize/Maximize), exact traffic-light token colours (`#ff5f57` live / `#cdcdd4` inactive), the 28×23
 > right-side control geometry, the Devanagari wordmarks, and the full theme swap exercised through the real
 > stores.
-> **QA1 fidelity gate (2026-06-20): `npm run verify` clean — lint + `tsc --noEmit` + 419 Vitest tests across
+> **E1-merge gate (2026-06-20): `npm run verify` clean — lint + `tsc --noEmit` + 439 Vitest tests across
 > 38 files + `vite build` writing `dist/`, no `.only`/`.skip` in the diff — and the backend `pytest` suite at
 > 102/102 green (incl. `test_serve_seam.py`).** Linchpin held: all real behaviour lives in pure-TS
 > headless-testable modules; **pixel/interaction fidelity is a separate browser-vision QA pass** (owner-run,
 > never a loop completion signal) — **it has NOT run; pixel parity is NOT claimed.** The headless gate proves
 > the markup, tokens and icon wiring are correct, not that the rendered pixels match the screenshots.
-> **Next step = the browser-vision pixel pass** (owner-run, per-surface vs the prototype + `screenshots/`),
-> then **E2** (data/control apps — read-only wiring over the existing `/api/*` contract; one hard backend
-> gap = `GET /api/org`).
+> **Next steps:** owner `git push origin main` (push is owner-gated), the browser-vision pixel pass (owner-run,
+> per-surface vs the prototype + `screenshots/`), then **E2** (data/control apps — read-only wiring over the
+> existing `/api/*` contract; one hard backend gap = `GET /api/org`) and **E3** (mobile device mode + the
+> deferred Dashboard narrow-grid HIGH#2).
 > **Phase 3 (active loop) is PARKED** (plan complete, resumes after the Experience track; will need live
 > `MUNSHI_API_URL`/`MUNSHI_SECRET` in `.env`). Carried into Phase 3: F1/F4 refresh hardening.
 
-**Repo:** github.com/dbhardwaj86/samagra · branch `e1/samagra-os` (E1 build) · local-first Python+FastAPI.
+**Repo:** github.com/dbhardwaj86/samagra · `main` (E1 merged, `06d88a3`; `e1/samagra-os` branch retained at the same commit) · local-first Python+FastAPI.
 **State:** Spine + portal + thin/thick exporter + semi-autonomous loop + two read-only subsystem adapters
 (mycontentdev seeds, munshi `library()`) reflecting into the catalog, **+ Phase-2 governance**: durable
 `governance.db` store (assignments / events ledger / review overlay), `GET /api/assignments` + the
@@ -57,7 +63,7 @@ Assignments portal tab, an advisory Codex pre-commit gate (`samagra/review/`), t
 `.githooks/pre-commit` shim, and per-agent board files (`board/{deepak,khanak,codex}/`), **+ SAMAGRA OS E1
 + fidelity layer**: the `frontend/` React+TS+Vite windowing shell (three themes — aqua/console/samagra chrome
 · `Icon`/`AppIcon` SVG system · WM · six OS utilities on tested pure-TS engines) served by FastAPI from
-`frontend/dist/`. **Backend 102/102 pytest green; frontend 419/419 Vitest green.**
+`frontend/dist/`, + the chairman rename and right-click context menus. **Backend 102/102 pytest green; frontend 439/439 Vitest green.**
 
 ## Run it
 
@@ -78,7 +84,7 @@ set PYTHONPATH=%CD%                 # or: export PYTHONPATH=$(pwd) in bash
 cd frontend
 npm install                      # first run only (generates node_modules from tracked lockfile)
 npm run dev                      # Vite :5173, proxies /api,/lecture,/open -> uvicorn :8799
-npm run verify                   # the fidelity gate: lint + tsc --noEmit + vitest run (419) + vite build
+npm run verify                   # the gate: lint + tsc --noEmit + vitest run (439) + vite build
 npm run build                    # writes frontend/dist/ (FastAPI serves it at / with an SPA fallback)
 ```
 
@@ -118,7 +124,7 @@ QX `C:\SandBox\gpt_box\gpt-extract-ques` · textbook `C:\SandBox\gpt_box\physics
    `frontend/` app shipped TDD (E1.1–E1.25); a fidelity layer then added theme-driven chrome for **aqua ·
    console · samagra** (all colours/sizes from the `themes/` token map — FD1) and the `Icon`/`AppIcon` SVG
    system (FD2) across every launcher + the six apps. **QA1 fidelity gate clean:** `npm run verify` (lint +
-   `tsc` + **419 Vitest / 38 files** + `vite build`, no `.only`/`.skip`) and backend `pytest` 102/102 (incl.
+   `tsc` + **439 Vitest / 38 files** + `vite build`, no `.only`/`.skip`) and backend `pytest` 102/102 (incl.
    `test_serve_seam.py`). **Owner to-do now:** (a) the **browser-vision pixel QA pass** over the three-theme
    shell + apps (pixel/interaction parity — outside any loop, never a loop gate; **NOT yet run — pixel parity
    NOT claimed**); (b) the merge/integration decision for `e1/samagra-os` (see
