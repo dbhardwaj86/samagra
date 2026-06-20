@@ -1,7 +1,14 @@
-// src/App.tsx — SAMAGRA OS shell assembly (E1.18, VISUAL).
-// Assembles the Aqua chrome over the WM + theme stores: top bar, dock, one window
-// frame per open window, and a right-click context menu. This is a THIN shell — all
-// window math lives in lib/wm/* (via the WM store) and all theme tokens in themes/.
+// src/App.tsx — SAMAGRA OS shell assembly (E1.18 + CH2 console chrome).
+// Assembles the per-theme chrome over the WM + theme stores. The chrome that wraps
+// the windows is theme-driven (FD1):
+//   - aqua / samagra (`kind!=='console'`): a top bar (TopBar) + a bottom-center /
+//     left-rail Dock.
+//   - console (`kind==='console'`): NO top bar — a bottom Taskbar (Start button +
+//     running-window strip + clock) with the Start-menu popover as its child.
+// Every open window renders through one WindowFrame, themed to the active theme so
+// its chrome (traffic-lights vs right-side icon controls, radius, glow ring) matches.
+// This is a THIN shell — all window math lives in lib/wm/* (via the WM store) and all
+// theme tokens in themes/.
 //
 // Cross-branch build invariant (division §1 †): open windows render ONLY through a
 // runtime-resolved lazy import of `apps/<App>/index.tsx`. There is NO static import
@@ -25,10 +32,10 @@ import { createWindowManagerStore } from "./stores/windowManager";
 import { createThemeStore } from "./stores/theme";
 import TopBar from "./shell/TopBar";
 import Dock from "./shell/Dock";
+import Taskbar from "./shell/Taskbar";
+import StartMenu from "./shell/StartMenu";
 import WindowFrame from "./shell/WindowFrame";
 import ContextMenu, { type ContextMenuItem } from "./shell/ContextMenu";
-
-const aqua = THEMES.aqua;
 
 // Wire the two stores once for the app lifetime (WM first, theme references it).
 const wmStore = createWindowManagerStore();
@@ -96,7 +103,12 @@ export default function App() {
   const toggleMax = useStore(wmStore, (s) => s.toggleMax);
   const focus = useStore(wmStore, (s) => s.focus);
 
+  const theme = useStore(themeStore, (s) => s.theme);
+  const t = THEMES[theme];
+  const isConsole = t.kind === "console";
+
   const [menu, setMenu] = useState<MenuState | null>(null);
+  const [startOpen, setStartOpen] = useState(false);
   const [now, setNow] = useState(() => new Date());
 
   // Live clock — 1s tick, cleared on unmount.
@@ -116,6 +128,27 @@ export default function App() {
     return live.reduce((a, b) => (b.z > a.z ? b : a));
   }, [windows]);
 
+  // Taskbar click on a running window (renderTaskbar L1042): restore it if minimized
+  // (openApp un-minimizes + bumps z for an already-open app — store §1.4 step 2),
+  // else just focus it.
+  const selectWindow = useCallback(
+    (id: string) => {
+      const w = wmStore.getState().windows.find((x) => x.id === id);
+      if (!w) return;
+      if (w.min) openApp(w.app);
+      else focus(id);
+    },
+    [focus, openApp],
+  );
+
+  const handleOpen = useCallback(
+    (id: AppId) => {
+      openApp(id);
+      setStartOpen(false);
+    },
+    [openApp],
+  );
+
   const menuItems = useMemo<ContextMenuItem[]>(() => {
     if (!menu) return [];
     const id = menu.winId;
@@ -129,17 +162,22 @@ export default function App() {
   return (
     <div
       id="samagra-os-shell"
-      onClick={() => setMenu(null)}
+      onClick={() => {
+        setMenu(null);
+        setStartOpen(false);
+      }}
       style={{
         position: "fixed",
         inset: 0,
         overflow: "hidden",
-        background: aqua.bg,
-        font: `13px ${aqua.font}`,
-        color: aqua.text,
+        background: t.bg,
+        font: `13px ${t.font}`,
+        color: t.text,
       }}
     >
+      {/* Top bar — aqua/samagra only (TopBar renders null for console). */}
       <TopBar
+        theme={theme}
         activeTitle={active ? APPS[active.app].name : ""}
         clock={fmtClock(now)}
         onOpenClock={() => openApp("clock")}
@@ -151,6 +189,7 @@ export default function App() {
           <WindowFrame
             key={win.id}
             win={win}
+            theme={theme}
             title={APPS[win.app].name}
             active={active?.id === win.id}
             onFocus={focus}
@@ -166,7 +205,24 @@ export default function App() {
         );
       })}
 
-      <Dock onOpen={openApp} />
+      {/* Bottom chrome — console gets the Taskbar + Start menu; the others a Dock. */}
+      {isConsole ? (
+        <Taskbar
+          theme={theme}
+          windows={windows}
+          activeId={active?.id ?? null}
+          clock={fmtClock(now)}
+          startOpen={startOpen}
+          onToggleStart={() => setStartOpen((v) => !v)}
+          onSelectWindow={selectWindow}
+          onWindowContextMenu={openContextMenu}
+          onOpenClock={() => openApp("clock")}
+        >
+          {startOpen && <StartMenu theme={theme} onOpen={handleOpen} />}
+        </Taskbar>
+      ) : (
+        <Dock theme={theme} onOpen={openApp} />
+      )}
 
       {menu && <ContextMenu x={menu.x} y={menu.y} items={menuItems} />}
     </div>

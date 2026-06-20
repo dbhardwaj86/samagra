@@ -245,3 +245,192 @@ describe("WindowFrame (CH1 aqua chrome fidelity)", () => {
     expect(frame.style.background).toBe("rgb(255, 252, 246)"); // #fffcf6 opaque
   });
 });
+
+// ---------------------------------------------------------------------------
+// CH2 fidelity — Console WindowFrame (README §Windows / .dc.html renderWindow
+// L940-969 + winControls console branch L929-937). Console window: radius 10, dark
+// glass surface, 38px title bar with the app glyph + LEFT-aligned title and controls
+// on the RIGHT as 28×23 icon buttons (minimize / maximize / close) rendered as inline
+// <svg>s (NEVER traffic-light dots). The bar carries a 2px TOP accent border (full
+// app accent when active, hexA(accent,0.35) when inactive); when active the frame
+// gains a neon glow ring (0 0 0 1px hexA(accent,0.5), 0 0 34px hexA(accent,0.13)).
+// Close hover fills #ef4444. All colours/sizes come from the active theme tokens +
+// per-app accent (FD1). Pixel parity is a separate human QA pass.
+// ---------------------------------------------------------------------------
+import { APPS } from "../registry";
+import { hexA } from "../components/icons-data";
+
+const con = THEMES.console;
+const dashAccent = APPS.dashboard.accent; // #4f46e5
+
+// jsdom serializes a hex border color to the `rgb(r, g, b)` form when it round-trips
+// through the `border-top` shorthand (the accent here is an opaque hex, unlike the
+// rgba `line` tokens which survive verbatim). Derive the expected rgb string from the
+// SAME accent token so the assertion stays "painted from the token", not a literal.
+const rgbOf = (hex: string) => {
+  const n = parseInt(hex.slice(1), 16);
+  // spaceless to match the `norm()`-collapsed serialization compared against below
+  return `rgb(${n >> 16},${(n >> 8) & 255},${n & 255})`;
+};
+
+describe("WindowFrame (CH2 console chrome fidelity)", () => {
+  it("uses the console window radius of 10 and the dark glass surface (FD1)", () => {
+    const { container } = render(
+      <WindowFrame win={win} title="Dashboard" theme="console">
+        <div />
+      </WindowFrame>,
+    );
+    const frame = container.firstChild as HTMLElement;
+    expect(frame.style.borderRadius).toBe("10px");
+    expect(norm(frame.style.background)).toBe(con.winBg);
+    expect(frame.style.backdropFilter).toBe(con.winBlur);
+  });
+
+  // --- right-side controls: 28×23 icon BUTTONS, not traffic-light dots ---
+  it("renders the three controls on the RIGHT as 28×23 icon buttons (min/max/close)", () => {
+    render(
+      <WindowFrame win={win} title="Dashboard" theme="console">
+        <div />
+      </WindowFrame>,
+    );
+    const min = screen.getByLabelText("Minimize");
+    const max = screen.getByLabelText("Maximize");
+    const close = screen.getByLabelText("Close");
+    // 28×23 icon buttons (winControls console branch L933), radius 6
+    for (const btn of [min, max, close]) {
+      expect(btn.style.width).toBe("28px");
+      expect(btn.style.height).toBe("23px");
+      expect(btn.style.borderRadius).toBe("6px");
+    }
+  });
+
+  it("renders each console control as an inline <svg> glyph, never a 12×12 round dot", () => {
+    render(
+      <WindowFrame win={win} title="Dashboard" theme="console">
+        <div />
+      </WindowFrame>,
+    );
+    const close = screen.getByLabelText("Close");
+    // a glyph button — carries an inline <svg>, NOT a circular traffic-light dot
+    expect(close.querySelector("svg")).not.toBeNull();
+    expect(close.style.borderRadius).not.toBe("50%");
+  });
+
+  it("places the controls AFTER the title (right side) — title is left-aligned", () => {
+    render(
+      <WindowFrame win={win} title="Dashboard" theme="console">
+        <div />
+      </WindowFrame>,
+    );
+    // the title wrapper left-aligns its content (flex-start, not center)
+    const titleWrap = screen.getByText("Dashboard").parentElement as HTMLElement;
+    expect(titleWrap.style.justifyContent).toBe("flex-start");
+  });
+
+  // --- FD2: an app glyph sits to the left of the title (console title bar L952) ---
+  it("renders the app icon glyph as an inline <svg> left of the title", () => {
+    render(
+      <WindowFrame win={win} title="Dashboard" theme="console">
+        <div />
+      </WindowFrame>,
+    );
+    const titleWrap = screen.getByText("Dashboard").parentElement as HTMLElement;
+    expect(titleWrap.querySelector("svg")).not.toBeNull();
+  });
+
+  // --- 2px top accent border (renderWindow L949) ---
+  it("draws a 2px top accent border in the app accent when active", () => {
+    const { getByTestId } = render(
+      <WindowFrame win={win} title="Dashboard" theme="console" active>
+        <div />
+      </WindowFrame>,
+    );
+    const bar = getByTestId("titlebar");
+    expect(norm(bar.style.borderTop)).toBe(`2px solid ${rgbOf(dashAccent)}`);
+  });
+
+  it("fades the 2px top accent border to hexA(accent,0.35) when inactive", () => {
+    const { getByTestId } = render(
+      <WindowFrame win={win} title="Dashboard" theme="console" active={false}>
+        <div />
+      </WindowFrame>,
+    );
+    const bar = getByTestId("titlebar");
+    expect(norm(bar.style.borderTop)).toBe(norm(`2px solid ${hexA(dashAccent, 0.35)}`));
+  });
+
+  // --- neon glow ring when active (renderWindow L956) ---
+  it("adds a neon glow ring to the frame shadow only when the console window is active", () => {
+    const { container: activeC } = render(
+      <WindowFrame win={win} title="Dashboard" theme="console" active>
+        <div />
+      </WindowFrame>,
+    );
+    const activeShadow = (activeC.firstChild as HTMLElement).style.boxShadow;
+    // ring = 0 0 0 1px hexA(accent,0.5), 0 0 34px hexA(accent,0.13)
+    expect(activeShadow).toContain(`0 0 0 1px ${hexA(dashAccent, 0.5)}`);
+    expect(activeShadow).toContain(`0 0 34px ${hexA(dashAccent, 0.13)}`);
+    // console inset highlight (renderWindow L957)
+    expect(activeShadow).toContain("inset 0 1px 0 rgba(255,255,255,.06)");
+
+    const { container: idleC } = render(
+      <WindowFrame win={win} title="Dashboard" theme="console" active={false}>
+        <div />
+      </WindowFrame>,
+    );
+    const idleShadow = (idleC.firstChild as HTMLElement).style.boxShadow;
+    // no glow ring when inactive
+    expect(idleShadow).not.toContain(`0 0 34px ${hexA(dashAccent, 0.13)}`);
+    expect(idleShadow).toContain(INACTIVE_SHADOW);
+  });
+
+  // --- close hover fills #ef4444 (winControls console branch L931) ---
+  it("fills the close button with #ef4444 on hover (danger), reverting on leave", () => {
+    render(
+      <WindowFrame win={win} title="Dashboard" theme="console">
+        <div />
+      </WindowFrame>,
+    );
+    const close = screen.getByLabelText("Close");
+    fireEvent.mouseEnter(close);
+    expect(close.style.background).toBe("rgb(239, 68, 68)"); // #ef4444
+    fireEvent.mouseLeave(close);
+    expect(close.style.background).toBe("transparent");
+  });
+
+  // --- behaviours preserved on the console branch too ---
+  it("dispatches the window ops from the console right-side controls", () => {
+    const onClose = vi.fn();
+    const onMinimize = vi.fn();
+    const onToggleMax = vi.fn();
+    render(
+      <WindowFrame
+        win={win}
+        title="Dashboard"
+        theme="console"
+        onClose={onClose}
+        onMinimize={onMinimize}
+        onToggleMax={onToggleMax}
+      >
+        <div />
+      </WindowFrame>,
+    );
+    fireEvent.click(screen.getByLabelText("Close"));
+    fireEvent.click(screen.getByLabelText("Minimize"));
+    fireEvent.click(screen.getByLabelText("Maximize"));
+    expect(onClose).toHaveBeenCalledWith("w1");
+    expect(onMinimize).toHaveBeenCalledWith("w1");
+    expect(onToggleMax).toHaveBeenCalledWith("w1");
+  });
+
+  it("still toggles maximize on title-bar double-click in the console theme", () => {
+    const onToggleMax = vi.fn();
+    const { getByTestId } = render(
+      <WindowFrame win={win} title="Dashboard" theme="console" onToggleMax={onToggleMax}>
+        <div />
+      </WindowFrame>,
+    );
+    fireEvent.doubleClick(getByTestId("titlebar"));
+    expect(onToggleMax).toHaveBeenCalledWith("w1");
+  });
+});
