@@ -139,7 +139,11 @@ export default function App() {
         color: aqua.text,
       }}
     >
-      <TopBar activeTitle={active ? APPS[active.app].name : ""} clock={fmtClock(now)} />
+      <TopBar
+        activeTitle={active ? APPS[active.app].name : ""}
+        clock={fmtClock(now)}
+        onOpenClock={() => openApp("clock")}
+      />
 
       {windows.map((win) => {
         const Body = appComponent(win.app);
@@ -148,6 +152,7 @@ export default function App() {
             key={win.id}
             win={win}
             title={APPS[win.app].name}
+            active={active?.id === win.id}
             onFocus={focus}
             onClose={closeApp}
             onMinimize={minimize}
