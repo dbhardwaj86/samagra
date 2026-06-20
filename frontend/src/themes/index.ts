@@ -139,6 +139,23 @@ export const THEMES: Record<Theme, ThemeTokens> = {
   samagra,
 };
 
+/** The safe fallback theme used whenever a theme value is missing/invalid. */
+export const DEFAULT_THEME: Theme = "aqua";
+
+/** Runtime guard — is `v` one of the known theme keys? */
+export function isTheme(v: unknown): v is Theme {
+  return typeof v === "string" && Object.prototype.hasOwnProperty.call(THEMES, v);
+}
+
+/**
+ * Resolve a theme's tokens, falling back to DEFAULT_THEME for an undefined or
+ * unknown value. Consumers read tokens through this so a transient/invalid store
+ * value can never crash by indexing `THEMES[badKey].something` (advisory HIGH #4).
+ */
+export function getTheme(theme: Theme | string | null | undefined): ThemeTokens {
+  return isTheme(theme) ? THEMES[theme] : THEMES[DEFAULT_THEME];
+}
+
 // FD1 — CSS-var provider mapping. `cssVars(tokens)` flattens a theme's token set
 // into the `--samagra-*` custom properties the chrome + apps read, so every
 // color/size/font is driven by the ACTIVE theme (no hardcoded per-theme values).

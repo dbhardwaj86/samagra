@@ -1,5 +1,29 @@
 import { describe, it, expect } from "vitest";
-import { THEMES, cssVars, type ThemeTokens } from "./index";
+import { THEMES, cssVars, getTheme, isTheme, DEFAULT_THEME, type ThemeTokens } from "./index";
+
+describe("getTheme / isTheme — fallback-guarded token access (advisory HIGH #4)", () => {
+  it("DEFAULT_THEME is aqua", () => {
+    expect(DEFAULT_THEME).toBe("aqua");
+  });
+  it("isTheme accepts the known keys and rejects everything else", () => {
+    expect(isTheme("aqua")).toBe(true);
+    expect(isTheme("console")).toBe(true);
+    expect(isTheme("samagra")).toBe(true);
+    expect(isTheme("bogus")).toBe(false);
+    expect(isTheme(undefined)).toBe(false);
+    expect(isTheme(null)).toBe(false);
+    expect(isTheme(42)).toBe(false);
+  });
+  it("getTheme returns the requested tokens for a valid theme", () => {
+    expect(getTheme("console")).toBe(THEMES.console);
+    expect(getTheme("samagra")).toBe(THEMES.samagra);
+  });
+  it("getTheme falls back to aqua tokens for an undefined/unknown value", () => {
+    expect(getTheme(undefined)).toBe(THEMES.aqua);
+    expect(getTheme(null)).toBe(THEMES.aqua);
+    expect(getTheme("bogus")).toBe(THEMES.aqua);
+  });
+});
 
 describe("THEMES.aqua", () => {
   const a = THEMES.aqua;

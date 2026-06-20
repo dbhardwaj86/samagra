@@ -41,6 +41,17 @@ describe("setTheme — update theme + re-clamp every window (proto.md §1.9)", (
     }
   });
 
+  // Advisory HIGH #4 — a transient/unknown theme value must never be stored: it
+  // would make every THEMES[theme] consumer crash. setTheme coerces it to aqua.
+  it("coerces an unknown theme value to the default (aqua) rather than storing it", () => {
+    const wm = createWindowManagerStore();
+    const theme = createThemeStore({ wm });
+    theme.getState().setTheme("samagra");
+    // @ts-expect-error — exercising the runtime guard with an invalid value
+    theme.getState().setTheme("bogus");
+    expect(theme.getState().theme).toBe("aqua");
+  });
+
   it("re-clamps every normal window into the new theme's work area (8px inset, not resized)", () => {
     const wm = createWindowManagerStore();
     const theme = createThemeStore({ wm });

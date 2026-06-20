@@ -4,6 +4,7 @@
 // geometry math lives in lib/wm/geometry (delegated via wm.reclampForTheme).
 import { createStore, type StoreApi } from "zustand/vanilla";
 import type { Device, Theme } from "../types/contracts";
+import { DEFAULT_THEME, isTheme } from "../themes";
 import type { WindowManagerStore } from "./windowManager";
 
 export interface ThemeStoreOptions {
@@ -29,8 +30,11 @@ export function createThemeStore(opts: ThemeStoreOptions): ThemeStore {
     device: "pc",
 
     setTheme: (theme) => {
-      set({ theme });
-      wm.getState().reclampForTheme(theme);
+      // Coerce an undefined/unknown value to the default so no consumer ever
+      // indexes THEMES with a bad key (advisory HIGH #4 — root-cause guard).
+      const t = isTheme(theme) ? theme : DEFAULT_THEME;
+      set({ theme: t });
+      wm.getState().reclampForTheme(t);
     },
 
     setDevice: (device) => set({ device }),

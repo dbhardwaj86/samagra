@@ -27,7 +27,7 @@ import {
 import { useStore } from "zustand";
 import type { AppId, WindowState } from "./types/contracts";
 import { APPS } from "./registry";
-import { THEMES } from "./themes";
+import { getTheme } from "./themes";
 import { createWindowManagerStore } from "./stores/windowManager";
 import { createThemeStore } from "./stores/theme";
 import TopBar from "./shell/TopBar";
@@ -107,7 +107,7 @@ export default function App() {
   const resize = useStore(wmStore, (s) => s.resize);
 
   const theme = useStore(themeStore, (s) => s.theme);
-  const t = THEMES[theme];
+  const t = getTheme(theme); // fallback-guarded index (advisory HIGH #4)
   const isConsole = t.kind === "console";
   const isSamagra = t.kind === "samagra";
 
