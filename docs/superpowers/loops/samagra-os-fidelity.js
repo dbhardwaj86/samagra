@@ -285,6 +285,17 @@ function makeMetrics() {
   };
 }
 
+// Guard: a transient terminal API failure makes agent() return null (after the
+// runtime's own retries). Never deref null — substitute a safe fallback so one
+// dropped call degrades gracefully (gate→red→retry, review→advisory-allow,
+// commit→escalate) instead of crashing the whole run. Resume re-runs the dropped
+// call live; identical (prompt,opts) keep every completed call a cache hit.
+async function agentOr(prompt, opts, fallback) {
+  const r = await agent(prompt, opts);
+  if (r == null) { log(`  ⚠ agent ${opts.label} returned null (transient) → safe fallback`); return fallback; }
+  return r;
+}
+
 async function runTask(task, budgetOk, metrics, degraded) {
   phase(task.group);
   log(`▶ ${task.id} [${task.group}] — ${task.title}`);
@@ -317,13 +328,14 @@ async function runTask(task, budgetOk, metrics, degraded) {
         `Return selectorPasses + a short note.`].join("\n"),
       { label: label(`impl#${rec.iterations}`), phase: task.group, schema: S_GREEN });
 
-    const gate = await agent(
+    const gate = await agentOr(
       [envPreamble(task),
         `STEP = GATE (iteration ${rec.iterations}). Run from the repo root:`,
         ...gateCmds(task).map((c) => `  ${c}`),
         `Then self-assess fidelity vs the reference screenshot you Read: fidelitySelfScore 0-100 (honest — how closely does the rendered markup/tokens match the screenshot's layout, colors, sizes, icons?).`,
         `Check the diff for forbidden .only/.skip. Return green (all gate cmds pass), failingStage (or null), fidelitySelfScore, onlySkip, note.`].join("\n"),
-      { label: label(`gate#${rec.iterations}`), phase: task.group, schema: S_GATE });
+      { label: label(`gate#${rec.iterations}`), phase: task.group, schema: S_GATE },
+      { green: false, failingStage: "agent-unavailable (transient API)", fidelitySelfScore: null, onlySkip: false, note: "agent returned null" });
 
     if (!gate.green) {
       rec.gateFails += 1; rec.consecutiveGateFails += 1;
@@ -337,14 +349,15 @@ async function runTask(task, budgetOk, metrics, degraded) {
     rec.gatePasses += 1; rec.consecutiveGateFails = 0;
     log(`  ✓ GATE GREEN (fidelity self-score ${gate.fidelitySelfScore == null ? "n/a" : gate.fidelitySelfScore})`);
 
-    const review = await agent(
+    const review = await agentOr(
       [envPreamble(task),
         `STEP = CODEX REVIEW (iteration ${rec.iterations}). Stage this task's files then run the advisory review:`,
         `  git add ${task.files.join(" ")}`,
         `  ${CONFIG.reviewCmd}`,
         `exit 0 = clean | exit 1 = confirmed-CRITICAL (hard stop) | codex not invokable/timeout → set codexDown=true (advisory-allow, never wedge).`,
         `Return codexDown, confirmedCritical, findings{C,H,M,L}, criticalFindings[], topFindingSignature(or null), weakestDimension(or null), rubricScore(0-100 or null), onlySkipInDiff, note.`].join("\n"),
-      { label: label(`review#${rec.iterations}`), phase: task.group, schema: S_REVIEW });
+      { label: label(`review#${rec.iterations}`), phase: task.group, schema: S_REVIEW },
+      { codexDown: true, confirmedCritical: false, findings: { CRITICAL: 0, HIGH: 0, MED: 0, LOW: 0 }, criticalFindings: [], topFindingSignature: null, weakestDimension: null, rubricScore: null, onlySkipInDiff: false, note: "agent returned null" });
 
     const neutral = { codexDown: true, findings: { CRITICAL: 0, HIGH: 0, MED: 0, LOW: 0 }, confirmedCritical: false, criticalFindings: [], topFindingSignature: null, weakestDimension: null, rubricScore: review.rubricScore != null ? review.rubricScore : null, onlySkipInDiff: review.onlySkipInDiff };
     const r = review.codexDown ? neutral : review;
@@ -382,15 +395,16 @@ async function runTask(task, budgetOk, metrics, degraded) {
     return rec;
   }
 
-  const c = await agent(
+  const c = await agentOr(
     [envPreamble(task),
       `STEP = COMMIT. Stage exactly this task's files and commit (the pre-commit hook runs — do not bypass):`,
       `  git add ${task.files.join(" ")}`,
       `  git commit -m "${task.commit}" -m "${CONFIG.coAuthor}"`,
       `Never amend; never --no-verify. If the hook BLOCKS a confirmed-CRITICAL, set blockedByHook=true, committed=false. Else committed=true + sha.`].join("\n"),
-    { label: label("commit"), phase: task.group, schema: S_COMMIT });
-  if (c.blockedByHook) {
-    rec.status = "escalated"; rec.escalation = "pre-commit hook blocked a confirmed-CRITICAL";
+    { label: label("commit"), phase: task.group, schema: S_COMMIT },
+    { committed: false, blockedByHook: false, sha: null, note: "commit agent returned null (transient API)" });
+  if (!c.committed) {
+    rec.status = "escalated"; rec.escalation = c.blockedByHook ? "pre-commit hook blocked a confirmed-CRITICAL" : ("commit did not complete: " + c.note);
     log(`  ⛔ ESCALATE — ${rec.escalation}`); metrics.record(rec); return rec;
   }
 
@@ -412,11 +426,12 @@ const started = new Set();
 const degraded = { advisoryOnly: false, advisoryAllows: 0 };
 
 phase("preflight");
-const pf = await agent(
+const pf = await agentOr(
   [`Preflight for the SAMAGRA OS fidelity pass, in C:/SandBox/claude_box/TeachingOS.`,
     `Run: \`codex --version\`; \`git rev-parse --abbrev-ref HEAD\` (expect ${CONFIG.branch}); confirm the design reference exists: list \`${CONFIG.designRoot}\` and confirm \`${CONFIG.shots}\` has aqua-/console-/samagra- PNGs.`,
     `Return codexAvailable, designRefPresent (true only if the screenshots + .dc.html are readable), branch, note.`].join("\n"),
-  { label: "preflight", phase: "preflight", schema: S_PRE });
+  { label: "preflight", phase: "preflight", schema: S_PRE },
+  { codexAvailable: false, designRefPresent: true, branch: CONFIG.branch, note: "preflight agent returned null — assuming design-ref present (it was committed earlier) to allow resume" });
 if (!pf.designRefPresent) {
   log(`!! ABORT — design reference not present/readable (${pf.note}). Cannot match fidelity without it.`);
   return { aborted: true, reason: "design-ref missing", preflight: pf };
