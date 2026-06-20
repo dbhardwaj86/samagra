@@ -58,7 +58,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
 </head>
 <body>
 <header class="top">
-  <h1>SAMAGRA</h1><span class="sub">SAMAGRA OS <strong>E1 + 3 themes + right-click menus — MERGED to <code>main</code></strong> · frontend 439/439 + backend 102/102 green — <strong>next: owner push, then E2/E3</strong> · backend active-loop (Phase 3) parked</span>
+  <h1>SAMAGRA</h1><span class="sub">SAMAGRA OS <strong>E1 + 3 themes + right-click menus — MERGED to <code>main</code></strong> · frontend 439/439 + backend 102/102 green · <strong>pushed to <code>origin/main</code></strong> — <strong>next: browser-vision QA, then E2/E3</strong> · backend active-loop (Phase 3) parked</span>
   <nav>
     <a href="#overview">Overview</a><a href="#phases">Phases</a>
     <a href="#samagra">SAMAGRA</a><a href="#experience">OS GUI</a><a href="#arch">Architecture</a><a href="#org">Org</a>
@@ -430,7 +430,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     surface — verified live in aqua/console/samagra). Landed as 3 commits (<code>7db1a9e</code>, <code>09b0566</code>,
     <code>06d88a3</code>); advisory Codex hook ran + timed out at 90s (never-wedge → allowed). Gate:
     <strong>439/439 Vitest</strong> + <code>tsc --noEmit</code> + <code>vite build</code> clean.
-    <strong>Not yet pushed</strong> — <code>main</code> is ahead of <code>origin/main</code> by 48 (push owner-gated).</div>
+    <strong>Pushed to <code>origin/main</code> 2026-06-21</strong> (<code>557e6a4..6d09693</code>, with the tracker doc-sync).</div>
   <div class="log"><div class="d">2026-06-20 · QA1 — 3-theme + icon fidelity layer landed; headless gate green (browser-vision QA pending)</div>
     On top of E1, a <strong>theme + icon fidelity layer</strong> shipped: theme-driven shell chrome for all
     three themes — <strong>aqua</strong> (top bar + bottom-centre Dock + left traffic-lights), <strong>console</strong>
@@ -589,7 +589,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   end-to-end across <strong>aqua · console · samagra</strong> (token-driven chrome — FD1) with every launcher
   an inline <code>&lt;svg&gt;</code> via <code>Icon</code>/<code>AppIcon</code> (FD2), on the tested pure-TS
   engines + the FastAPI serve seam, green across the E1-merge gate (frontend <strong>439/439</strong> +
-  backend 102/102), now <strong>merged to <code>main</code></strong> (<code>06d88a3</code>). <strong>Next steps = owner push, then the browser-vision pixel pass</strong>
+  backend 102/102), now <strong>merged to <code>main</code> and pushed to <code>origin/main</code></strong> (<code>06d88a3</code>). <strong>Next step = the browser-vision pixel pass</strong>
   (owner-run, never a loop gate) — the headless gate proves logic/tokens/icons, <strong>not</strong> pixel
   parity, which is not yet claimed. Then <strong>E2</strong> (data/control apps — read-only wiring over
   <code>/api/*</code>; one backend gap = <code>GET /api/org</code>) and <strong>E3</strong> (mobile device
@@ -612,7 +612,8 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     <tr><td>SAMAGRA OS — E1 (shell + aqua + utilities)</td><td><span class="badge ok">shipped · 166/166</span></td><td>React+TS+Vite GUI replacing the portal. Built TDD (E1.1–E1.25) on <code>e1/samagra-os</code>; E1.26 green gate clean (lint + <code>tsc</code> + 166 Vitest + <code>vite build</code>; backend 102/102). Pure-TS engines + aqua shell + six apps + serve seam.</td></tr>
     <tr><td>SAMAGRA OS — 3-theme + icon fidelity layer</td><td><span class="badge ok">landed · 419/419</span></td><td>Theme-driven chrome for <strong>aqua · console · samagra</strong> (token map — FD1) + the <code>Icon</code>/<code>AppIcon</code> SVG system (FD2) across every launcher + the six apps. RTL tests adapted + fidelity hooks pinned. QA1 gate clean (lint + <code>tsc</code> + <strong>419 Vitest / 38 files</strong> + <code>vite build</code>, no <code>.only</code>/<code>.skip</code>; backend 102/102). Pixel parity not yet claimed.</td></tr>
     <tr><td>SAMAGRA OS — chairman rename + right-click menus + merge to <code>main</code></td><td><span class="badge ok">done · 439/439</span></td><td>Chairman renamed <strong>Deepak Bhardwaj</strong> + <strong>right-click context menus</strong> in all 3 themes (desktop · window · dock-icon), on top of draggable windows + HIGH#4 guard + Notes a11y. Fast-forwarded <code>e1/samagra-os</code> → <code>main</code> (<code>06d88a3</code>; 96 files / ~19k ins). Advisory Codex hook ran (90s timeout, never-wedge).</td></tr>
-    <tr><td>SAMAGRA OS — push <code>origin/main</code> + browser-vision pixel QA</td><td><span class="badge todo">owner · next</span></td><td><strong>Next step.</strong> <code>git push origin main</code> (owner-gated; <code>main</code> ahead by 48), and the visual/interaction fidelity pass over the three-theme shell + apps vs the prototype + <code>screenshots/</code> (outside any loop; has NOT run).</td></tr>
+    <tr><td>SAMAGRA OS — push <code>origin/main</code></td><td><span class="badge ok">done</span></td><td>Pushed 2026-06-21 (<code>557e6a4..6d09693</code>) — the full E1 build + tracker doc-sync now on the remote.</td></tr>
+    <tr><td>SAMAGRA OS — browser-vision pixel QA</td><td><span class="badge todo">owner · next</span></td><td><strong>Next step.</strong> The visual/interaction fidelity pass over the three-theme shell + apps vs the prototype + <code>screenshots/</code> (outside any loop; has NOT run).</td></tr>
     <tr><td>SAMAGRA OS — E2 (data/control apps)</td><td><span class="badge todo">planned</span></td><td>Eleven read-only apps over <code>/api/*</code>; one hard backend gap = <code>GET /api/org</code> (static <code>samagra/org.py</code>). Skeletoned in the plan; expand to full TDD detail at the boundary.</td></tr>
     <tr><td>SAMAGRA OS — mobile device mode</td><td><span class="badge park">planned</span></td><td>Phone frame + home-screen grid + single-app mode (the three desktop themes have now landed; mobile re-skin remains). Skeletoned in the plan.</td></tr>
     <tr><td>Phase 3 — active loop (backend)</td><td><span class="badge park">parked</span></td><td>Deprioritised 2026-06-20 for the Experience track; plan complete, resumes after. Will need live munshi creds in <code>.env</code>.</td></tr>

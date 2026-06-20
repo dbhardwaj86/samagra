@@ -25,8 +25,8 @@
 > draggable/resizable windows, the advisory HIGH#4 theme-index guard, Notes to-do keyboard a11y, and the
 > owner's two asks: the **chairman renamed Devesh → Deepak Bhardwaj** (Dashboard greeting, terminal prompt
 > `deepak@samagra:~$`, board + `whoami`) and **right-click context menus for all 3 themes** (desktop · window ·
-> dock-icon; theme-driven surface, verified live in aqua/console/samagra). **NOT yet pushed — `main` is ahead
-> of `origin/main` by 48 (push owner-gated).**
+> dock-icon; theme-driven surface, verified live in aqua/console/samagra). **PUSHED to `origin/main` 2026-06-21
+> (`557e6a4..6d09693`, incl. the tracker doc-sync).**
 > The full `frontend/` app (React 18 + TS + Vite) shipped TDD across E1.1–E1.25: the bootstrap + frozen
 > 17-app registry, every pure `lib/` engine (`wm/{geometry,zorder}`, `snake/{engine,cell}`,
 > `clock/{analog,stopwatch,timer,world}`, `terminal/{parser,dispatch}`, `notes/model`, `persistence`), the
@@ -48,10 +48,9 @@
 > headless-testable modules; **pixel/interaction fidelity is a separate browser-vision QA pass** (owner-run,
 > never a loop completion signal) — **it has NOT run; pixel parity is NOT claimed.** The headless gate proves
 > the markup, tokens and icon wiring are correct, not that the rendered pixels match the screenshots.
-> **Next steps:** owner `git push origin main` (push is owner-gated), the browser-vision pixel pass (owner-run,
-> per-surface vs the prototype + `screenshots/`), then **E2** (data/control apps — read-only wiring over the
-> existing `/api/*` contract; one hard backend gap = `GET /api/org`) and **E3** (mobile device mode + the
-> deferred Dashboard narrow-grid HIGH#2).
+> **Next steps:** the browser-vision pixel pass (owner-run, per-surface vs the prototype + `screenshots/`),
+> then **E2** (data/control apps — read-only wiring over the existing `/api/*` contract; one hard backend
+> gap = `GET /api/org`) and **E3** (mobile device mode + the deferred Dashboard narrow-grid HIGH#2).
 > **Phase 3 (active loop) is PARKED** (plan complete, resumes after the Experience track; will need live
 > `MUNSHI_API_URL`/`MUNSHI_SECRET` in `.env`). Carried into Phase 3: F1/F4 refresh hardening.
 
