@@ -20,21 +20,31 @@
 > FastAPI. Own spec + phased plan + agent division + two autonomous loop scripts under `docs/superpowers/`
 > (spec `specs/2026-06-20-samagra-os-experience-design.md`; plan `plans/2026-06-20-samagra-os.md`; division
 > `plans/2026-06-20-samagra-os-division.md`; loops `loops/{deepak,khanak}-loop.js` + `RUBRIC.md`).
-> **E1 (shell + aqua theme + OS utilities) is BUILT + GREEN on branch `e1/samagra-os` (2026-06-20).**
+> **E1 (shell + aqua theme + OS utilities) is BUILT + GREEN on branch `e1/samagra-os` (2026-06-20), and a
+> 3-theme + icon fidelity layer has now landed on top of it.**
 > The full `frontend/` app (React 18 + TS + Vite) shipped TDD across E1.1–E1.25: the bootstrap + frozen
 > 17-app registry, every pure `lib/` engine (`wm/{geometry,zorder}`, `snake/{engine,cell}`,
 > `clock/{analog,stopwatch,timer,world}`, `terminal/{parser,dispatch}`, `notes/model`, `persistence`), the
 > `windowManager`/`theme` Zustand stores (thin over `lib/`), the aqua chrome shell (top bar · dock · window
 > frame · context menu), the six OS-utility apps (Dashboard · Settings · Terminal · Clock · Notes · Snake) +
 > shared leaf components, and the FastAPI serve seam (Vite `dist/` + SPA fallback, jinja portal route retired).
-> **E1.26 green gate (this commit): `npm run verify` clean — lint + `tsc --noEmit` + 166 Vitest tests across
-> 32 files + `vite build` writing `dist/` — and the backend `pytest` suite at 102/102 green (incl.
-> `test_serve_seam.py`).** Linchpin held: all real behaviour lives in pure-TS headless-testable modules;
-> **pixel/interaction fidelity is a separate human QA pass** (owner-run, never a loop completion signal).
-> **Gate re-verified 2026-06-20 (E1.26 boundary):** independent re-run from `e1/samagra-os` confirms
-> frontend `npm run verify` clean (166 Vitest / 32 files + `tsc` + lint + `vite build`) and backend
-> `pytest` 102/102 (0 failures / 0 errors, rc=0) — pointer files in sync.
-> **Next = E2** (data/control apps — read-only wiring over the existing `/api/*` contract; one hard backend
+> **Fidelity layer (2026-06-20):** theme-driven chrome for all three themes — **aqua** (top bar + bottom-centre
+> Dock + left traffic-lights), **console** (no top bar; bottom Taskbar + Start menu + right-side neon icon
+> controls), **samagra** (Devanagari top strip + left **Rail** dock + warm window frame) — every colour/size
+> driven by the `themes/` token map (**FD1**), plus the `Icon`/`AppIcon` SVG components (**FD2**) wired through
+> every dock/rail/Start launcher and the six apps (no letter badges anywhere). The RTL suite was adapted to the
+> new markup and pins the fidelity hooks: per-launcher inline `<svg>`, control aria-labels
+> (Close/Minimize/Maximize), exact traffic-light token colours (`#ff5f57` live / `#cdcdd4` inactive), the 28×23
+> right-side control geometry, the Devanagari wordmarks, and the full theme swap exercised through the real
+> stores.
+> **QA1 fidelity gate (2026-06-20): `npm run verify` clean — lint + `tsc --noEmit` + 419 Vitest tests across
+> 38 files + `vite build` writing `dist/`, no `.only`/`.skip` in the diff — and the backend `pytest` suite at
+> 102/102 green (incl. `test_serve_seam.py`).** Linchpin held: all real behaviour lives in pure-TS
+> headless-testable modules; **pixel/interaction fidelity is a separate browser-vision QA pass** (owner-run,
+> never a loop completion signal) — **it has NOT run; pixel parity is NOT claimed.** The headless gate proves
+> the markup, tokens and icon wiring are correct, not that the rendered pixels match the screenshots.
+> **Next step = the browser-vision pixel pass** (owner-run, per-surface vs the prototype + `screenshots/`),
+> then **E2** (data/control apps — read-only wiring over the existing `/api/*` contract; one hard backend
 > gap = `GET /api/org`).
 > **Phase 3 (active loop) is PARKED** (plan complete, resumes after the Experience track; will need live
 > `MUNSHI_API_URL`/`MUNSHI_SECRET` in `.env`). Carried into Phase 3: F1/F4 refresh hardening.
@@ -44,9 +54,10 @@
 (mycontentdev seeds, munshi `library()`) reflecting into the catalog, **+ Phase-2 governance**: durable
 `governance.db` store (assignments / events ledger / review overlay), `GET /api/assignments` + the
 Assignments portal tab, an advisory Codex pre-commit gate (`samagra/review/`), the committed
-`.githooks/pre-commit` shim, and per-agent board files (`board/{deepak,khanak,codex}/`), **+ SAMAGRA OS E1**:
-the `frontend/` React+TS+Vite windowing shell (aqua theme · WM · six OS utilities on tested pure-TS engines)
-served by FastAPI from `frontend/dist/`. **Backend 102/102 pytest green; frontend 166/166 Vitest green.**
+`.githooks/pre-commit` shim, and per-agent board files (`board/{deepak,khanak,codex}/`), **+ SAMAGRA OS E1
++ fidelity layer**: the `frontend/` React+TS+Vite windowing shell (three themes — aqua/console/samagra chrome
+· `Icon`/`AppIcon` SVG system · WM · six OS utilities on tested pure-TS engines) served by FastAPI from
+`frontend/dist/`. **Backend 102/102 pytest green; frontend 419/419 Vitest green.**
 
 ## Run it
 
@@ -67,7 +78,7 @@ set PYTHONPATH=%CD%                 # or: export PYTHONPATH=$(pwd) in bash
 cd frontend
 npm install                      # first run only (generates node_modules from tracked lockfile)
 npm run dev                      # Vite :5173, proxies /api,/lecture,/open -> uvicorn :8799
-npm run verify                   # the E1 gate: lint + tsc --noEmit + vitest run + vite build
+npm run verify                   # the fidelity gate: lint + tsc --noEmit + vitest run (419) + vite build
 npm run build                    # writes frontend/dist/ (FastAPI serves it at / with an SPA fallback)
 ```
 
@@ -85,7 +96,7 @@ npm run build                    # writes frontend/dist/ (FastAPI serves it at /
 - `samagra/notify.py` — Telegram + email (creds-gated, always logs `state/notifications.log`).
 - `samagra/lectures/` — `render.py` (content.json→HTML), `thin.py`, `export.py` (HTML/DOCX/GDocs), `gdocs.py`.
 - `samagra/api/app.py` — FastAPI; serves the Vite build at `/` (mounts `frontend/dist/assets`, SPA fallback `GET /{full_path}` declared LAST, 404s `api/*`, 503 if not built); `/api/*`, `/lecture/{slug}`, `/open` are a frozen contract.
-- `frontend/` — **SAMAGRA OS E1** (React 18 + TS + Vite; own `package.json`, lockfile tracked, `dist/` gitignored). `src/lib/**` = pure headless-testable engines (WM geometry/z-order, snake, clock, terminal, notes, persistence) each co-located with a `*.test.ts`; `src/stores/**` = thin Zustand over `lib/`; `src/shell/**` = aqua chrome; `src/apps/**` = the six OS utilities; `src/registry.ts` = the frozen 17-app table.
+- `frontend/` — **SAMAGRA OS E1 + fidelity layer** (React 18 + TS + Vite; own `package.json`, lockfile tracked, `dist/` gitignored). `src/lib/**` = pure headless-testable engines (WM geometry/z-order, snake, clock, terminal, notes, persistence) each co-located with a `*.test.ts`; `src/stores/**` = thin Zustand over `lib/`; `src/themes/**` = the per-theme token map (aqua/console/samagra — **FD1**); `src/components/{Icon,AppIcon}.tsx` = the SVG icon system (**FD2**, `icons-data.ts`); `src/shell/**` = theme-driven chrome (`ThemeRoot` · `TopBar` · `Dock` · `Taskbar` · `StartMenu` · `Rail` · `WindowFrame` · `ContextMenu`); `src/apps/**` = the six OS utilities; `src/registry.ts` = the frozen 17-app table.
 
 ## Sources (read-only, paths in samagra/config.py / .env)
 
@@ -103,28 +114,33 @@ QX `C:\SandBox\gpt_box\gpt-extract-ques` · textbook `C:\SandBox\gpt_box\physics
 ## Open / needs user consent
 
 **SAMAGRA OS (Experience track):**
-0. **E1 BUILT + GREEN (2026-06-20) on `e1/samagra-os`.** The full `frontend/` app shipped TDD (E1.1–E1.25)
-   and cleared the E1.26 green gate: `npm run verify` clean (lint + `tsc` + 166 Vitest + `vite build`) and
-   backend `pytest` 102/102 (incl. `test_serve_seam.py`). **Owner to-do now:** (a) the **human visual-fidelity
-   QA pass** over the aqua shell + six apps (pixel/interaction parity — outside any loop, never a loop gate);
-   (b) the merge/integration decision for `e1/samagra-os` (see `superpowers:finishing-a-development-branch`).
-   **Next build = E2** (data/control apps — read-only wiring over `/api/*`; one hard backend gap =
-   `GET /api/org` via static `samagra/org.py`). **No new creds needed for E1** (the GUI reads existing
-   `/api/*`); E2's mcd/munshi apps render graceful creds-gated empty states.
+0. **E1 BUILT + GREEN + 3-theme/icon fidelity layer landed (2026-06-20) on `e1/samagra-os`.** The full
+   `frontend/` app shipped TDD (E1.1–E1.25); a fidelity layer then added theme-driven chrome for **aqua ·
+   console · samagra** (all colours/sizes from the `themes/` token map — FD1) and the `Icon`/`AppIcon` SVG
+   system (FD2) across every launcher + the six apps. **QA1 fidelity gate clean:** `npm run verify` (lint +
+   `tsc` + **419 Vitest / 38 files** + `vite build`, no `.only`/`.skip`) and backend `pytest` 102/102 (incl.
+   `test_serve_seam.py`). **Owner to-do now:** (a) the **browser-vision pixel QA pass** over the three-theme
+   shell + apps (pixel/interaction parity — outside any loop, never a loop gate; **NOT yet run — pixel parity
+   NOT claimed**); (b) the merge/integration decision for `e1/samagra-os` (see
+   `superpowers:finishing-a-development-branch`). **Next build = E2** (data/control apps — read-only wiring
+   over `/api/*`; one hard backend gap = `GET /api/org` via static `samagra/org.py`). **No new creds needed**
+   (the GUI reads existing `/api/*`); E2's mcd/munshi apps render graceful creds-gated empty states.
 
-   **Human visual-fidelity sign-off (E1 boundary — owner-run, RUBRIC §6).** Per spec §7.4/§10-item-9 and
-   `docs/superpowers/loops/RUBRIC.md` §6, pixel & interaction parity is a **human QA pass, never a loop
-   gate** — run once per surface with `npm run dev` (Vite :5173) or a built `samagra serve`, against the
-   extracted prototype + `screenshots/`. The owner (deepak) signs each row here. **Status: all rows
-   PENDING** (logic green, build green — *not yet* "looks right"). Eight surfaces:
-   - [ ] **E1.18 Aqua shell** — top bar **30px** (wordmark · active title · status pill · live clock); Dock bottom-center **radius 20** + hover lift; WindowFrame **radius 13**, left traffic-lights, **38px** title bar, double-click maximize; ContextMenu **width 216**; work-area framing `{8,36,vw-16,vh-122}`.
-   - [ ] **E1.19 Dashboard** — hero-stat layout, pipeline-bar density, board + recent-activity spacing.
-   - [ ] **E1.20 Settings** — Appearance / Device / Integration row styling; pill active vs needs-creds states.
-   - [ ] **E1.21 Terminal** — prompt rendering, line-class colors from `termPalette`, welcome banner.
-   - [ ] **E1.22 Clock** — hand sweep, ring depletion, chime, tab visuals.
-   - [ ] **E1.23 Notes/To-dos** — list/editor split, "● Autosaved" footer, filter chrome.
-   - [ ] **E1.24 Snake** — movement feel, speed ramp, death visuals, D-pad.
-   - [ ] **E1.25 Components** — Pill/Card/Chip/IconButton accent + spacing parity.
+   **Browser-vision pixel QA sign-off (fidelity boundary — owner-run, RUBRIC §6).** Per spec §7.4/§10-item-9
+   and `docs/superpowers/loops/RUBRIC.md` §6, pixel & interaction parity is a **human / browser-vision QA
+   pass, never a loop gate** — run once per surface with `npm run dev` (Vite :5173) or a built `samagra
+   serve`, against the extracted prototype + `screenshots/`. The owner (deepak) signs each row here. **Status:
+   all rows PENDING** (logic green, theming + icon wiring green, build green — *not yet* "looks right"; the
+   headless gate proves the markup/tokens/icons, not the pixels). Surfaces:
+   - [ ] **Theme chrome (×3)** — aqua (top bar **30px** · bottom-centre Dock **radius 20** + hover lift · left traffic-lights), console (no top bar · bottom Taskbar **50px** + Start menu · right-side neon icon controls · active glow ring), samagra (Devanagari **समग्र** top strip · left **Rail 66px** + active accent bar · warm window frame). WindowFrame radii aqua **13** / console **10** / samagra **15**; **38px** title bar; right controls 28×23; double-click maximize; ContextMenu **width 216**.
+   - [ ] **Icons (FD2)** — every dock/rail/Start/app glyph is an inline 24×24 stroke `<svg>` via `Icon`/`AppIcon` (no letter badges); per-app accent colours from `APPS[id].accent`.
+   - [ ] **Dashboard** — hero-stat layout, pipeline-bar density, board + recent-activity spacing.
+   - [ ] **Settings** — Appearance (3 theme swatch cards) / Device toggle / Integration rows; pill active vs needs-creds states; this is the production theme + device switcher.
+   - [ ] **Terminal** — prompt rendering, line-class colors from the per-theme palette, welcome banner.
+   - [ ] **Clock** — hand sweep, ring depletion, chime, tab visuals.
+   - [ ] **Notes/To-dos** — list/editor split, "● Autosaved" footer, filter chrome.
+   - [ ] **Snake** — movement feel, speed ramp, death visuals, D-pad, themed board (cream in samagra).
+   - [ ] **Components** — Pill/Card/Chip/IconButton accent + spacing parity across all three themes.
 
 **Phase-2 owner-gated — ALL DONE (2026-06-19):**
 1. **Pre-merge Codex review → APPROVE** (gpt-5.5, xhigh): 6 rounds + a CEO adversarial Workflow audit. Caught a never-wedge HIGH, a recurring "outer guard downgrades a confirmed-CRITICAL block" class (5 ever-deeper instances: cache prune, malformed cached findings, broken-stderr warnings, pathological exception str/repr, and a finding's raising `__eq__` on the dedup), + 2 MEDIUM + nits — all fixed TDD (+11 invariant regressions, suite 98). Reports `docs/codex-reviews/07–13` + `12-workflow-invariant-audit.md`.
