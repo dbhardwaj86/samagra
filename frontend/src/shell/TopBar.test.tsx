@@ -19,6 +19,14 @@ const aqua = THEMES.aqua;
 // without asserting an artefact of jsdom's serializer.
 const norm = (s: string) => s.replace(/,\s+/g, ",");
 
+// jsdom's CSSOM also re-quotes font-family names (single → double quotes) and
+// re-spaces the comma list when a value round-trips through the `font-family`
+// property — e.g. the token `'Tiro Devanagari Hindi',serif` serializes as
+// `"Tiro Devanagari Hindi", serif`. normFont collapses both quote style and
+// whitespace so we still assert "painted from the wordmark token" (the Devanagari
+// family) without pinning a serializer artefact.
+const normFont = (s: string) => s.replace(/["']/g, "").replace(/\s*,\s*/g, ",");
+
 describe("TopBar (CH1 aqua chrome fidelity)", () => {
   it("renders the chrome bar without crashing", () => {
     const { container } = render(<TopBar activeTitle="Dashboard" clock="9:41 AM" />);
@@ -136,5 +144,39 @@ describe("TopBar (CH1 aqua chrome fidelity)", () => {
     );
     fireEvent.click(screen.getByText("9:41 AM"));
     expect(onOpenClock).toHaveBeenCalledTimes(1);
+  });
+
+  // --- CH3 samagra rail-offset: the strip starts at left = rail (66) so it sits to
+  // the RIGHT of the left rail dock, not over it (renderTopBar samagra L988). ---
+  it("offsets the samagra strip by the rail width so it clears the left rail", () => {
+    const { container } = render(
+      <TopBar activeTitle="Dashboard" clock="9:41 AM" theme="samagra" />,
+    );
+    const bar = container.firstChild as HTMLElement;
+    // left is driven by the theme rail token (66), never 0 like the aqua bar
+    expect(bar.style.left).toBe(`${THEMES.samagra.rail}px`);
+    expect(bar.style.left).toBe("66px");
+  });
+
+  // --- CH3 Devanagari wordmark: समग्र rendered in the Tiro Devanagari wordmark font,
+  // accent-colored, at the 18px display size (renderTopBar samagra L990). ---
+  it("renders समग्र in the Devanagari wordmark font + accent color (not a generic span)", () => {
+    render(<TopBar activeTitle="Dashboard" clock="9:41 AM" theme="samagra" />);
+    const mark = screen.getByText("समग्र");
+    expect(normFont(mark.style.fontFamily)).toBe(normFont(THEMES.samagra.wordmark));
+    expect(mark.style.fontSize).toBe("18px");
+    // colored with the samagra accent token (#d9601a), not the muted/text token
+    expect(mark.style.color).toBe("rgb(217, 96, 26)");
+  });
+
+  // --- CH3 padding/gap: the samagra strip uses its own gap 14 / padding 0 16px,
+  // distinct from the aqua bar's gap 18 / padding 0 14px. ---
+  it("uses the samagra strip gap 14 / padding 0 16px (distinct from aqua)", () => {
+    const { container } = render(
+      <TopBar activeTitle="Dashboard" clock="9:41 AM" theme="samagra" />,
+    );
+    const bar = container.firstChild as HTMLElement;
+    expect(bar.style.gap).toBe("14px");
+    expect(bar.style.padding).toBe("0px 16px");
   });
 });

@@ -434,3 +434,135 @@ describe("WindowFrame (CH2 console chrome fidelity)", () => {
     expect(onToggleMax).toHaveBeenCalledWith("w1");
   });
 });
+
+// ---------------------------------------------------------------------------
+// CH3 fidelity — Samagra WindowFrame (README §Windows L52 / .dc.html renderWindow
+// L940-969 + winControls L929-937). Samagra has controlSide:'right' (themes §6.3),
+// so — exactly like console and UNLIKE aqua — its windows carry the three controls
+// on the RIGHT as 28×23 icon buttons (minimize / maximize / close) drawn as inline
+// <svg>s, NEVER left traffic-light dots; the app glyph sits left of a LEFT-aligned
+// title. But samagra is NOT console: the window is an opaque cream surface (radius
+// 15), the title bar gets NO 2px top accent border and NO 90deg accent wash, and the
+// active frame gets NO neon glow ring (those are console-only). All colours/sizes are
+// driven by the samagra theme tokens (FD1). Pixel parity is a separate human QA pass.
+// ---------------------------------------------------------------------------
+const sam = THEMES.samagra;
+
+describe("WindowFrame (CH3 samagra chrome fidelity)", () => {
+  it("uses the samagra window radius 15 + opaque cream surface (FD1)", () => {
+    const { container } = render(
+      <WindowFrame win={win} title="Dashboard" theme="samagra">
+        <div />
+      </WindowFrame>,
+    );
+    const frame = container.firstChild as HTMLElement;
+    expect(frame.style.borderRadius).toBe("15px");
+    expect(frame.style.background).toBe("rgb(255, 252, 246)"); // #fffcf6 opaque
+  });
+
+  // --- right-side controls: 28×23 icon BUTTONS, never traffic-light dots ---
+  it("renders the three controls on the RIGHT as 28×23 icon buttons (min/max/close)", () => {
+    render(
+      <WindowFrame win={win} title="Dashboard" theme="samagra">
+        <div />
+      </WindowFrame>,
+    );
+    const min = screen.getByLabelText("Minimize");
+    const max = screen.getByLabelText("Maximize");
+    const close = screen.getByLabelText("Close");
+    for (const btn of [min, max, close]) {
+      expect(btn.style.width).toBe("28px");
+      expect(btn.style.height).toBe("23px");
+      expect(btn.style.borderRadius).toBe("6px");
+    }
+  });
+
+  it("renders each samagra control as an inline <svg> glyph, never a 12×12 round dot", () => {
+    render(
+      <WindowFrame win={win} title="Dashboard" theme="samagra">
+        <div />
+      </WindowFrame>,
+    );
+    const close = screen.getByLabelText("Close");
+    expect(close.querySelector("svg")).not.toBeNull();
+    expect(close.style.borderRadius).not.toBe("50%");
+  });
+
+  it("left-aligns the title with the app glyph to its left (controlSide right)", () => {
+    render(
+      <WindowFrame win={win} title="Dashboard" theme="samagra">
+        <div />
+      </WindowFrame>,
+    );
+    const titleWrap = screen.getByText("Dashboard").parentElement as HTMLElement;
+    expect(titleWrap.style.justifyContent).toBe("flex-start");
+    // FD2: an inline app glyph sits left of the title (renderWindow L952)
+    expect(titleWrap.querySelector("svg")).not.toBeNull();
+  });
+
+  // --- samagra is NOT console: no 2px top accent border / no neon glow ring ---
+  it("does NOT draw the console-only 2px top accent border on the samagra title bar", () => {
+    const { getByTestId } = render(
+      <WindowFrame win={win} title="Dashboard" theme="samagra" active>
+        <div />
+      </WindowFrame>,
+    );
+    const bar = getByTestId("titlebar");
+    // the console top accent border is "2px solid <accent>"; samagra must not have it
+    expect(bar.style.borderTop === "" || bar.style.borderTopWidth === "").toBe(true);
+    expect(bar.style.borderTop).not.toContain("2px");
+  });
+
+  it("does NOT add the console neon glow ring to an active samagra frame", () => {
+    const { container } = render(
+      <WindowFrame win={win} title="Dashboard" theme="samagra" active>
+        <div />
+      </WindowFrame>,
+    );
+    const shadow = (container.firstChild as HTMLElement).style.boxShadow;
+    // samagra active shadow comes from its own token, with the GLASS inset highlight
+    expect(shadow).toContain(sam.shadow);
+    expect(shadow).toContain("inset 0 1px 0 rgba(255,255,255,.5)");
+    // no console glow ring layers
+    expect(shadow).not.toContain("0 0 34px");
+    expect(shadow).not.toContain("0 0 0 1px");
+  });
+
+  // --- close hover fills #ef4444 on samagra too (shared right-control branch) ---
+  it("fills the samagra close button with #ef4444 on hover (danger)", () => {
+    render(
+      <WindowFrame win={win} title="Dashboard" theme="samagra">
+        <div />
+      </WindowFrame>,
+    );
+    const close = screen.getByLabelText("Close");
+    fireEvent.mouseEnter(close);
+    expect(close.style.background).toBe("rgb(239, 68, 68)"); // #ef4444
+    fireEvent.mouseLeave(close);
+    expect(close.style.background).toBe("transparent");
+  });
+
+  it("dispatches the window ops from the samagra right-side controls", () => {
+    const onClose = vi.fn();
+    const onMinimize = vi.fn();
+    const onToggleMax = vi.fn();
+    render(
+      <WindowFrame
+        win={win}
+        title="Dashboard"
+        theme="samagra"
+        onClose={onClose}
+        onMinimize={onMinimize}
+        onToggleMax={onToggleMax}
+      >
+        <div />
+      </WindowFrame>,
+    );
+    fireEvent.click(screen.getByLabelText("Close"));
+    fireEvent.click(screen.getByLabelText("Minimize"));
+    fireEvent.click(screen.getByLabelText("Maximize"));
+    expect(onClose).toHaveBeenCalledWith("w1");
+    expect(onMinimize).toHaveBeenCalledWith("w1");
+    expect(onToggleMax).toHaveBeenCalledWith("w1");
+  });
+});

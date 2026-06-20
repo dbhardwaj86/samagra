@@ -2,17 +2,20 @@
 // Verbatim port of the prototype's renderWindow + winControls (.dc.html L921-969):
 // an absolutely-positioned glass window whose radius/surface/blur/shadow come from
 // the ACTIVE theme tokens (FD1). The 38px title bar adapts to the theme's control
-// side:
-//   - aqua/samagra (`controlSide:'left'` — mac branch): macOS traffic-lights on the
-//     LEFT (close #ff5f57 / min #febc2e / zoom #28c840, 12×12 round), centered title.
+// side (themes §6.3):
+//   - aqua (`controlSide:'left'` — mac branch): macOS traffic-lights on the LEFT
+//     (close #ff5f57 / min #febc2e / zoom #28c840, 12×12 round), centered title.
 //     Inactive → dots desaturate to #cdcdd4.
-//   - console (`controlSide:'right'`): the app glyph + LEFT-aligned title, then the
-//     three controls on the RIGHT as 28×23 icon buttons (minimize/maximize/close)
-//     drawn as inline <svg>s (FD2 — never traffic-light dots). The bar gets a 2px TOP
-//     accent border (full app accent when active, hexA(accent,0.35) when inactive) +
-//     a 90deg accent→transparent wash; the active frame gains a neon glow ring
-//     (0 0 0 1px hexA(accent,0.5), 0 0 34px hexA(accent,0.13)). Close-button hover
-//     fills #ef4444; the other controls fill hexA(text,0.12).
+//   - console + samagra (`controlSide:'right'`): the app glyph + LEFT-aligned title,
+//     then the three controls on the RIGHT as 28×23 icon buttons (minimize/maximize/
+//     close) drawn as inline <svg>s (FD2 — never traffic-light dots). Close-button
+//     hover fills #ef4444; the other controls fill hexA(text,0.12). The glyph tints
+//     to the app accent on console, the theme accent on samagra (renderWindow L943).
+//   - console ONLY adds the decorative chrome: a 2px TOP accent border (full app
+//     accent when active, hexA(accent,0.35) when inactive) + a 90deg accent→
+//     transparent wash, and an active-frame neon glow ring (0 0 0 1px
+//     hexA(accent,0.5), 0 0 34px hexA(accent,0.13)). Samagra's cream window has none
+//     of those — opaque #fffcf6 surface, radius 15, glass inset highlight.
 // ALL geometry + z-order math lives in lib/wm/* (via the WM store); this component
 // only positions the frame and dispatches intents up. Pixel parity is a separate
 // human QA pass.
@@ -165,6 +168,11 @@ export default function WindowFrame({
 }: WindowFrameProps) {
   const t = THEMES[theme];
   const isConsole = t.kind === "console";
+  // controlSide drives the title-bar layout: 'right' themes (console AND samagra)
+  // use the 28×23 icon buttons + left-aligned title; 'left' (aqua) uses traffic
+  // lights + centered title (themes §6.3). The *decorative* console chrome (2px top
+  // accent border, 90deg wash, neon glow ring, fainter inset) stays console-only.
+  const controlsRight = t.controlSide === "right";
   const acc = APPS[win.app].accent;
 
   // renderWindow L956-958: console active windows gain a neon glow ring; the inset
@@ -181,9 +189,9 @@ export default function WindowFrame({
   const consoleBarBg = `linear-gradient(90deg,${hexA(acc, active ? 0.2 : 0.07)}, transparent 65%)`;
   const consoleTopBorder = `2px solid ${active ? acc : hexA(acc, 0.35)}`;
 
-  // Console window controls = three 28×23 icon buttons in min/max/close order
-  // (winControls console branch L935-937). Aqua/samagra = three traffic lights.
-  const controls = isConsole ? (
+  // Right-control themes (console + samagra) = three 28×23 icon buttons in
+  // min/max/close order (winControls right branch L929-937). Aqua = traffic lights.
+  const controls = controlsRight ? (
     <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
       <ConsoleControl
         d="M2.5 6h7"
@@ -256,39 +264,44 @@ export default function WindowFrame({
           alignItems: "center",
           gap: 10,
           padding: "0 12px",
+          // Decorative wash + 2px top accent border are console-ONLY (renderWindow
+          // L948-949); samagra's cream title bar has neither.
           background: isConsole ? consoleBarBg : "transparent",
           borderTop: isConsole ? consoleTopBorder : undefined,
           borderBottom: `1px solid ${t.line}`,
-          opacity: isConsole ? (active ? 1 : 0.82) : undefined,
+          // proto applies the inactive dim to every theme (renderWindow L949).
+          opacity: active ? 1 : 0.82,
           userSelect: "none",
         }}
       >
-        {/* Left-side controls (aqua/samagra traffic lights). */}
-        {!isConsole && controls}
+        {/* Left-side controls (aqua traffic lights only — controlSide 'left'). */}
+        {!controlsRight && controls}
 
-        {/* Title row (renderWindow L951): mac centers it, console left-aligns it.
-            pointerEvents:none so the bar's drag/double-click/right-click reach the
-            bar itself. The console branch prefixes the app's accent-coloured glyph. */}
+        {/* Title row (renderWindow L951): mac centers it, the right-control themes
+            (console + samagra) left-align it. pointerEvents:none so the bar's
+            drag/double-click/right-click reach the bar itself. Right-control themes
+            prefix the app glyph — console tints it the app accent, samagra the theme
+            accent (renderWindow L943/952). */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             gap: 8,
             flex: 1,
-            justifyContent: isConsole ? "flex-start" : "center",
+            justifyContent: controlsRight ? "flex-start" : "center",
             pointerEvents: "none",
           }}
         >
-          {isConsole ? (
-            <span style={{ color: acc, display: "flex" }}>
+          {controlsRight ? (
+            <span style={{ color: isConsole ? acc : t.accent, display: "flex" }}>
               <Icon name={win.app} size={16} />
             </span>
           ) : null}
           <span style={{ fontSize: 13, fontWeight: 600, color: t.text }}>{title}</span>
         </div>
 
-        {/* Right-side controls (console icon buttons). */}
-        {isConsole && controls}
+        {/* Right-side controls (console + samagra icon buttons). */}
+        {controlsRight && controls}
       </div>
 
       <div style={{ flex: 1, minHeight: 0, overflow: "auto" }}>{children}</div>

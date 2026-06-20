@@ -32,6 +32,7 @@ import { createWindowManagerStore } from "./stores/windowManager";
 import { createThemeStore } from "./stores/theme";
 import TopBar from "./shell/TopBar";
 import Dock from "./shell/Dock";
+import Rail from "./shell/Rail";
 import Taskbar from "./shell/Taskbar";
 import StartMenu from "./shell/StartMenu";
 import WindowFrame from "./shell/WindowFrame";
@@ -106,6 +107,7 @@ export default function App() {
   const theme = useStore(themeStore, (s) => s.theme);
   const t = THEMES[theme];
   const isConsole = t.kind === "console";
+  const isSamagra = t.kind === "samagra";
 
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [startOpen, setStartOpen] = useState(false);
@@ -127,6 +129,13 @@ export default function App() {
     if (live.length === 0) return null;
     return live.reduce((a, b) => (b.z > a.z ? b : a));
   }, [windows]);
+
+  // App ids with at least one open window — drives the samagra Rail's running
+  // tint + left accent bar (renderDock samagra `running(id)`, .dc.html L1018).
+  const runningApps = useMemo<AppId[]>(
+    () => Array.from(new Set(windows.map((w) => w.app))),
+    [windows],
+  );
 
   // Taskbar click on a running window (renderTaskbar L1042): restore it if minimized
   // (openApp un-minimizes + bumps z for an already-open app — store §1.4 step 2),
@@ -205,7 +214,8 @@ export default function App() {
         );
       })}
 
-      {/* Bottom chrome — console gets the Taskbar + Start menu; the others a Dock. */}
+      {/* Theme-driven dock chrome (FD1): console → bottom Taskbar + Start menu;
+          samagra → left Rail; aqua → bottom-center floating Dock. */}
       {isConsole ? (
         <Taskbar
           theme={theme}
@@ -220,6 +230,8 @@ export default function App() {
         >
           {startOpen && <StartMenu theme={theme} onOpen={handleOpen} />}
         </Taskbar>
+      ) : isSamagra ? (
+        <Rail theme={theme} onOpen={openApp} running={runningApps} />
       ) : (
         <Dock theme={theme} onOpen={openApp} />
       )}
