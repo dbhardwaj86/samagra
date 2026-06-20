@@ -139,6 +139,63 @@ export const THEMES: Record<Theme, ThemeTokens> = {
   samagra,
 };
 
+// FD1 — CSS-var provider mapping. `cssVars(tokens)` flattens a theme's token set
+// into the `--samagra-*` custom properties the chrome + apps read, so every
+// color/size/font is driven by the ACTIVE theme (no hardcoded per-theme values).
+// Numeric measurements (winRadius/barH/rail) are emitted as `px` strings; a theme
+// without a rail (aqua/console) emits `0px` so consumers can always reference the
+// var unconditionally. ThemeRoot spreads this map onto the root element's style.
+export type CssVarName =
+  | "--samagra-bg"
+  | "--samagra-win-bg"
+  | "--samagra-win-blur"
+  | "--samagra-bar"
+  | "--samagra-bar-text"
+  | "--samagra-bar-blur"
+  | "--samagra-text"
+  | "--samagra-muted"
+  | "--samagra-line"
+  | "--samagra-card-bg"
+  | "--samagra-sub-bg"
+  | "--samagra-accent"
+  | "--samagra-accent2"
+  | "--samagra-shadow"
+  | "--samagra-dock-bg"
+  | "--samagra-dock-blur"
+  | "--samagra-dock-border"
+  | "--samagra-font"
+  | "--samagra-wordmark"
+  | "--samagra-win-radius"
+  | "--samagra-bar-h"
+  | "--samagra-rail";
+
+export function cssVars(t: ThemeTokens): Record<CssVarName, string> {
+  return {
+    "--samagra-bg": t.bg,
+    "--samagra-win-bg": t.winBg,
+    "--samagra-win-blur": t.winBlur,
+    "--samagra-bar": t.bar,
+    "--samagra-bar-text": t.barText,
+    "--samagra-bar-blur": t.barBlur,
+    "--samagra-text": t.text,
+    "--samagra-muted": t.muted,
+    "--samagra-line": t.line,
+    "--samagra-card-bg": t.cardBg,
+    "--samagra-sub-bg": t.subBg,
+    "--samagra-accent": t.accent,
+    "--samagra-accent2": t.accent2,
+    "--samagra-shadow": t.shadow,
+    "--samagra-dock-bg": t.dockBg,
+    "--samagra-dock-blur": t.dockBlur,
+    "--samagra-dock-border": t.dockBorder,
+    "--samagra-font": t.font,
+    "--samagra-wordmark": t.wordmark,
+    "--samagra-win-radius": `${t.winRadius}px`,
+    "--samagra-bar-h": `${t.barH}px`,
+    "--samagra-rail": `${t.rail ?? 0}px`,
+  };
+}
+
 // §6.4 Terminal palette — per theme, plus shared err/ok
 export interface TermPalette {
   bg: string;

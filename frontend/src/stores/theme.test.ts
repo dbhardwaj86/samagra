@@ -29,6 +29,18 @@ describe("setTheme — update theme + re-clamp every window (proto.md §1.9)", (
     expect(theme.getState().theme).toBe("samagra");
   });
 
+  // FD1 — the store must drive ALL THREE themes (aqua/console/samagra), since
+  // ThemeRoot maps the active theme's tokens to CSS vars. A store that only
+  // honored aqua/samagra would silently break console fidelity.
+  it("can switch to every supported theme", () => {
+    const wm = createWindowManagerStore();
+    const theme = createThemeStore({ wm });
+    for (const t of ["console", "samagra", "aqua"] as const) {
+      theme.getState().setTheme(t);
+      expect(theme.getState().theme).toBe(t);
+    }
+  });
+
   it("re-clamps every normal window into the new theme's work area (8px inset, not resized)", () => {
     const wm = createWindowManagerStore();
     const theme = createThemeStore({ wm });
