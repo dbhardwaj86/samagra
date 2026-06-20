@@ -1,8 +1,8 @@
-"""SAMAGRA portal — FastAPI app.
+"""SAMAGRA OS — FastAPI app.
 
-Serves the unified portal (UI forked from QX's browser style) plus a small JSON
-API over the catalog, QX live question search, the pipeline state machine, and a
-safe local-file opener constrained to configured source roots.
+Serves the Vite-built SAMAGRA OS single-page app (`frontend/dist/`) plus a small
+JSON API over the catalog, QX live question search, the pipeline state machine,
+and a safe local-file opener constrained to configured source roots.
 """
 from __future__ import annotations
 
@@ -12,8 +12,6 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from starlette.requests import Request
 
 import samagra
 from .. import catalog, config, scheduler, state
@@ -21,11 +19,17 @@ from ..adapters import get_adapter
 from ..governance import store as gstore
 from ..lectures import render as lecture_render
 
-PORTAL = Path(__file__).resolve().parent.parent / "portal"
+# Vite build output (E1.17). Computed from config.REPO_ROOT at import time so the
+# serve seam follows config.REPO_ROOT under test (the suite reloads this module
+# after monkeypatching REPO_ROOT to a built/unbuilt tmp tree).
+FRONTEND_DIST = config.REPO_ROOT / "frontend" / "dist"
 
 app = FastAPI(title="SAMAGRA", version=samagra.__version__)
-app.mount("/static", StaticFiles(directory=str(PORTAL / "static")), name="static")
-templates = Jinja2Templates(directory=str(PORTAL / "templates"))
+# Serve hashed Vite assets only when a build is present; absent before the first
+# `npm run build`, so guard the mount to avoid a StaticFiles directory error.
+if (FRONTEND_DIST / "assets").exists():
+    app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")),
+              name="assets")
 
 ALLOWED_ROOTS = [
     config.QX_ROOT, config.TEXTBOOK_ROOT, config.BOOKLETS_ROOT,
@@ -45,13 +49,6 @@ def _allowed(p: Path) -> bool:
 
 
 # -- pages ---------------------------------------------------------------
-@app.get("/", response_class=HTMLResponse)
-def index(request: Request):
-    return templates.TemplateResponse(
-        request, "portal.html", {"version": samagra.__version__}
-    )
-
-
 @app.get("/lecture/{slug}", response_class=HTMLResponse)
 def lecture_preview(slug: str):
     try:
@@ -141,3 +138,18 @@ def open_file(path: str, download: bool = False):
     filename = p.name if (download or p.suffix.lower() == ".docx") else None
     return FileResponse(str(p), media_type=media or "application/octet-stream",
                         filename=filename)
+
+
+# -- SPA fallback (MUST be declared LAST) -------------------------------
+# Catch-all for client-side routes: serve the Vite-built index.html so the React
+# router can take over. Declared last so it never shadows the API, the lecture
+# preview, or the file opener above. Explicitly 404s anything under `api/` (an
+# unknown API path should be a real 404, not the SPA shell).
+@app.get("/{full_path:path}", response_class=HTMLResponse)
+def spa(full_path: str):
+    if full_path.startswith("api/"):
+        raise HTTPException(404, "unknown API route")
+    index_html = FRONTEND_DIST / "index.html"
+    if not index_html.is_file():
+        raise HTTPException(503, "frontend not built — run `npm run build`")
+    return FileResponse(str(index_html))
