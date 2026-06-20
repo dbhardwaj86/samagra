@@ -199,6 +199,67 @@ describe("WindowFrame (CH1 aqua chrome fidelity)", () => {
     expect(onToggleMax).toHaveBeenCalledWith("w1");
   });
 
+  // --- drag-to-move (proto.md §1.6) — the title bar is grabbable; a move emits the
+  // new absolute target (pointer position minus the grab offset). The WM store
+  // re-applies clampDrag, so the frame here just reports the raw target. ---
+  it("drag on the title bar moves the window by the pointer delta (proto.md §1.6)", () => {
+    const onMove = vi.fn();
+    const { getByTestId } = render(
+      <WindowFrame win={win} title="Dashboard" onMove={onMove}>
+        <div />
+      </WindowFrame>,
+    );
+    const bar = getByTestId("titlebar");
+    // jsdom doesn't populate clientX on synthetic pointer events, so dispatch a
+    // native MouseEvent typed 'pointer*' (React reads clientX off the nativeEvent).
+    // grab at (100,80): offset from win origin (40,60) = (60,20).
+    bar.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true, cancelable: true, button: 0, clientX: 100, clientY: 80 }));
+    bar.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, cancelable: true, clientX: 200, clientY: 180 }));
+    // target = pointer − offset = (200−60, 180−20)
+    expect(onMove).toHaveBeenCalledWith("w1", 140, 160);
+    bar.dispatchEvent(new MouseEvent("pointerup", { bubbles: true }));
+  });
+
+  it("focuses the window when a title-bar drag begins", () => {
+    const onFocus = vi.fn();
+    const { getByTestId } = render(
+      <WindowFrame win={win} title="Dashboard" onFocus={onFocus}>
+        <div />
+      </WindowFrame>,
+    );
+    fireEvent.pointerDown(getByTestId("titlebar"), { button: 0, pointerId: 1, clientX: 100, clientY: 80 });
+    expect(onFocus).toHaveBeenCalledWith("w1");
+  });
+
+  it("does NOT drag when the pointer-down lands on a title-bar control button", () => {
+    const onMove = vi.fn();
+    render(
+      <WindowFrame win={win} title="Dashboard" onMove={onMove}>
+        <div />
+      </WindowFrame>,
+    );
+    const close = screen.getByLabelText("Close");
+    fireEvent.pointerDown(close, { button: 0, pointerId: 1, clientX: 50, clientY: 70 });
+    fireEvent.pointerMove(close, { pointerId: 1, clientX: 300, clientY: 300 });
+    expect(onMove).not.toHaveBeenCalled();
+  });
+
+  // --- drag the bottom-right grip (proto.md §1.7) — emits the grown absolute size. ---
+  it("drag on the resize grip resizes the window by the pointer delta (proto.md §1.7)", () => {
+    const onResize = vi.fn();
+    const { getByTestId } = render(
+      <WindowFrame win={win} title="Dashboard" onResize={onResize}>
+        <div />
+      </WindowFrame>,
+    );
+    const grip = getByTestId("resize-grip");
+    grip.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true, cancelable: true, button: 0, clientX: 500, clientY: 500 }));
+    grip.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, cancelable: true, clientX: 560, clientY: 540 }));
+    // size = (w0+60, h0+40) = (940+60, 610+40)
+    expect(onResize).toHaveBeenCalledWith("w1", 1000, 650);
+    grip.dispatchEvent(new MouseEvent("pointerup", { bubbles: true }));
+  });
+
   it("right-click on the title bar opens the context menu (proto.md §1.1)", () => {
     const onContextMenu = vi.fn();
     const { getByTestId } = render(

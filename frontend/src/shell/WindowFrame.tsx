@@ -19,7 +19,7 @@
 // ALL geometry + z-order math lives in lib/wm/* (via the WM store); this component
 // only positions the frame and dispatches intents up. Pixel parity is a separate
 // human QA pass.
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import type { WindowState, Theme } from "../types/contracts";
 import { THEMES, INACTIVE_SHADOW } from "../themes";
 import { APPS } from "../registry";
@@ -50,6 +50,10 @@ export interface WindowFrameProps {
   onToggleMax?: (id: string) => void;
   /** Right-click → open the context menu at the pointer (shell-owned state). */
   onContextMenu?: (id: string, x: number, y: number) => void;
+  /** Drag-move to an absolute target (title-bar drag) — wired to WM store `move`. */
+  onMove?: (id: string, x: number, y: number) => void;
+  /** Resize to an absolute size (bottom-right grip drag) — wired to WM store `resize`. */
+  onResize?: (id: string, w: number, h: number) => void;
 }
 
 /** A single Aqua traffic-light dot (winControls L924-925): 12×12 round; the live
@@ -165,6 +169,8 @@ export default function WindowFrame({
   onMinimize,
   onToggleMax,
   onContextMenu,
+  onMove,
+  onResize,
 }: WindowFrameProps) {
   const t = THEMES[theme];
   const isConsole = t.kind === "console";
@@ -174,6 +180,55 @@ export default function WindowFrame({
   // accent border, 90deg wash, neon glow ring, fainter inset) stays console-only.
   const controlsRight = t.controlSide === "right";
   const acc = APPS[win.app].accent;
+
+  // ── Title-bar drag (proto.md §1.6) — record the pointer→window offset on down,
+  // emit absolute targets on move (the WM store re-applies clampDrag). setPointer-
+  // Capture keeps events flowing if the pointer leaves the bar; it is guarded for
+  // jsdom (which doesn't implement it). A pointerdown on a control button is NOT a
+  // drag (controls own their click). ──
+  const drag = useRef<{ dx: number; dy: number; id: number } | null>(null);
+  const onBarPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button && e.button !== 0) return; // primary button only (undefined in jsdom → primary)
+    if ((e.target as HTMLElement).closest("button")) return;
+    onFocus?.(win.id);
+    drag.current = { dx: e.clientX - win.x, dy: e.clientY - win.y, id: e.pointerId };
+    const el = e.currentTarget;
+    if (el.setPointerCapture) try { el.setPointerCapture(e.pointerId); } catch { /* jsdom */ }
+  };
+  const onBarPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    if (!d) return;
+    onMove?.(win.id, e.clientX - d.dx, e.clientY - d.dy);
+  };
+  const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!drag.current) return;
+    const el = e.currentTarget;
+    if (el.releasePointerCapture) try { el.releasePointerCapture(drag.current.id); } catch { /* jsdom */ }
+    drag.current = null;
+  };
+
+  // ── Bottom-right resize grip (proto.md §1.7) — same pattern; emit absolute size
+  // (store re-applies clampResize ≥360×280). ──
+  const rez = useRef<{ x0: number; y0: number; w0: number; h0: number; id: number } | null>(null);
+  const onGripPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button && e.button !== 0) return; // primary button only
+    e.stopPropagation();
+    onFocus?.(win.id);
+    rez.current = { x0: e.clientX, y0: e.clientY, w0: win.w, h0: win.h, id: e.pointerId };
+    const el = e.currentTarget;
+    if (el.setPointerCapture) try { el.setPointerCapture(e.pointerId); } catch { /* jsdom */ }
+  };
+  const onGripPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const r = rez.current;
+    if (!r) return;
+    onResize?.(win.id, r.w0 + (e.clientX - r.x0), r.h0 + (e.clientY - r.y0));
+  };
+  const endResize = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!rez.current) return;
+    const el = e.currentTarget;
+    if (el.releasePointerCapture) try { el.releasePointerCapture(rez.current.id); } catch { /* jsdom */ }
+    rez.current = null;
+  };
 
   // renderWindow L956-958: console active windows gain a neon glow ring; the inset
   // top-edge highlight (fainter on console) is always the final shadow layer.
@@ -252,6 +307,10 @@ export default function WindowFrame({
     >
       <div
         data-testid="titlebar"
+        onPointerDown={onBarPointerDown}
+        onPointerMove={onBarPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
         onDoubleClick={() => onToggleMax?.(win.id)}
         onContextMenu={(e) => {
           e.preventDefault();
@@ -264,6 +323,8 @@ export default function WindowFrame({
           alignItems: "center",
           gap: 10,
           padding: "0 12px",
+          cursor: win.max ? "default" : "move",
+          touchAction: "none",
           // Decorative wash + 2px top accent border are console-ONLY (renderWindow
           // L948-949); samagra's cream title bar has neither.
           background: isConsole ? consoleBarBg : "transparent",
@@ -308,6 +369,11 @@ export default function WindowFrame({
 
       {/* bottom-right resize grip — inline <svg> (renderWindow L966-968) */}
       <div
+        data-testid="resize-grip"
+        onPointerDown={onGripPointerDown}
+        onPointerMove={onGripPointerMove}
+        onPointerUp={endResize}
+        onPointerCancel={endResize}
         style={{
           position: "absolute",
           right: 0,
@@ -315,6 +381,7 @@ export default function WindowFrame({
           width: 18,
           height: 18,
           cursor: "nwse-resize",
+          touchAction: "none",
           color: t.muted,
           zIndex: 3,
         }}

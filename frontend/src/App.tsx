@@ -103,6 +103,8 @@ export default function App() {
   const minimize = useStore(wmStore, (s) => s.minimize);
   const toggleMax = useStore(wmStore, (s) => s.toggleMax);
   const focus = useStore(wmStore, (s) => s.focus);
+  const move = useStore(wmStore, (s) => s.move);
+  const resize = useStore(wmStore, (s) => s.resize);
 
   const theme = useStore(themeStore, (s) => s.theme);
   const t = THEMES[theme];
@@ -206,6 +208,8 @@ export default function App() {
             onMinimize={minimize}
             onToggleMax={toggleMax}
             onContextMenu={openContextMenu}
+            onMove={move}
+            onResize={resize}
           >
             <Suspense fallback={null}>
               <Body />
