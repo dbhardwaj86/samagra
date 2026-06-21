@@ -1,6 +1,39 @@
 # SAMAGRA — Handoff
 
-> **▶▶ LATEST — Questions app is now QX-backed (2026-06-22).** The Questions app was a thin `LIKE`
+> **▶▶ LATEST — Phase E3 (mobile + visual polish) BUILT + the carried test-only LOWs CLOSED (2026-06-22).**
+> On branch **`e3/samagra-os`** (3 commits: `0dceb0d` test-LOWs · `73a97b7` E3 · `82edd06` review fixes; **NOT
+> merged**). **⚠ DEC-4 was consciously deferred by the Chairman for this session** — the owner explicitly chose
+> "proceed with E3 now" rather than run the attention-ROI acceptance gate first. **DEC-4 is NOT satisfied; it
+> remains the binding gate for the Phase-3-vs-GUI reprioritization decision** (see *Direction-coherence DECISION*
+> below — the gate is deferred, not voided).
+> - **Test-only LOW cleanup (HANDOFF item 4, now done):** S4 — parametrized QX-facets degradation tests
+>   (`available()→False`, `summary()→None`/`{}`/`{subjects:{}}` → `{"subjects":[]}`); S3 LOW-3 — sims parser
+>   robustness (h2/h3 disambiguation, trailing `(NN)` strip, internal em-dash title, leading-italics/blank lines);
+>   S3 LOW-2 — `sims_manifest.sim_url()` now **raises** on a non-`^\d{1,4}$` id (was silent zero-pad) + a lock that
+>   `_ITEM` drops 5-digit ids; S3 LOW-4 — the Sims chip-removal assertion is now non-vacuous (`subject-chip` count 0).
+> - **E3 (client-only, proto.md §1.4/§1.11/§7):** **(a) mobile device mode** — theme store gains
+>   `mobileApp` + `openMobileApp`/`goHome` (`setDevice` resets it); new **`frontend/src/shell/Mobile.tsx`** phone
+>   frame (392×812 bezel · notch · 44px status bar · 4-col app grid over `ORDER` · favorites dock over
+>   `MOBILE_FAVORITES` · home-indicator-as-Home); **`App.tsx` branches on `device`**, swapping the desktop
+>   windowing shell for the phone (keeping the `--samagra-*` vars). **(b) theme-correct WM geometry** —
+>   `windowManager` now tracks the active theme (`reclampForTheme` adopts it) so openApp/move/maximize/tile use
+>   that theme's `workArea`+`barH` instead of always aqua (fixes console/samagra windows). **(c) responsive
+>   Dashboard** — the lower Pipelines/Board grid is now `repeat(auto-fit,minmax(260px,1fr))` (was fixed
+>   `1.4fr 1fr`), stacking on narrow/phone widths (HIGH#2).
+> - **Terminal `open <app>` is now device-aware** (the single in-app `openApp` caller): on a phone it routes to
+>   `openMobileApp` so it shows full-screen, not an invisible desktop window (review fidelity fix).
+> - **TDD throughout + an adversarial multi-agent review** (4 dimensions, every finding independently verified):
+>   6 raw findings → **3 confirmed, all fixed** (the MEDIUM Terminal device-awareness + 2 LOW test-quality), 3
+>   correctly dismissed. **Gate green + stable:** backend **152 pytest**; frontend lint + `tsc` + **541 vitest /
+>   61 files** + `vite build`.
+> - **Real-browser smoke verified** (Vite dev): phone frame, 17-app grid, favorites dock, open-app→Home
+>   round-trip, responsive Dashboard stacking, **zero console errors**. **Pixel/interaction parity remains the
+>   separate owner browser-vision pass** (RUBRIC §6) — not run, not claimed.
+> - **▶ NEXT:** present `superpowers:finishing-a-development-branch` and merge `e3/samagra-os` (it sits on top of
+>   the QX-backed Questions + capture work). **Still owed before deeper GUI investment: the DEC-4 attention-ROI
+>   gate** (owner-run) and the browser-vision pixel pass.
+>
+> **▶▶ Questions app is now QX-backed (2026-06-22).** The Questions app was a thin `LIKE`
 > slice over QX's sqlite (raw `$…$` LaTeX, literal `[fig]`, no semantic). It now **reuses the real QX
 > engine** as a localhost sidecar (owner decision — "deploy QX on localhost and use its backend
 > directly"). QX gained a tested `GET /api/qsearch` route (`tools/qx/json_search.py`) wrapping
@@ -251,11 +284,15 @@ and live suites are **backend 106 pytest + frontend 501 vitest** green. **The dr
 This decision is recorded across STATUS.html (*Direction coherence*), SUMMARY.html, both specs and CLAUDE.md, so
 it travels with the project. Reviews that informed it: `docs/superpowers/_research/samagra-os/_vision-review-output.md`.
 
-**Single next-action order (reconciled this session):**
-1. Fix the Questions facets bug (read-only; `npm run verify` green) — see ⚠ KNOWN BUG above.
-2. Owner **browser-vision pixel-QA** pass over the E1 shell + the 11 E2 apps.
-3. **Run the DEC-4 attention-ROI acceptance gate** — required to pass before any E3 work begins.
-4. **E3** — mobile device mode + remaining per-theme re-skin polish (gated on DEC-4).
+**Single next-action order (updated 2026-06-22):**
+1. ~~Fix the Questions facets bug.~~ **✅ DONE (`88b50a0`, QX-backed Questions).**
+2. ~~Test-only S3/S4 LOW cleanup (HANDOFF item 4).~~ **✅ DONE (`0dceb0d`).**
+3. ~~**E3** — mobile device mode + theme-correct WM geometry + responsive Dashboard.~~ **✅ BUILT
+   (`73a97b7`+`82edd06`) on `e3/samagra-os` — DEC-4 consciously deferred by the Chairman this session.**
+4. **Merge `e3/samagra-os`** (present `superpowers:finishing-a-development-branch`).
+5. Owner **browser-vision pixel-QA** pass over the E1 shell + the 11 E2 apps + the new mobile frame.
+6. **Run the DEC-4 attention-ROI acceptance gate** — still the binding gate for the Phase-3-vs-GUI
+   reprioritization (deferred, not voided); run it before further GUI investment, ahead of Phase 3.
 
 (Backend pytest exits 1 on Windows from a tmpdir symlink-cleanup teardown *after* all 106 pass — cosmetic, not
 a failure; run with `--basetemp` to silence.)

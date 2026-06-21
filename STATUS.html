@@ -197,7 +197,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     <div class="card"><div class="n">E1 <span class="badge ok">merged to main · 439/439</span></div><div class="l">Shell + <strong>all 3 themes</strong> + OS utilities — window manager (draggable/resizable), dock/top-bar, Dashboard · Settings · Terminal · Clock · Notes · Snake + FastAPI serve seam. Built TDD then fidelity-passed; chairman renamed <strong>Deepak Bhardwaj</strong> + <strong>right-click context menus</strong> in every theme. Fast-forwarded <code>e1/samagra-os</code> → <code>main</code> (<code>06d88a3</code>); gate clean (lint + <code>tsc</code> + 439 Vitest + <code>vite build</code>; backend 102/102). Not yet pushed.</div></div>
     <div class="card"><div class="n">Fidelity <span class="badge ok">landed · 3 themes + icons</span></div><div class="l">Theme-driven chrome for <strong>aqua · console · samagra</strong> (Dock / Taskbar + Start menu / left Rail; per-theme window controls + wordmarks), plus the <code>Icon</code>/<code>AppIcon</code> SVG system (FD2) wired through every launcher and the six apps. RTL tests pin the fidelity hooks (aria-labels, <code>&lt;svg&gt;</code> presence, theme data-attribute/CSS-var, key token measurements). <strong>Pixel parity NOT yet claimed</strong> — next step is the browser-vision pass.</div></div>
     <div class="card"><div class="n">E2 <span class="badge ok">merged · headless-green</span></div><div class="l">Eleven data/control apps — Org · Pipelines · Lectures · mycontentdev · Munshi · Assignments · Activity · Questions · Booklets · INSP · Sims — as thin read-only React wrappers over <code>/api/*</code>, plus one new endpoint <code>GET /api/org</code> (static <code>samagra/org.py</code>). Built TDD on <code>e2/samagra-os</code> (22 commits); backend 106/106 + frontend 501/501 green, <code>tsc</code>/<code>vite build</code> clean (22 lazy chunks). <strong>MERGED to <code>main</code> (fast-forward, <code>31aa5bb</code>) and pushed to <code>origin/main</code> 2026-06-21</strong> after a Codex pre-merge review (GO; 3 MEDIUMs fixed) — <a href="https://github.com/dbhardwaj86/samagra/pull/2">merged PR #2</a>.</div></div>
-    <div class="card"><div class="n">E3 <span class="badge todo">next</span></div><div class="l">Mobile device mode + remaining per-theme re-skin polish (the 3 aqua/console/samagra themes already shipped in E1).</div></div>
+    <div class="card"><div class="n">E3 <span class="badge ok">built · green</span></div><div class="l"><strong>Built TDD on <code>e3/samagra-os</code> (2026-06-22, not merged).</strong> <strong>Mobile device mode</strong> — theme store <code>mobileApp</code> + <code>openMobileApp</code>/<code>goHome</code> (<code>setDevice</code> resets it); new <code>shell/Mobile.tsx</code> phone frame (notch · 44px status bar · 4-col app grid · favorites dock · home-indicator); <code>App.tsx</code> branches on <code>device</code>. <strong>Theme-correct WM geometry</strong> — <code>windowManager</code> tracks the active theme so open/move/maximize/tile use that theme's <code>workArea</code>+<code>barH</code> (fixes console/samagra). <strong>Responsive Dashboard</strong> (HIGH#2) — lower grid now <code>auto-fit minmax(260px,1fr)</code>, stacks on the phone. Terminal <code>open</code> made device-aware. Adversarial multi-agent review (6 raw → 3 confirmed, all fixed). Gate: backend <strong>152 pytest</strong> + frontend <strong>541 vitest</strong> + <code>tsc</code>/<code>vite build</code>. <strong>⚠ DEC-4 consciously deferred</strong> by the Chairman; pixel parity = separate owner pass (not claimed).</div></div>
   </div>
   <p><strong>Linchpin architecture:</strong> all real behaviour lives in pure-TypeScript modules
   (window geometry / z-order / tile math, the Snake engine, Clock/Timer math, the Terminal command parser,
@@ -251,7 +251,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     <li><strong>DEC-1 · Scope.</strong> SAMAGRA OS is a <strong>bounded operator console — a UI metaphor only</strong>; SAMAGRA remains a control plane and does not acquire app-platform scope.</li>
     <li><strong>DEC-2 · North-star binding.</strong> The attention-ROI north-star + the kill-criterion remain <strong>binding</strong> and are not voided by the OS track (data source = the governance <code>events</code>/<code>review_overlay</code> ledger; the ~3 hrs/wk figure stays the seed proposal pending the DEC-4 gauge).</li>
     <li><strong>DEC-3 · Scope firewall</strong> (hard non-goal, mirrored into OS spec §3): no entertainment apps beyond E1's Snake, no third-party apps / marketplace, no process-scheduler model, no user-facing product identity.</li>
-    <li><strong>DEC-4 · Attention-ROI acceptance gate before E3:</strong> 2–3 representative operator tasks (triage munshi captures · read pipeline/gate status · find + open a catalog artifact) measured for owner time-saved vs the old portal must pass before any E3 work; fail → freeze GUI expansion + reprioritize Phase 3.</li>
+    <li><strong>DEC-4 · Attention-ROI acceptance gate before E3:</strong> 2–3 representative operator tasks (triage munshi captures · read pipeline/gate status · find + open a catalog artifact) measured for owner time-saved vs the old portal; fail → freeze GUI expansion + reprioritize Phase 3. <strong>⚠ Consciously DEFERRED 2026-06-22</strong> — the Chairman chose to build E3 first this session. The gate is <strong>not satisfied and not voided</strong>; it remains the binding gate for the Phase-3-vs-GUI reprioritization and should run before further GUI investment.</li>
     <li><strong>DEC-5 · Phase 3 is the primary value engine</strong> — the active loop restarts after the E2 visual-QA pass and the DEC-4 gate, ahead of further theme/mobile polish.</li>
   </ol>
   <p class="lede">Full write-up: <code>HANDOFF.md</code> → <em>✅ Direction-coherence DECISION (ratified 2026-06-21)</em>.</p>
@@ -413,10 +413,14 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   </svg>
 
   <h2 id="tests">Tests</h2>
-  <p><span class="badge ok">frontend 524 / 524 · 60 files</span> <span class="badge ok">backend 142 / 142</span>
-  (last run 2026-06-22, branch <code>feature/control-plane-capture</code>). The <strong>Questions QX-backed</strong> upgrade
-  added backend <code>qx_client</code> / <code>questions_proxy</code> / <code>api_questions</code> tests (+8 → 142) and frontend
-  questions-lib + component tests (+10 → 524), all TDD; QX's own <code>tools/qx/tests/test_json_search.py</code> (5) is green too.
+  <p><span class="badge ok">frontend 541 / 541 · 61 files</span> <span class="badge ok">backend 152 / 152</span>
+  (last run 2026-06-22, branch <code>e3/samagra-os</code>). <strong>E3 + the test-only LOW cleanup</strong> added
+  backend sims-parser-robustness + QX-facets degradation tests (+10 → 152) and frontend mobile-shell
+  (<code>Mobile.test.tsx</code>), theme-aware WM geometry, theme-store <code>mobileApp</code>, App device-branch,
+  responsive-Dashboard + device-aware-Terminal tests (+17 → 541), all TDD; <code>tsc</code> + <code>eslint</code> +
+  <code>vite build</code> clean, no <code>.only</code>/<code>.skip</code>. <em>Prior baseline:</em> the
+  <strong>Questions QX-backed</strong> upgrade (branch <code>feature/control-plane-capture</code>) brought the suite to
+  frontend 524 / backend 142; QX's own <code>tools/qx/tests/test_json_search.py</code> (5) is green too.
   <strong>Capture track</strong> added the
   write clients + endpoints (<code>create_item</code>, <code>create_seed</code>, <code>/api/munshi/capture</code>,
   <code>/api/mcd/seeds</code>), the live-read passthroughs, the deployed-sims parser + <code>/api/sims</code>,
@@ -483,6 +487,26 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   the decided-block path; <code>dispatch_codex</code> + git mocked).</p>
 
   <h2 id="decisions">Recent decisions</h2>
+  <div class="log"><div class="d">2026-06-22 · Phase E3 built (mobile + polish); DEC-4 consciously deferred by the Chairman</div>
+    The owner was asked how to handle E3 given the binding <strong>DEC-4 attention-ROI gate</strong> (which the
+    Chairman ratified 2026-06-21 to precede any E3 work) and chose <strong>"proceed with E3 now"</strong> — DEC-4 is
+    <strong>deferred for this session, not voided</strong>; it stays the binding gate for the Phase-3-vs-GUI
+    reprioritization. <strong>E3 (client-only, TDD)</strong> on branch <code>e3/samagra-os</code>: <strong>mobile
+    device mode</strong> (theme store <code>mobileApp</code> + <code>openMobileApp</code>/<code>goHome</code>;
+    <code>setDevice</code> resets it; new <code>shell/Mobile.tsx</code> phone frame — notch · 44px status bar · 4-col
+    app grid over <code>ORDER</code> · favorites dock over <code>MOBILE_FAVORITES</code> · home-indicator;
+    <code>App.tsx</code> branches on <code>device</code>), <strong>theme-correct WM geometry</strong>
+    (<code>windowManager</code> tracks the active theme so open/move/maximize/tile use that theme's
+    <code>workArea</code>+<code>barH</code>, fixing console/samagra), and a <strong>responsive Dashboard</strong>
+    (HIGH#2 — lower grid <code>auto-fit minmax(260px,1fr)</code>, stacks on the phone). The carried <strong>test-only
+    S3/S4 LOWs</strong> (HANDOFF item 4) are closed too (<code>0dceb0d</code>): QX-facets degradation tests, sims
+    parser-robustness tests, the <code>sim_url()</code> validation guard, the non-vacuous Sims chip assertion. An
+    <strong>adversarial multi-agent review</strong> (4 dimensions, every finding verified) confirmed 3 of 6 raw
+    findings — all fixed (MEDIUM: Terminal <code>open</code> made device-aware; 2 LOW test-quality). Gate green +
+    stable: backend <strong>152 pytest</strong> + frontend <strong>541 vitest / 61 files</strong> +
+    <code>tsc</code>/<code>vite build</code>; real-browser smoke verified (phone frame, grid/dock, open→Home,
+    responsive Dashboard). Pixel parity = separate owner pass (not claimed). Commits <code>73a97b7</code> +
+    <code>82edd06</code>; <strong>not merged</strong>.</div>
   <div class="log"><div class="d">2026-06-22 · Questions app is now QX-backed (exact + semantic + maths + figures)</div>
     The Questions app was a thin <code>LIKE</code> slice over QX's sqlite (raw <code>$…$</code> LaTeX, literal
     <code>[fig]</code>, no semantic). Per the owner's decision — <em>"deploy QX on localhost and use its backend
@@ -743,14 +767,17 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   </table>
 
   <h2 id="next">Next actions</h2>
-  <p><strong>Immediate (next session — on branch <code>feature/control-plane-capture</code>, then merge via PR):</strong></p>
+  <p><strong>Immediate (branch <code>e3/samagra-os</code>, built + green, then merge):</strong></p>
   <ol>
-    <li><strong>Questions narrow fix (owner-requested):</strong> render <strong>correct maths</strong> (currently shows raw LaTeX source + literal <code>[fig]</code>) and add <strong>QX-style search — exact + semantic</strong>. Narrow upgrade to Questions only, not full QX feature-parity (the data apps are thin wrappers by design).</li>
-    <li><strong>F1 (review LOW):</strong> the live-read capture apps render only <code>useApi</code>'s hook error; an upstream read failure returns <code>200 {results:[], error:…}</code> and shows the misleading "set creds" empty-state. Type the reads as <code>SearchResponse &amp; {error?:string}</code> and render <code>data?.error</code>.</li>
-    <li><strong>S3 LOW-1 (review LOW):</strong> reset <code>subject = None</code> on a new grade heading in <code>sims_manifest.parse_deployed_sims</code>.</li>
-    <li>Optional: QX facets degradation tests (S4 LOW); sims parser-robustness tests (S3 LOW-2/3/4) — test-only.</li>
-    <li>Then <strong>merge <code>feature/control-plane-capture</code></strong> (final Codex review already GO-WITH-FIXES, all LOW → merge-safe).</li>
+    <li><strong>Merge <code>e3/samagra-os</code></strong> — present <code>superpowers:finishing-a-development-branch</code> and integrate the E3 work (mobile device mode + theme-correct WM geometry + responsive Dashboard) which sits on top of the QX-backed Questions + capture-control-plane work. Gate green: backend <strong>152 pytest</strong> + frontend <strong>541 vitest</strong> + <code>tsc</code>/<code>vite build</code>; adversarial multi-agent review clean (3 findings fixed).</li>
+    <li><strong>Owner browser-vision pixel-QA pass</strong> over the E1 shell + the 11 E2 apps + the new mobile phone frame (the one thing no headless test can judge; never a loop gate, RUBRIC §6). Pixel parity is <strong>not yet claimed</strong>.</li>
+    <li><strong>Run the DEC-4 attention-ROI acceptance gate</strong> — <strong>consciously deferred this session</strong> (the Chairman chose to build E3 first), but still the <em>binding</em> gate for the Phase-3-vs-GUI reprioritization (deferred, not voided). Run it before further GUI investment, ahead of Phase 3.</li>
   </ol>
+  <p><strong>Done since the last STATUS:</strong> the carried test-only S3/S4 LOW cleanup (HANDOFF item 4) is closed
+  (`0dceb0d`) — QX-facets degradation tests, sims parser-robustness tests, the <code>sim_url()</code> validation
+  guard, and the non-vacuous Sims chip assertion. The Questions <code>SIM0xxx</code> facets bug was already fixed
+  structurally by the QX-backed Questions rebuild (`88b50a0`). The capture-control-plane + QX-Questions work is on
+  branch <code>feature/control-plane-capture</code> (these E3 commits build on it).</p>
   <p><strong>Background (pre-capture-track):</strong> Phase 0 (rename), the vision fold (D9–D12), Track A (stabilize) and Phase 1 (subsystem adapters) are
   <strong>merged to <code>main</code> and pushed to <code>origin/main</code></strong>. <strong>Phase 2 —
   governance</strong> is now <strong>built TDD on <code>main</code> (suite 63 → 98 green)</strong>, reconciled
