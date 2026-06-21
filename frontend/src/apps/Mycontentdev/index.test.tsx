@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 const useApiMock = vi.fn();
 vi.mock("../../hooks/useApi", () => ({ useApi: (p: string) => useApiMock(p) }));
@@ -39,6 +39,27 @@ describe("mycontentdev app", () => {
     fireEvent.change(screen.getByLabelText("raw_text"), { target: { value: "tidal locking demo" } });
     fireEvent.click(screen.getByTestId("seed-submit"));
     await waitFor(() => expect(spy).toHaveBeenCalledWith("/api/mcd/seeds", expect.objectContaining({ method: "POST" })));
+    spy.mockRestore();
+  });
+  it("ignores rapid double-submit (no duplicate production write)", async () => {
+    useApiMock.mockReturnValue({ data: { results: [] }, loading: false, error: null });
+    let resolve!: (r: Response) => void;
+    const spy = vi.spyOn(globalThis, "fetch").mockReturnValue(
+      new Promise<Response>((r) => { resolve = r; }) as Promise<Response>);
+    render(<Mcd />);
+    fireEvent.change(screen.getByLabelText("raw_text"), { target: { value: "dup demo" } });
+    const btn = screen.getByTestId("seed-submit");
+    // Two clicks in the SAME synchronous tick — before React re-renders and the
+    // disabled={posting} flag can take effect. This is the production race
+    // (Enter+click / rapid double-click). A ref guard must block the second.
+    act(() => {
+      btn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      btn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    expect(spy).toHaveBeenCalledTimes(1);
+    resolve(new Response(JSON.stringify({ ok: true, seed: { id: "s1", status: "captured" } }),
+      { status: 200, headers: { "content-type": "application/json" } }));
+    await waitFor(() => expect(spy).toHaveBeenCalledTimes(1));
     spy.mockRestore();
   });
 });

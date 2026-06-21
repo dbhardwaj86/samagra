@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useApi } from "../../hooks/useApi";
 import { useApiPost } from "../../hooks/useApiPost";
 import Icon from "../../components/Icon";
@@ -31,8 +31,13 @@ export default function Mycontentdev() {
   const [rawText, setRawText] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const { post, loading: posting, error: postError } = useApiPost<{ ok: boolean }>();
+  // Synchronous in-flight guard: disabled={posting} only takes effect after a
+  // re-render, so rapid double-clicks (or Enter+click) could re-enter onSubmit
+  // and issue a duplicate production write. The ref flips synchronously.
+  const inFlight = useRef(false);
 
   async function onSubmit() {
+    if (inFlight.current) return;
     setFormError(null);
     const form = { type, title, raw_text: rawText } as SeedForm;
     const built = buildSeed(form);
@@ -40,11 +45,16 @@ export default function Mycontentdev() {
       setFormError(built.error);
       return;
     }
-    const out = await post("/api/mcd/seeds", built.body);
-    if (out) {
-      setTitle("");
-      setRawText("");
-      setReloadKey((k) => k + 1);
+    inFlight.current = true;
+    try {
+      const out = await post("/api/mcd/seeds", built.body);
+      if (out) {
+        setTitle("");
+        setRawText("");
+        setReloadKey((k) => k + 1);
+      }
+    } finally {
+      inFlight.current = false;
     }
   }
 
