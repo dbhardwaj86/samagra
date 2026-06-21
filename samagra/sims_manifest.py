@@ -26,6 +26,7 @@ def parse_deployed_sims(text: str) -> list[dict]:
         mg = _GRADE.match(line)
         if mg:
             grade = mg.group(1).strip()
+            subject = None  # a new grade starts fresh — don't bleed the prior grade's subject
             continue
         mi = _ITEM.match(line)
         if mi:

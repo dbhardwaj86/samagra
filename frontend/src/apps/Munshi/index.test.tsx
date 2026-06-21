@@ -29,6 +29,15 @@ describe("Munshi app", () => {
     expect(screen.getByRole("alert")).toBeInTheDocument();
     expect(screen.getByTestId("munshi")).toBeInTheDocument();
   });
+  it("surfaces an upstream read error (200 body) instead of the misleading creds empty-state (F1)", () => {
+    // /api/munshi/library returns 200 {results:[], error} on an upstream read
+    // failure, so useApi's hook error is null. The empty-state must show the
+    // real read error, not the "set MUNSHI_API_URL/MUNSHI_SECRET" line.
+    useApiMock.mockReturnValue({ data: { results: [], error: "munshi read failed" }, loading: false, error: null });
+    render(<Munshi />);
+    expect(screen.getByTestId("catalog-empty")).toHaveTextContent("munshi read failed");
+    expect(screen.getByTestId("catalog-empty")).not.toHaveTextContent(/set MUNSHI/i);
+  });
 });
 
 describe("Munshi capture composer", () => {

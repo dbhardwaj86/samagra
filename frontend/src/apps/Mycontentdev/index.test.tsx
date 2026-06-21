@@ -29,6 +29,15 @@ describe("mycontentdev app", () => {
     expect(screen.getByRole("alert")).toBeInTheDocument();
     expect(screen.getByTestId("mycontentdev")).toBeInTheDocument();
   });
+  it("surfaces an upstream read error (200 body) instead of the misleading creds empty-state (F1)", () => {
+    // /api/mcd/seeds returns 200 {results:[], error} on an upstream read failure,
+    // so useApi's hook error is null. The empty-state must show the real read
+    // error, not the "set mcd-cloud.json adminKey" line.
+    useApiMock.mockReturnValue({ data: { results: [], error: "mycontentdev read failed" }, loading: false, error: null });
+    render(<Mcd />);
+    expect(screen.getByTestId("catalog-empty")).toHaveTextContent("mycontentdev read failed");
+    expect(screen.getByTestId("catalog-empty")).not.toHaveTextContent(/adminKey/i);
+  });
   it("captures a seed", async () => {
     useApiMock.mockReturnValue({ data: { results: [] }, loading: false, error: null });
     const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(

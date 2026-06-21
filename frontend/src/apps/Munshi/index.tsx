@@ -31,7 +31,9 @@ export default function Munshi() {
   // Live read straight from the deployed Munshi worker (not the catalog), so a
   // fresh capture appears on the next refetch (reloadKey bump).
   const path = "/api/munshi/library" + (reloadKey ? `?_r=${reloadKey}` : "");
-  const { data, loading, error } = useApi<SearchResponse>(path);
+  // The live-read passthrough returns 200 {results:[], error} on an upstream read
+  // failure, so useApi's hook error stays null — surface data.error explicitly.
+  const { data, loading, error } = useApi<SearchResponse & { error?: string }>(path);
   const rows = catalogRows(data);
 
   const [kind, setKind] = useState<MunshiKind>("todo");
@@ -97,7 +99,7 @@ export default function Munshi() {
       <section data-testid="catalog-list" aria-busy={loading} style={{ marginTop: 16, display: "grid", gap: 8 }}>
         {rows.length === 0 ? (
           <div data-testid="catalog-empty" style={{ color: V.muted }}>
-            {loading ? "Loading…" : "Munshi not available — set MUNSHI_API_URL / MUNSHI_SECRET."}
+            {loading ? "Loading…" : (data?.error ?? "Munshi not available — set MUNSHI_API_URL / MUNSHI_SECRET.")}
           </div>
         ) : rows.map((r) => (
           <article key={r.uid} data-testid="catalog-row"

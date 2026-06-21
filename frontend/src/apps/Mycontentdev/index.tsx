@@ -23,7 +23,9 @@ export default function Mycontentdev() {
   // Live read straight from the deployed mycontentdev worker (not the catalog),
   // so a freshly captured seed appears on the next refetch (reloadKey bump).
   const path = "/api/mcd/seeds" + (reloadKey ? `?_r=${reloadKey}` : "");
-  const { data, loading, error } = useApi<SearchResponse>(path);
+  // The live-read passthrough returns 200 {results:[], error} on an upstream read
+  // failure, so useApi's hook error stays null — surface data.error explicitly.
+  const { data, loading, error } = useApi<SearchResponse & { error?: string }>(path);
   const rows = catalogRows(data);
 
   const [type, setType] = useState<SeedType>("rough_idea");
@@ -98,7 +100,7 @@ export default function Mycontentdev() {
       <section data-testid="catalog-list" aria-busy={loading} style={{ marginTop: 16, display: "grid", gap: 8 }}>
         {rows.length === 0 ? (
           <div data-testid="catalog-empty" style={{ color: V.muted }}>
-            {loading ? "Loading…" : "mycontentdev not available — set mcd-cloud.json adminKey."}
+            {loading ? "Loading…" : (data?.error ?? "mycontentdev not available — set mcd-cloud.json adminKey.")}
           </div>
         ) : rows.map((r) => (
           <article key={r.uid} data-testid="catalog-row"
