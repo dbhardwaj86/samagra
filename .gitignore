@@ -43,3 +43,9 @@ frontend/coverage/
 
 # local design reference (extracted handoff zip — read-only, not source)
 .design-ref/
+Web OS GUI design.zip
+
+# --- cloudflare tunnel (Phase B): commit only the non-secret config.yml ---
+*.pem
+cloudflared/*.json
+mcd-cloud.json

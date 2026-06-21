@@ -5,10 +5,16 @@ off `[x]` when done *with evidence*; append discovered work; record `BLOCKED:` n
 should be one focused, committable unit.
 
 ## Phase 0 — setup
-- [ ] **C-0 · Branch base.** Decide with the state in `HANDOFF.md §0`: merge PR
-  [samagra#4](https://github.com/dbhardwaj86/samagra/pull/4) to `main`, then branch
-  `ship/samagra-os` off `main` for this loop (keeps PR #4 reviewable; loop commits land on the new
-  branch). Confirm gates green on the fresh branch before proceeding.
+- [x] **C-0 · Branch base.** **DONE 2026-06-22.** Decision: **Option B** — branched `ship/samagra-os`
+  off `e3/samagra-os` HEAD (`396ca50`) **without** merging PR
+  [samagra#4](https://github.com/dbhardwaj86/samagra/pull/4) to `main`. Rationale: merging to the
+  shared `main` is outward-facing + the owner's call and isn't required for the loop; branching off the
+  PR head keeps #4 reviewable, lands loop commits on the fresh branch, and is fully reversible. The
+  #4→main merge defers to the owner / C-2. PR #4 confirmed OPEN + MERGEABLE. Baseline gates **green on
+  this exact tree**: **backend 152 pytest** (3×72/72/8 dots, 0 failures) + **frontend `npm run verify`**
+  (lint→tsc→vitest→`vite build ✓ 1.83s`, 22 lazy chunks). Branch creation is a pointer change (tree
+  byte-identical), so the gate result carries. Hygiene: gitignored the stray `Web OS GUI design.zip`
+  binary + pre-emptive Phase-B tunnel-secret patterns (`*.pem`, `cloudflared/*.json`, `mcd-cloud.json`).
 
 ## Phase A — make it fully working (functional DoD A1–A8)
 - [ ] **A-1 · Production-serve audit.** `npm run build`, start uvicorn `:8799`, and with the `preview_*`
