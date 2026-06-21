@@ -1,6 +1,16 @@
 # SAMAGRA — Handoff
 
-> **▶▶ LATEST — Phase E3 (mobile + visual polish) BUILT + the carried test-only LOWs CLOSED (2026-06-22).**
+> **▶▶▶ NEXT SESSION = RALPH LOOP: ship it & tunnel to Cloudflare (2026-06-22).** The next session runs an
+> autonomous "ralph" loop to drive the app to **fully working** and then **deploy it at a custom URL via a
+> `cloudflared` tunnel to the local stack**. Entry point + Definition of Done + guardrails:
+> [`docs/superpowers/loops/ralph-deploy/HANDOFF.md`](docs/superpowers/loops/ralph-deploy/HANDOFF.md); recurring
+> loop prompt: [`…/ralph-deploy/PROMPT.md`](docs/superpowers/loops/ralph-deploy/PROMPT.md); prioritized backlog:
+> [`…/ralph-deploy/BACKLOG.md`](docs/superpowers/loops/ralph-deploy/BACKLOG.md). **DEC-4 is ASSUMED UNBLOCKED**
+> for that session (owner directive) — GUI/deploy work is no longer gated on it (DEC-1/DEC-3 + the
+> never-automated publish gate still hold). **The public-exposure step is OWNER-GATED** and must sit behind
+> Cloudflare Access before the app is reachable (the capture write-paths + admin keys must not be open).
+>
+> **▶▶ Phase E3 (mobile + visual polish) BUILT + the carried test-only LOWs CLOSED (2026-06-22).**
 > On branch **`e3/samagra-os`** (3 commits: `0dceb0d` test-LOWs · `73a97b7` E3 · `82edd06` review fixes; **NOT
 > merged**). **⚠ DEC-4 was consciously deferred by the Chairman for this session** — the owner explicitly chose
 > "proceed with E3 now" rather than run the attention-ROI acceptance gate first. **DEC-4 is NOT satisfied; it
