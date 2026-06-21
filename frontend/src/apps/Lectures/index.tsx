@@ -39,8 +39,8 @@ export default function Lectures() {
                 {[r.unit, r.chapter && `ch ${r.chapter}`, r.status].filter(Boolean).join(" · ")}
               </div>
             </div>
-            {r.openHref ? (
-              <a href={r.openHref} target="_blank" rel="noreferrer"
+            {r.href ? (
+              <a href={r.href} target="_blank" rel="noreferrer"
                  style={{ color: V.accent, fontSize: 13, alignSelf: "center" }}>open</a>
             ) : null}
           </article>

@@ -16,8 +16,9 @@ ORG: dict = {
         {"id": "codex", "name": "Codex", "role": "Reviewer — pre-merge gate"},
     ],
     "workers": [
-        {"id": "gemini", "name": "Gemini", "role": "Research & synthesis"},
-        {"id": "notebooklm", "name": "NotebookLM", "role": "Research & synthesis"},
+        # Gemini+NotebookLM is ONE roster line per the source-verified frontend roster;
+        # the two pipeline owner tokens stay distinct in `owners` below.
+        {"id": "gemini-notebooklm", "name": "Gemini+NotebookLM", "role": "Research & synthesis"},
         {"id": "grok", "name": "Grok", "role": "Real-time search"},
         {"id": "hermes", "name": "Hermes", "role": "Kanban / scheduling"},
     ],

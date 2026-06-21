@@ -11,6 +11,8 @@ def test_org_dict_shape():
     assert o["chairman"]["role"] == "Founder & Chairman"
     # board hierarchy from the source-verified roster
     assert [b["id"] for b in o["board"]] == ["claude-deepak", "claude-khanak", "codex"]
+    # workers roster matches the verified frontend roster (Gemini+NotebookLM is ONE line)
+    assert [w["name"] for w in o["workers"]] == ["Gemini+NotebookLM", "Grok", "Hermes"]
     # owners map covers ALL 7 distinct state.PIPELINES owner ids
     assert set(o["owners"]) == {
         "claude1", "claude2", "codex", "gemini", "human", "notebooklm", "teachingos"

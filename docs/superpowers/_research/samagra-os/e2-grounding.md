@@ -123,9 +123,13 @@ All 17 `AppId`s already complete in `contracts.ts`, `registry.ts`, and `App.tsx`
 generic runtime dynamic import (`App.tsx` L88–99):
 ```ts
 const Comp = lazy(() =>
-  import(/* @vite-ignore */ `./apps/${dir}/index.tsx`).catch(() => ({ default: () => null })),
+  import(`./apps/${dir}/index.tsx`).catch(() => ({ default: () => null })),
 ) as ComponentType;
 ```
+> **Note (E2 fix, commit `7794f0f`):** the original `/* @vite-ignore */` was REMOVED. With it, Vite left every
+> `apps/*/index.tsx` OUT of the production bundle — FastAPI-served windows rendered empty (only `npm run dev`
+> worked). Dropping it lets Vite's dynamic-import-vars emit a lazy chunk per app. **Do NOT re-add it.**
+
 **"append-only / one-app-per-PR" = CREATE one `frontend/src/apps/<Dir>/index.tsx` per PR — no edit to
 `registry.ts` or `App.tsx`.** Folder name MUST equal `APP_DIR[id]` exactly (`pipelines→Pipelines`, `org→Org`,
 `insp→Insp`, `sims→Sims`, `mycontentdev→Mycontentdev`, `munshi→Munshi`, `activity→Activity`). A forgotten

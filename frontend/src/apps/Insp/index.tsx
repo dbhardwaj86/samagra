@@ -36,8 +36,8 @@ export default function Insp() {
               <div style={{ color: V.text, fontWeight: 600 }}>{r.title}</div>
               <div style={{ color: V.muted, fontSize: 12 }}>{r.kind}</div>
             </div>
-            {r.openHref ? (
-              <a href={r.openHref} target="_blank" rel="noreferrer"
+            {r.href ? (
+              <a href={r.href} target="_blank" rel="noreferrer"
                  style={{ color: V.accent, fontSize: 13, alignSelf: "center" }}>open</a>
             ) : null}
           </article>

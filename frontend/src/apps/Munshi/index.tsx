@@ -30,9 +30,16 @@ export default function Munshi() {
           </div>
         ) : rows.map((r) => (
           <article key={r.uid} data-testid="catalog-row"
-                   style={{ background: V.cardBg, border: `1px solid ${V.line}`, borderRadius: 10, padding: "10px 12px" }}>
-            <div style={{ color: V.text, fontWeight: 600 }}>{r.title}</div>
-            <div style={{ color: V.muted, fontSize: 12 }}>{[r.kind, r.status].filter(Boolean).join(" · ")}</div>
+                   style={{ background: V.cardBg, border: `1px solid ${V.line}`, borderRadius: 10,
+                            padding: "10px 12px", display: "flex", justifyContent: "space-between", gap: 12 }}>
+            <div>
+              <div style={{ color: V.text, fontWeight: 600 }}>{r.title}</div>
+              <div style={{ color: V.muted, fontSize: 12 }}>{[r.kind, r.status].filter(Boolean).join(" · ")}</div>
+            </div>
+            {r.href ? (
+              <a href={r.href} target="_blank" rel="noreferrer"
+                 style={{ color: V.accent, fontSize: 13, alignSelf: "center" }}>open</a>
+            ) : null}
           </article>
         ))}
       </section>

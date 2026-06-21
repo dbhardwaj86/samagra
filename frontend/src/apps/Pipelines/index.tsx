@@ -1,7 +1,8 @@
 import { useApi } from "../../hooks/useApi";
 import Icon from "../../components/Icon";
 import { stagesOf } from "../../lib/pipelines/stages";
-import type { PipelinesResponse } from "../../types/contracts";
+import { ownerName } from "../../lib/org/resolve";
+import type { PipelinesResponse, OrgChart } from "../../types/contracts";
 
 const V = {
   text: "var(--samagra-text)", muted: "var(--samagra-muted)", line: "var(--samagra-line)",
@@ -11,6 +12,7 @@ const V = {
 
 export default function Pipelines() {
   const { data, loading, error } = useApi<PipelinesResponse>("/api/pipelines");
+  const org = useApi<OrgChart>("/api/org");   // resolves owner tokens -> display names
   const pipelines = Array.isArray(data?.pipelines) ? data!.pipelines : [];
   return (
     <div data-testid="pipelines" style={{ padding: 20, fontFamily: V.font }}>
@@ -32,7 +34,7 @@ export default function Pipelines() {
                      style={{ background: V.subBg, borderRadius: 8, padding: "4px 10px",
                               color: s.isCurrent ? V.text : V.muted, fontSize: 12,
                               border: s.isCurrent ? `1px solid ${V.accent}` : `1px solid ${V.line}` }}>
-                  {s.gate ? "[gate] " : ""}{s.name}: {s.status}{s.owner ? ` · ${s.owner}` : ""}
+                  {s.gate ? "[gate] " : ""}{s.name}: {s.status}{s.owner ? ` · ${ownerName(org.data, s.owner)}` : ""}
                 </div>
               ))}
             </div>

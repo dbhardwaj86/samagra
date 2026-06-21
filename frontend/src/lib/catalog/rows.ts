@@ -9,7 +9,8 @@ export interface CatalogRow {
   status: string | null;
   kind: string;
   url: string | null;
-  openHref: string | null;        // safe /open?path= link, or null
+  openHref: string | null;        // safe /open?path= link (file rows), or null
+  href: string | null;            // unified link target: file-open, else a safe web url
   meta: Record<string, unknown>;
 }
 
@@ -20,7 +21,15 @@ export function openHref(path: string | null | undefined): string | null {
   return "/open?path=" + encodeURIComponent(path);
 }
 
+/** A safe link target for a row's `url` field: http(s) or root-relative only.
+ *  Guards against javascript:/data: and other unsafe schemes. */
+export function safeUrl(u: string | null | undefined): string | null {
+  if (!u) return null;
+  return u.startsWith("/") || /^https?:\/\//i.test(u) ? u : null;
+}
+
 function toRow(r: SearchResult): CatalogRow {
+  const fileHref = openHref(r.path);
   return {
     uid: r.uid,
     title: r.title,
@@ -30,7 +39,8 @@ function toRow(r: SearchResult): CatalogRow {
     status: r.status ?? null,
     kind: r.kind,
     url: r.url ?? null,
-    openHref: openHref(r.path),
+    openHref: fileHref,
+    href: fileHref ?? safeUrl(r.url),   // prefer file open; fall back to a safe web url
     meta: r.meta && typeof r.meta === "object" ? r.meta : {},
   };
 }

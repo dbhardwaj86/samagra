@@ -14,13 +14,20 @@ const data = { pipelines: [{
 
 describe("Pipelines app", () => {
   beforeEach(() => useApiMock.mockReset());
-  it("calls /api/pipelines and renders stages", () => {
-    useApiMock.mockReturnValue({ data, loading: false, error: null });
+  it("calls /api/pipelines + /api/org and resolves owner tokens to display names", () => {
+    const org = { owners: { codex: { name: "Codex", role: "Reviewer" } } };
+    useApiMock.mockImplementation((p: string) =>
+      p === "/api/org"
+        ? { data: org, loading: false, error: null }
+        : { data, loading: false, error: null });
     render(<Pipelines />);
     expect(useApiMock).toHaveBeenCalledWith("/api/pipelines");
+    expect(useApiMock).toHaveBeenCalledWith("/api/org");
     expect(screen.getByTestId("pipelines")).toBeInTheDocument();
     expect(screen.getByText("Lectures (textbook)")).toBeInTheDocument();
     expect(screen.getAllByTestId("phase")).toHaveLength(2);
+    // owner token "codex" rendered as the display name "Codex" (not the raw token)
+    expect(screen.getAllByTestId("phase")[0]).toHaveTextContent("· Codex");
   });
   it("error inline + still mounts", () => {
     useApiMock.mockReturnValue({ data: null, loading: false, error: "HTTP 503" });
