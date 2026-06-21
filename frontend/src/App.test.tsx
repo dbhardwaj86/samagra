@@ -13,6 +13,7 @@ import { render, screen, fireEvent, act } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import App, { wmStore, themeStore } from "./App";
 import { ORDER, APPS } from "./registry";
+import { THEMES } from "./themes";
 
 // Reset the shared WM store between tests so window assertions are isolated.
 function resetWm() {
@@ -32,6 +33,18 @@ describe("App (CH1 aqua chrome fidelity)", () => {
   it("renders the shell root element", () => {
     const { container } = render(<App />);
     expect(container.querySelector("#samagra-os-shell")).toBeInTheDocument();
+    resetWm();
+  });
+
+  it("sets the theme --samagra-* CSS vars on the shell root so var() resolves app-wide", () => {
+    // Without these, every var(--samagra-*) falls back app-wide — most apps tolerate
+    // it (transparent bg + black text ≈ aqua) but the Clock face SVG fill defaults to
+    // a solid BLACK disc. The shell root must expose the active theme's tokens as vars.
+    const { container } = render(<App />);
+    const shell = container.querySelector("#samagra-os-shell") as HTMLElement;
+    expect(shell.style.getPropertyValue("--samagra-card-bg")).toBe(THEMES.aqua.cardBg);
+    expect(shell.style.getPropertyValue("--samagra-accent")).toBe(THEMES.aqua.accent);
+    expect(shell.style.getPropertyValue("--samagra-text")).toBe(THEMES.aqua.text);
     resetWm();
   });
 

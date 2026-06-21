@@ -33,11 +33,12 @@ import {
   useMemo,
   useState,
   type ComponentType,
+  type CSSProperties,
 } from "react";
 import { useStore } from "zustand";
 import type { AppId, Theme, WindowState } from "./types/contracts";
 import { APPS } from "./registry";
-import { getTheme } from "./themes";
+import { getTheme, cssVars } from "./themes";
 import { createWindowManagerStore } from "./stores/windowManager";
 import { createThemeStore } from "./stores/theme";
 import TopBar from "./shell/TopBar";
@@ -298,6 +299,10 @@ export default function App() {
         openDesktopMenu(e.clientX, e.clientY);
       }}
       style={{
+        // Expose the active theme's tokens as --samagra-* CSS vars so every
+        // var(--samagra-*) reference (chrome + app bodies, incl. the Clock face
+        // SVG fill/stroke) resolves; without this they fall back (black clock).
+        ...(cssVars(t) as CSSProperties),
         position: "fixed",
         inset: 0,
         overflow: "hidden",
