@@ -1,0 +1,47 @@
+import type { SearchResponse, SearchResult } from "../../types/contracts";
+
+export interface CatalogRow {
+  uid: string;
+  title: string;
+  subject: string | null;
+  unit: string | null;
+  chapter: string | null;
+  status: string | null;
+  kind: string;
+  url: string | null;
+  openHref: string | null;        // safe /open?path= link, or null
+  meta: Record<string, unknown>;
+}
+
+/** Build the safe file-open href for a catalog path (null when no path). The
+ *  backend /open enforces ALLOWED_ROOTS; we only link rows that carry a path. */
+export function openHref(path: string | null | undefined): string | null {
+  if (!path) return null;
+  return "/open?path=" + encodeURIComponent(path);
+}
+
+function toRow(r: SearchResult): CatalogRow {
+  return {
+    uid: r.uid,
+    title: r.title,
+    subject: r.subject ?? null,
+    unit: r.unit ?? null,
+    chapter: r.chapter ?? null,
+    status: r.status ?? null,
+    kind: r.kind,
+    url: r.url ?? null,
+    openHref: openHref(r.path),
+    meta: r.meta && typeof r.meta === "object" ? r.meta : {},
+  };
+}
+
+export function catalogRows(data: SearchResponse | null | undefined): CatalogRow[] {
+  const results = data?.results;
+  return Array.isArray(results) ? results.map(toRow) : [];
+}
+
+export function subjectsOf(rows: CatalogRow[]): string[] {
+  const set = new Set<string>();
+  for (const r of rows) if (r.subject) set.add(r.subject);
+  return Array.from(set).sort();
+}
