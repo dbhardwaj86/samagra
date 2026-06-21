@@ -77,8 +77,28 @@ should be one focused, committable unit.
   `minmax(0,…)`. Gates: **frontend 546 vitest / 62 files** (+3) + lint+tsc+`vite build ✓`; **backend 154
   pytest / 0 failures** (no backend change). Browser proof: home-grid, Assignments (reflowed 3+2), INSP
   (wrapped titles) screenshots.
-- [ ] **A-6 · Theme pass.** Exercise console + samagra across every app + the shell chrome; fix any
-  aqua-only leakage; confirm windows open/clamp correctly per theme (E3 theme-aware WM geometry).
+- [x] **A-6 · Theme pass. DONE 2026-06-22.** Exercised **console + samagra** across **all 17 apps + shell
+  chrome** in a real browser (opened all 17 windows in aqua, then live-switched themes so every open
+  window reskins via the `--samagra-*` CSS vars). **No aqua-only leakage found** — the leaf apps are
+  var-driven by construction (static scan confirmed every hardcoded hue is an intentional fixed
+  semantic/brand/data-viz color: danger `#ef4444`, success `#16a34a`, Clock day/night, Dashboard chart
+  series, Snake's own `[data-theme]` board vars, Settings' theme-preview gradients).
+  - **Per-app reskin** (luminance sweep of each window's largest text block): **console** (text
+    `#e7eef8`) → all 17 light, **0 dark-text leakage** (min lum 0.42 = readable muted); **samagra** (text
+    `#2a2118`) → all 17 dark-on-warm, **0 light-text leakage**. Theme CSS vars verified switching: console
+    `bar-h:0px/rail:0px`, samagra `bar-h:32px/rail:66px/accent:#d9601a`.
+  - **Shell chrome correct per theme** (screenshots): console = bottom Taskbar (Start + running strip +
+    clock) · **no top bar** · right-side window controls; samagra = top bar (`समग्र` wordmark + Phase
+    pill + clock) · **left Rail** of warm icons · right-side controls; status pills + accents recolor.
+  - **Theme-aware WM geometry confirmed** (`lib/wm/geometry.workArea`): a fresh window opened *in* samagra
+    lands at x=86,y=50,w=895 (clears rail+topbar, fits work area + viewport); *in* console at x=32,y=20,
+    w=941 (origin {8,8}, no topbar); `reclampOnTheme` on switch kept **0/17 windows under the rail or top
+    bar** (minX=74, minY=48). *(Noted: §1.9 reclamp intentionally does NOT resize, so a window wider than
+    the new work area — e.g. opened in wide aqua/console then switched to samagra's rail-inset area —
+    overflows the right edge on the cross-theme switch only, not the normal per-theme open path.)*
+  - **0 console errors** in both themes. **No production code change** (verification pass, like A-4) — the
+    3-theme system from E1/E3 is correct. Tree byte-identical to A-5 HEAD, so gates hold (frontend 546 /
+    backend 154).
 - [ ] **A-7 · Console-error sweep.** Across every app × {pc, mobile} × {aqua, console, samagra}, confirm
   `preview_console_logs` shows zero errors; fix any that appear.
 - [ ] **A-8 · Adversarial review + gates.** Run an adversarial-review workflow over the accumulated diff;
