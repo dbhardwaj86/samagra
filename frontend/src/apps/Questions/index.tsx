@@ -3,7 +3,7 @@ import { useApi } from "../../hooks/useApi";
 import Icon from "../../components/Icon";
 import { buildQuery } from "../../lib/api/query";
 import { QTYPES, questionRows, questionError } from "../../lib/questions/facets";
-import type { QuestionsResponse, Facets } from "../../types/contracts";
+import type { QuestionsResponse, QuestionFacets } from "../../types/contracts";
 
 const V = {
   text: "var(--samagra-text)", muted: "var(--samagra-muted)", line: "var(--samagra-line)",
@@ -19,7 +19,7 @@ export default function Questions() {
   const [subject, setSubject] = useState("");
   const qPath = "/api/questions" + buildQuery({ subject, limit: 50 });
   const { data, loading, error } = useApi<QuestionsResponse>(qPath);
-  const { data: facetData } = useApi<Facets>("/api/facets");
+  const { data: facetData } = useApi<QuestionFacets>("/api/questions/facets");
   const subjects = Array.isArray(facetData?.subjects) ? facetData!.subjects : [];
   const rows = questionRows(data);
   const notice = questionError(data);   // in-body QX-absent notice (optional)

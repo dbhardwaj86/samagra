@@ -8,14 +8,20 @@ const questions = { results: [
   { q_uid: "q1", slug: "s1", q_type: "integer", subject: "Physics", chapter: "1",
     difficulty: "easy", text: "A block of mass…" },
 ] };
-const facets = { sources: ["qx"], kinds: ["question"], subjects: ["Physics", "Chemistry"] };
+// Question-scoped facets (the fix): subject chips must come from here.
+const qFacets = { subjects: ["Physics", "Chemistry"] };
+// Catalog-wide facets (the old bug source): leaks SIM ids — must NOT be used.
+const catalogFacets = { sources: ["qx"], kinds: ["question"], subjects: ["SIM0018"] };
 
-// Route the mock per path: facets payload for /api/facets, questions payload for the rest.
+// Route the mock per path: question-scoped facets for /api/questions/facets,
+// catalog-wide for /api/facets, questions payload for the rest.
 function wire(opts: { qData?: unknown; loading?: boolean; error?: string | null } = {}) {
   useApiMock.mockImplementation((p: string) =>
-    p === "/api/facets"
-      ? { data: facets, loading: false, error: null }
-      : { data: opts.qData ?? questions, loading: opts.loading ?? false, error: opts.error ?? null });
+    p === "/api/questions/facets"
+      ? { data: qFacets, loading: false, error: null }
+      : p === "/api/facets"
+        ? { data: catalogFacets, loading: false, error: null }
+        : { data: opts.qData ?? questions, loading: opts.loading ?? false, error: opts.error ?? null });
 }
 
 describe("Questions app", () => {
@@ -31,12 +37,14 @@ describe("Questions app", () => {
     expect(screen.getByTestId("question-row")).toHaveTextContent("A block of mass…");
   });
 
-  it("fetches /api/facets and renders a subject chip per facet subject", () => {
+  it("fetches /api/questions/facets and renders a chip per question-scoped subject", () => {
     wire();
     render(<Questions />);
-    expect(useApiMock).toHaveBeenCalledWith("/api/facets");
+    expect(useApiMock).toHaveBeenCalledWith("/api/questions/facets");
+    expect(useApiMock).not.toHaveBeenCalledWith("/api/facets");
     const chips = screen.getAllByTestId("subject-chip");
     expect(chips.map((c) => c.textContent)).toEqual(["Physics", "Chemistry"]);
+    expect(screen.queryByText("SIM0018")).not.toBeInTheDocument();
   });
 
   it("selecting a subject bakes it into the /api/questions path so the list refetches", () => {
