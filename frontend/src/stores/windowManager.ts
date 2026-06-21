@@ -29,6 +29,9 @@ export interface WindowManagerOptions {
 export interface WindowManagerState {
   windows: WindowState[];
   z: number;
+  /** The active theme (E3) — drives the work area + barH for every window op.
+   * Kept in sync by `reclampForTheme`, which the theme store calls on setTheme. */
+  theme: Theme;
   /** Open-or-focus an app (proto.md §1.4): never spawns a duplicate. */
   openApp: (id: AppId) => void;
   /** Drag move to an absolute target; clamps x≥0, y≥barH (proto.md §1.6). */
@@ -65,8 +68,9 @@ function wa(theme: Theme): Rect {
   return workArea(theme, vw, vh);
 }
 
-// E1 ships only the aqua desktop; the WM is keyed to it for clamps/work area.
-const WM_THEME: Theme = "aqua";
+// The default theme at boot (aqua). After the first theme switch the active theme
+// is whatever `reclampForTheme` last applied, so non-aqua windows clamp correctly.
+const WM_DEFAULT_THEME: Theme = "aqua";
 
 export function createWindowManagerStore(
   opts: WindowManagerOptions = {},
@@ -74,6 +78,7 @@ export function createWindowManagerStore(
   return createStore<WindowManagerState>((set, get) => ({
     windows: [],
     z: INITIAL_Z,
+    theme: WM_DEFAULT_THEME,
 
     openApp: (id) =>
       set((state) => {
@@ -91,7 +96,7 @@ export function createWindowManagerStore(
         // §1.4 step 3 — new window: openRect cascade off the count-before-insert.
         const n = state.windows.length;
         const app = APPS[id];
-        const rect = openRect({ w: app.w, h: app.h }, wa(WM_THEME), n);
+        const rect = openRect({ w: app.w, h: app.h }, wa(state.theme), n);
         const nz = bump(state.z);
         const win: WindowState = {
           id: `w${Date.now()}${n}`,
@@ -110,7 +115,7 @@ export function createWindowManagerStore(
 
     move: (id, x, y) =>
       set((state) => {
-        const barH = THEMES[WM_THEME].barH;
+        const barH = THEMES[state.theme].barH;
         const clamped = clampDrag(x, y, barH);
         return {
           windows: state.windows.map((w) =>
@@ -150,7 +155,7 @@ export function createWindowManagerStore(
               };
             }
             // maximize — stash prev, fill the work area
-            const rect = maximizeRect(wa(WM_THEME));
+            const rect = maximizeRect(wa(state.theme));
             return {
               ...w,
               prev: { x: w.x, y: w.y, w: w.w, h: w.h },
@@ -178,7 +183,7 @@ export function createWindowManagerStore(
       set((state) => {
         const live = state.windows.filter((w) => !w.min);
         if (live.length === 0) return {};
-        const rects = tileRects(live.length, wa(WM_THEME));
+        const rects = tileRects(live.length, wa(state.theme));
         const byId = new Map<string, Rect>();
         live.forEach((w, i) => byId.set(w.id, rects[i]));
         return {
@@ -208,6 +213,9 @@ export function createWindowManagerStore(
       set((state) => {
         const area = wa(theme);
         return {
+          // Adopt the new theme as the active one so every subsequent window op
+          // (open/move/maximize/tile) uses its work area + barH (E3 polish).
+          theme,
           windows: state.windows.map((w) => {
             if (w.max) {
               const rect = maximizeRect(area);

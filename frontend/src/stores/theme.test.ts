@@ -98,3 +98,33 @@ describe("setDevice — toggle device (proto.md §1.11)", () => {
     expect(theme.getState().device).toBe("pc");
   });
 });
+
+// E3 — mobile single-app state (proto.md §1.4 step 1 / §1.11). In mobile the OS
+// shows ONE app full-screen (`mobileApp`) over a home grid; switching device
+// resets it so a stale app never lingers on the next device.
+describe("mobile app state (E3 — proto.md §1.4/§1.11)", () => {
+  it("starts on the home grid (mobileApp = null)", () => {
+    const wm = createWindowManagerStore();
+    const theme = createThemeStore({ wm });
+    expect(theme.getState().mobileApp).toBeNull();
+  });
+
+  it("openMobileApp shows that app; goHome returns to the grid", () => {
+    const wm = createWindowManagerStore();
+    const theme = createThemeStore({ wm });
+    theme.getState().openMobileApp("notes");
+    expect(theme.getState().mobileApp).toBe("notes");
+    theme.getState().goHome();
+    expect(theme.getState().mobileApp).toBeNull();
+  });
+
+  it("setDevice resets mobileApp to the home grid (proto.md §1.11)", () => {
+    const wm = createWindowManagerStore();
+    const theme = createThemeStore({ wm });
+    theme.getState().setDevice("mobile");
+    theme.getState().openMobileApp("clock");
+    expect(theme.getState().mobileApp).toBe("clock");
+    theme.getState().setDevice("pc");
+    expect(theme.getState().mobileApp).toBeNull();
+  });
+});

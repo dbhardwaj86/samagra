@@ -267,8 +267,19 @@ export default function Dashboard() {
         })}
       </section>
 
-      {/* Two-column lower area: Pipelines | (Board + Recent activity) (L279). */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 14, alignItems: "start" }}>
+      {/* Lower area: Pipelines | (Board + Recent activity) (L279). HIGH#2 —
+          responsive: `auto-fit minmax(260px,1fr)` keeps two columns when wide
+          but stacks to a single column once the window/mobile screen is narrow,
+          instead of squishing the old fixed `1.4fr 1fr` grid into ~190px columns. */}
+      <div
+        data-testid="dashboard-lower"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))",
+          gap: 14,
+          alignItems: "start",
+        }}
+      >
         {/* Pipelines — labeled progress bars (L280-285). */}
         <section data-testid="pipelines" style={cardStyle}>
           <div style={{ ...sectionHeading, marginBottom: 12 }}>Pipelines</div>

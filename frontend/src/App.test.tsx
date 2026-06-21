@@ -9,7 +9,7 @@
 // swaps the chrome — the TopBar/Dock give way to the bottom Taskbar + Start menu,
 // and every WindowFrame re-themes to the console right-side icon controls. These
 // pin that theme-driven assembly (FD1) end-to-end through the real stores.
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { render, screen, fireEvent, act, within } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import App, { wmStore, themeStore } from "./App";
 import { ORDER, APPS } from "./registry";
@@ -296,5 +296,43 @@ describe("App (right-click context menus — all themes)", () => {
     expect(screen.getByText("Close window")).toBeInTheDocument();
     resetWm();
     resetTheme();
+  });
+});
+
+// E3 — switching the device store to `mobile` swaps the whole desktop shell for
+// the phone frame; opening an app shows it full-screen and Home returns to the
+// grid. Pins the device-driven assembly end-to-end through the real stores.
+describe("App (E3 mobile device mode)", () => {
+  // setDevice('pc') also clears mobileApp (proto §1.11) — restores the desktop.
+  const resetDevice = () => act(() => themeStore.getState().setDevice("pc"));
+
+  it("swaps the desktop chrome for the phone frame when device is mobile", () => {
+    act(() => themeStore.getState().setDevice("mobile"));
+    render(<App />);
+    expect(screen.getByTestId("mobile-frame")).toBeInTheDocument();
+    // none of the desktop dock chrome is mounted in mobile
+    expect(screen.queryByRole("toolbar", { name: /dock/i })).toBeNull();
+    expect(screen.queryByRole("toolbar", { name: /taskbar/i })).toBeNull();
+    expect(screen.queryByRole("toolbar", { name: /rail/i })).toBeNull();
+    resetDevice();
+    resetWm();
+  });
+
+  it("opens an app full-screen from the home grid and returns to the grid via Home", () => {
+    act(() => themeStore.getState().setDevice("mobile"));
+    render(<App />);
+    expect(screen.getByTestId("mobile-grid")).toBeInTheDocument();
+    // tap Notes in the home grid → full-screen app (the home grid disappears)
+    fireEvent.click(
+      within(screen.getByTestId("mobile-grid")).getByRole("button", { name: /notes/i }),
+    );
+    expect(screen.getByTestId("mobile-app")).toBeInTheDocument();
+    expect(screen.queryByTestId("mobile-grid")).toBeNull();
+    expect(themeStore.getState().mobileApp).toBe("notes");
+    // tap Home → back to the grid
+    fireEvent.click(screen.getByRole("button", { name: /home/i }));
+    expect(screen.getByTestId("mobile-grid")).toBeInTheDocument();
+    resetDevice();
+    resetWm();
   });
 });

@@ -48,6 +48,7 @@ import Taskbar from "./shell/Taskbar";
 import StartMenu from "./shell/StartMenu";
 import WindowFrame from "./shell/WindowFrame";
 import ContextMenu, { type ContextMenuItem } from "./shell/ContextMenu";
+import Mobile from "./shell/Mobile";
 
 // Wire the two stores once for the app lifetime (WM first, theme references it).
 const wmStore = createWindowManagerStore();
@@ -128,8 +129,11 @@ export default function App() {
 
   const theme = useStore(themeStore, (s) => s.theme);
   const device = useStore(themeStore, (s) => s.device);
+  const mobileApp = useStore(themeStore, (s) => s.mobileApp);
   const setTheme = useStore(themeStore, (s) => s.setTheme);
   const setDevice = useStore(themeStore, (s) => s.setDevice);
+  const openMobileApp = useStore(themeStore, (s) => s.openMobileApp);
+  const goHome = useStore(themeStore, (s) => s.goHome);
   const t = getTheme(theme); // fallback-guarded index (advisory HIGH #4)
   const isConsole = t.kind === "console";
   const isSamagra = t.kind === "samagra";
@@ -282,6 +286,44 @@ export default function App() {
     tile,
     closeAll,
   ]);
+
+  // E3 — mobile device mode: the desktop windowing shell is replaced by the phone
+  // frame (proto §7). Declared AFTER every hook above so the hook order is stable.
+  // The shell root keeps the --samagra-* CSS vars so app bodies resolve var()s; the
+  // desktop context menu is intentionally NOT wired here (no right-click desktop on
+  // a phone). Tapping a launcher opens the app full-screen; Home returns to the grid.
+  if (device === "mobile") {
+    const MobileBody = mobileApp ? appComponent(mobileApp) : null;
+    return (
+      <div
+        id="samagra-os-shell"
+        style={{
+          ...(cssVars(t) as CSSProperties),
+          position: "fixed",
+          inset: 0,
+          overflow: "hidden",
+          background: t.bg,
+          font: `13px ${t.font}`,
+          color: t.text,
+        }}
+      >
+        <Mobile
+          theme={theme}
+          clock={fmtClock(now)}
+          mobileApp={mobileApp}
+          onOpen={openMobileApp}
+          onHome={goHome}
+          appBody={
+            MobileBody ? (
+              <Suspense fallback={null}>
+                <MobileBody />
+              </Suspense>
+            ) : null
+          }
+        />
+      </div>
+    );
+  }
 
   return (
     <div

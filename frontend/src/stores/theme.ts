@@ -3,7 +3,7 @@
 // re-clamp every window into the new theme's work area (proto.md §1.9). All
 // geometry math lives in lib/wm/geometry (delegated via wm.reclampForTheme).
 import { createStore, type StoreApi } from "zustand/vanilla";
-import type { Device, Theme } from "../types/contracts";
+import type { AppId, Device, Theme } from "../types/contracts";
 import { DEFAULT_THEME, isTheme } from "../themes";
 import type { WindowManagerStore } from "./windowManager";
 
@@ -15,10 +15,16 @@ export interface ThemeStoreOptions {
 export interface ThemeState {
   theme: Theme;
   device: Device;
+  /** The app shown full-screen in mobile (proto.md §1.4 step 1); null = home grid. */
+  mobileApp: AppId | null;
   /** Switch theme, then re-clamp every window into the new work area (§1.9). */
   setTheme: (theme: Theme) => void;
-  /** Toggle the device (proto.md §1.11). */
+  /** Toggle the device (proto.md §1.11) — also resets `mobileApp` to the home grid. */
   setDevice: (device: Device) => void;
+  /** Open an app in mobile — shows it full-screen (proto.md §1.4 step 1). */
+  openMobileApp: (id: AppId) => void;
+  /** Return to the mobile home grid (`mobileApp = null`). */
+  goHome: () => void;
 }
 
 export type ThemeStore = StoreApi<ThemeState>;
@@ -28,6 +34,7 @@ export function createThemeStore(opts: ThemeStoreOptions): ThemeStore {
   return createStore<ThemeState>((set) => ({
     theme: "aqua",
     device: "pc",
+    mobileApp: null,
 
     setTheme: (theme) => {
       // Coerce an undefined/unknown value to the default so no consumer ever
@@ -37,6 +44,11 @@ export function createThemeStore(opts: ThemeStoreOptions): ThemeStore {
       wm.getState().reclampForTheme(t);
     },
 
-    setDevice: (device) => set({ device }),
+    // proto.md §1.11 — switching device clears any open mobile app so a stale app
+    // never lingers across a device change (it would otherwise re-show on return).
+    setDevice: (device) => set({ device, mobileApp: null }),
+
+    openMobileApp: (id) => set({ mobileApp: id }),
+    goHome: () => set({ mobileApp: null }),
   }));
 }

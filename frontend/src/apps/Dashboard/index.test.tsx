@@ -324,6 +324,22 @@ describe("Dashboard (fidelity — Recent activity timeline)", () => {
   });
 });
 
+describe("Dashboard (E3 — responsive narrow grid, HIGH#2)", () => {
+  it("lays the lower Pipelines/Board area out as an auto-fit grid that reflows when narrow", async () => {
+    // HIGH#2: the lower area was a fixed `1.4fr 1fr` two-column grid that never
+    // reflowed, so at a narrow window / mobile (392px) both columns squished into
+    // an unreadable ~190px. It is now `repeat(auto-fit,minmax(260px,1fr))` — two
+    // columns when wide, a single stacked column once the container falls below
+    // ~534px. Pins the responsive template (the stat grid is already auto-fill).
+    render(<Dashboard />);
+    const lower = await screen.findByTestId("dashboard-lower");
+    expect(lower).toHaveStyle({
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))",
+    });
+  });
+});
+
 describe("Dashboard (fidelity — theme-driven surface)", () => {
   it("drives card surfaces from theme CSS vars (no hardcoded per-theme value)", async () => {
     render(<Dashboard />);

@@ -209,6 +209,55 @@ describe("tile — lay out non-minimized windows (proto.md §1.10)", () => {
   });
 });
 
+// E3 polish — the WM is theme-aware: once the active theme changes (via the theme
+// store's setTheme, which calls reclampForTheme), every subsequent window op
+// (open/move/maximize/tile) uses THAT theme's work area + barH, not aqua's.
+// geometry.workArea already supports all three themes; this pins the store wiring.
+describe("theme-aware geometry (E3 — non-aqua work area)", () => {
+  it("opens a window into the ACTIVE theme's work area after a theme switch (console)", () => {
+    const store = make();
+    store.getState().reclampForTheme("console"); // becomes the active WM theme
+    store.getState().openApp("dashboard");
+    const w = store.getState().windows[0];
+    const WAc = workArea("console", 1440, 900); // { x:8, y:8, ... }
+    expect(w.x).toBe(WAc.x + 24); // 32
+    expect(w.y).toBe(WAc.y + 12); // 20 — NOT aqua's 48 (y=36+12)
+  });
+
+  it("clamps a drag to the ACTIVE theme's barH (console barH=0, not aqua 30)", () => {
+    const store = make();
+    store.getState().reclampForTheme("console");
+    store.getState().openApp("dashboard");
+    const id = store.getState().windows[0].id;
+    store.getState().move(id, -50, -50);
+    const w = store.getState().windows[0];
+    expect(w.x).toBe(0);
+    expect(w.y).toBe(0); // console barH=0
+  });
+
+  it("maximizes into the ACTIVE theme's full work area (samagra rail+bar)", () => {
+    const store = make();
+    store.getState().reclampForTheme("samagra");
+    store.getState().openApp("dashboard");
+    const id = store.getState().windows[0].id;
+    store.getState().toggleMax(id);
+    const w = store.getState().windows[0];
+    expect({ x: w.x, y: w.y, w: w.w, h: w.h }).toEqual(workArea("samagra", 1440, 900));
+  });
+
+  it("tiles into the ACTIVE theme's work area origin (samagra rail offset)", () => {
+    const store = make();
+    store.getState().reclampForTheme("samagra");
+    store.getState().openApp("dashboard");
+    store.getState().openApp("notes");
+    store.getState().tile();
+    const WAs = workArea("samagra", 1440, 900); // x = rail+8 = 74
+    const ws = store.getState().windows;
+    expect(ws[0].x).toBe(WAs.x); // top-left cell sits at the samagra work-area origin
+    expect(ws[0].y).toBe(WAs.y);
+  });
+});
+
 describe("closeApp / minimize — engine hooks (proto.md §1.11)", () => {
   it("closeApp removes the window and fires the injected stop hook", () => {
     let stopped = 0;
