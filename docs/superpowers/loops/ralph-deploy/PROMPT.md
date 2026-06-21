@@ -14,7 +14,9 @@ checkable task list is `docs/superpowers/loops/ralph-deploy/BACKLOG.md`.
 ## Each iteration — do exactly this
 1. **Orient.** Read `HANDOFF.md` (§1 DoD, §2 stack, §4 guardrails) and `BACKLOG.md`. Run the gates to
    learn the true current state — don't trust prior claims:
-   - backend: `PYTHONPATH=$(pwd) .venv/Scripts/python -m pytest -p no:cacheprovider --basetemp=.pytest_tmp` then `rm -rf .pytest_tmp`
+   - backend: `PYTHONPATH=$(pwd) .venv/Scripts/python -m pytest -p no:cacheprovider --basetemp=.pytest_tmp`
+     (`.pytest_tmp/` is gitignored and disposable — no cleanup command needed; **0 failures is the real
+     signal**, the Windows tmpdir-teardown exit-1 is cosmetic)
    - frontend: `cd frontend && npm run verify`
 2. **Re-check the DoD (HANDOFF §1).** If EVERY item A1–A8, B1–B5, C is satisfied *with evidence*
    (gate output + real-browser/public-URL proof) → **STOP the loop**: write a closing summary, update

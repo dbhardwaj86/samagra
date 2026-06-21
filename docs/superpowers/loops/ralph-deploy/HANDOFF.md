@@ -70,7 +70,8 @@ proof), not asserted:
   `mcd-cloud.json` (mcd `adminKey`). Without them the capture/live-read apps show graceful states.
 - Don't use `uvicorn --reload` here (an orphaned reload worker held the port once — see CLAUDE.md).
 - Backend pytest exits 1 on Windows from a cosmetic tmpdir teardown *after* all pass — run with
-  `--basetemp=.pytest_tmp` (and clean it up) to silence; **0 failures is the real signal**.
+  `--basetemp=.pytest_tmp` to silence (that dir is gitignored + disposable — no cleanup needed);
+  **0 failures is the real signal**.
 
 ## 3. How to run the loop
 
