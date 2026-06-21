@@ -12,6 +12,22 @@
 
 ---
 
+> **⚠ Coherence note (OPEN — added 2026-06-21 by a coherence audit; owner has not yet ratified).**
+> This spec re-adopts "OS" as the product metaphor, but the **2026-06-19 evolution spec deliberately
+> *retired* the word "OS"** — *"it silently licenses OS-sized scope"* — and bound SAMAGRA to an
+> **attention-ROI north-star + a kill-criterion** (freeze if not saving the owner ~3 hrs/wk by Phase 2). An
+> independent **Codex vision review (verdict DRIFTING)** and a **multi-agent implementation audit (verdict
+> COHERENT-WITH-CAVEATS)** found this track *half-reconciles* the reversal (it argues §1's "honest shape of the
+> work" and firewalls write paths) but **never restates the attention-ROI metric or the kill-criterion**, and
+> parks the value-producing active loop while OS chrome (3 themes, a Snake game, mobile mode) grows; the "frugal"
+> value sits unaddressed. **Recommended (PROPOSED, not ratified):** (1) frame SAMAGRA OS as a *bounded operator
+> console / UI-metaphor only* — no app-platform scope; (2) restate the attention-ROI north-star + ~3 hrs/wk
+> kill-criterion as still binding (data source = the governance `events`/`review_overlay` ledger); (3) add a
+> scope firewall to §3 non-goals (no entertainment apps beyond E1's Snake, no third-party apps/marketplace, no
+> process-scheduler model, no user-facing identity); (4) add an attention-ROI acceptance gate before E3; (5) give
+> Phase 3 a dated restart commitment after the E2 visual-QA pass. Full write-up: `HANDOFF.md` → *Direction-coherence
+> finding (OPEN)*; reviews in `docs/superpowers/_research/samagra-os/_vision-review-output.md`.
+
 ## 1. Overview & goal
 
 **SAMAGRA OS** is a desktop-and-mobile, operating-system-style GUI that becomes the

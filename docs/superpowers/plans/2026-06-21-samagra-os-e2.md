@@ -6,6 +6,14 @@
 > `headless` = fully gated by vitest/tsc/eslint/vite-build/pytest (loop-completable). `visual` = also needs a
 > human pixel/interaction QA pass (NOT in any loop; see §Testing).
 
+> **⚠ POST-E2 KNOWN BUG (open, 2026-06-21 — take up next session):** The Questions app
+> (`apps/Questions/index.tsx`) now consumes `/api/facets` (the E2 LOW follow-up, commit `e1cb22a`, merged +
+> pushed), but its subject chips render ~600 `SIM0xxx` **sim-ids** instead of subjects: `/api/facets.subjects`
+> is **catalog-wide** (`catalog.py:191`) and the sims adapter writes each sim's folder id into `subject`
+> (`sims.py:37`). Clicking one → `/api/questions?subject=SIM0xxx` → 0 rows. Fix **read-only** next session — a
+> question-scoped subject source (QX `summary().subjects`, `qx.py:57`), or intersect `facets.subjects` with the
+> returned questions, or facet on chapter/q_type. Full write-up in `HANDOFF.md` (⚠ KNOWN BUG) + `STATUS.html`.
+
 **Goal:** Wire the eleven SAMAGRA OS data/control apps (Org Chart, Pipelines, Assignments, Activity, Questions,
 Lectures, Booklets, INSP, Simulations, mycontentdev, Munshi) as **thin, read-only React wrappers** over the
 existing FastAPI `/api/*` contract, adding exactly one backend endpoint (`GET /api/org`, static `samagra/org.py`)

@@ -45,7 +45,7 @@
 > `plans/2026-06-21-samagra-os-e2.md` cleared a **4-critic adversarial pass** (0 CRITICAL / 0 MAJOR; 6 minor
 > polish fixes applied).
 > **E2 test gate (just-run): BACKEND 106 pytest passing** (102 E1 + 4 new `tests/test_api_org.py`); **FRONTEND
-> 497 vitest passing across 56 files** (439 E1 + 25 new lib tests incl. the catalog href/safeUrl tests + 33 app
+> 501 vitest passing across 56 files** (497 at the E2 merge; the +4 are the post-merge `e1cb22a` Questions `/api/facets` tests) (439 E1 + 25 new lib tests incl. the catalog href/safeUrl tests + 33 app
 > render-smoke), `tsc --noEmit` clean, `vite build` green emitting **22 lazy chunks** (one per app), no
 > `.only`/`.skip`. **A Codex pre-merge review returned GO and three MEDIUM findings were fixed (commit
 > `31aa5bb`):** **(a)** `org.py`'s worker roster shows "Gemini+NotebookLM" as ONE line (the owners map keeps the
@@ -64,8 +64,9 @@
 > in `components/icons-data` → empty-icon fallback; a visual-polish follow-up). **Next planned action: the
 > owner-run browser-vision pixel-QA pass over the 11 E2 apps (now that the bundling fix makes them render when
 > FastAPI-served, not just under `npm run dev`), then Phase E3 (mobile device mode + remaining per-theme re-skin
-> polish — the 3 themes already shipped in E1).** A LOW non-blocking follow-up: the Questions app could also
-> consume `/api/facets`.
+> polish — the 3 themes already shipped in E1).** The E2 LOW follow-up — the Questions app consuming
+> `/api/facets` — was IMPLEMENTED this session (commit `e1cb22a`, pushed to `origin/main`) but **introduced a
+> known bug; see ⚠ KNOWN BUG below.**
 > The full `frontend/` app (React 18 + TS + Vite) shipped TDD across E1.1–E1.25: the bootstrap + frozen
 > 17-app registry, every pure `lib/` engine (`wm/{geometry,zorder}`, `snake/{engine,cell}`,
 > `clock/{analog,stopwatch,timer,world}`, `terminal/{parser,dispatch}`, `notes/model`, `persistence`), the
@@ -94,6 +95,73 @@
 > remains outstanding.
 > **Phase 3 (active loop) is PARKED** (plan complete, resumes after the Experience track; will need live
 > `MUNSHI_API_URL`/`MUNSHI_SECRET` in `.env`). Carried into Phase 3: F1/F4 refresh hardening.
+>
+> **⚠ KNOWN BUG (open — take up next session): Questions app subject chips show sim-ids, not subjects.**
+> The Questions app (`frontend/src/apps/Questions/index.tsx`) renders its subject filter chips from
+> `GET /api/facets`, whose `subjects` is **catalog-wide** (`select distinct subject from catalog`,
+> `samagra/catalog.py:191`). The sims adapter writes each simulation's folder id (`SIM0018`…`SIM0626`) into the
+> `subject` column (`samagra/adapters/sims.py:37`, `subject = after[0]`), so **~500 `SIM0xxx` ids dominate the
+> chip list** (498 measured against `samagra.db` — 502 of 504 distinct catalog subjects come from the sims source). Global catalog facets ≠ the question bank's subject vocabulary;
+> clicking a `SIM0xxx` chip filters `/api/questions?subject=SIM0xxx` → 0 QX rows. Compounded by QX's own
+> `subject` column being physics-only/unpopulated (see Gotchas). **Introduced this session by the E2 LOW-finding
+> fix `e1cb22a`** (already merged + pushed to `origin/main`). **Fix options (next session — keep it read-only,
+> tests + `npm run verify` green):** (a) source the chips from a **question-scoped** subject list — QX
+> `summary().subjects` (`samagra/adapters/qx.py:57`) via a new `/api/questions/facets` or the existing qx
+> overview summary; (b) intersect `facets.subjects` with the subjects actually present in the returned
+> questions; or (c) drop subject chips and facet on chapter/q_type per the Gotcha. **Deeper cause (audit 2026-06-21):**
+> the `subject` column has *uneven semantics across adapters* — sims writes a folder id (`sims.py:37`),
+> mcd/munshi hardcode `physics`, qx derives from the builder DB — so a catalog-wide `DISTINCT subject`
+> (`catalog.py:199`) can never equal the question bank's subject vocabulary; the durable read-only fix is
+> question-scoped facets (`qx.summary().subjects`), not catalog-wide facets.
+
+## ⚠ Direction-coherence finding (OPEN — owner decision; audited 2026-06-21)
+
+A dedicated coherence audit this session — an independent **Codex vision review** plus a **multi-agent
+implementation audit** (4 mappers + 4 verifiers, live test runs) — found **execution coherence strong but
+strategic direction drifting.** Execution verified clean: every merge claim holds (E1 `06d88a3`, E2 `31aa5bb`,
+HEAD `e1cb22a`), the **read-only safety invariant holds exactly** (no `create_seed` shipped anywhere;
+`GET /api/org` is static; `useApi` is the only fetch and GET-only; the 3 POST routes are control-plane), the
+spec↔code mapping is exact (17 apps · 7 linchpin `lib/` modules · 12 engines · 3 themes · 8 shell components),
+and live suites are **backend 106 pytest + frontend 501 vitest** green. **The drift is strategic, not factual:**
+
+- The **2026-06-19 evolution spec deliberately retired the word "OS"** — *"the word 'OS' is retired because it
+  silently licenses OS-sized scope"* — and bound the project to an **attention-ROI north-star + a kill-criterion**
+  (freeze if not demonstrably saving the owner ~3 hrs/wk by Phase 2). One day later the project pivoted to a
+  literal **17-app "SAMAGRA OS"** windowing GUI (incl. a Snake game, 3 themes, mobile mode) as the **top
+  priority** and **parked the value-producing active loop** (munshi → seed → board-approve → publish — the
+  mechanism that actually saves owner attention).
+- The OS experience spec **half-reconciles** this (it argues the windowing metaphor is "the honest shape of the
+  work" and firewalls write paths) but **never restates the attention-ROI metric or the kill-criterion**, and
+  STATUS / SUMMARY / HANDOFF did not surface the tension at all until this audit.
+- **Codex vision verdict: `DRIFTING`. Audit verdict: `COHERENT-WITH-CAVEATS`** (this is the caveat). Full
+  reviews: `docs/superpowers/_research/samagra-os/_vision-review-output.md` (+ `_vision-review-prompt.md`,
+  `_vision-review.log`); audit synthesis is summarised in STATUS.html → *Direction coherence*.
+
+**Recommended reconciliation — PROPOSED, NOT yet ratified (owner's call):**
+1. Frame SAMAGRA OS explicitly as a **bounded operator console / UI metaphor only** — SAMAGRA stays a control
+   plane and does **not** gain app-platform scope.
+2. **Restate the attention-ROI north-star + the ~3 hrs/wk kill-criterion as still binding**, with the governance
+   `events`/`review_overlay` ledger as the data source.
+3. Add a **scope firewall** to the OS spec non-goals: no entertainment apps beyond E1's Snake, no third-party
+   apps / marketplace, no process-scheduler model, no user-facing product identity.
+4. Add an **attention-ROI acceptance gate before E3**: 2–3 concrete operator tasks with *measured* time-saved
+   vs the old portal must pass before any further theme/mobile polish.
+5. Give **Phase 3 (active loop) a dated restart commitment** after the E2 visual-QA pass — it is the primary
+   value engine, not optional.
+
+Until the owner ratifies, treat the above as an **open question**, not a decided position. (This finding is
+recorded across the spec, STATUS.html and SUMMARY.html so it is no longer invisible.)
+
+**Single next-action order (reconciled this session):**
+1. Fix the Questions facets bug (read-only; `npm run verify` green) — see ⚠ KNOWN BUG above.
+2. Owner **browser-vision pixel-QA** pass over the E1 shell + the 11 E2 apps.
+3. **Ratify the direction-coherence finding** above; if accepted, add the attention-ROI gate (§4).
+4. **E3** — mobile device mode + remaining per-theme re-skin polish.
+
+(Backend pytest exits 1 on Windows from a tmpdir symlink-cleanup teardown *after* all 106 pass — cosmetic, not
+a failure; run with `--basetemp` to silence.)
+
+---
 
 **Repo:** github.com/dbhardwaj86/samagra · `main` (E1 merged, `06d88a3`; **E2 merged, `31aa5bb`**) · **E2 MERGED to `main` (fast-forward, `31aa5bb`) and pushed to `origin/main` 2026-06-21 (Codex pre-merge review GO; 3 MEDIUMs fixed)** · local-first Python+FastAPI.
 **State:** Spine + portal + thin/thick exporter + semi-autonomous loop + two read-only subsystem adapters
@@ -153,7 +221,7 @@ QX `C:\SandBox\gpt_box\gpt-extract-ques` · textbook `C:\SandBox\gpt_box\physics
 
 - Python 3.11 venv (`.venv`) for the portal; system Python is 3.14 (stdlib-only CLI works there too).
 - Do **not** use `uvicorn --reload` here — an orphaned reload worker held the port once. Use the preview harness or plain uvicorn.
-- QX `subject` column is unpopulated (physics-only); facet on chapter/q_type instead.
+- QX `subject` column is unpopulated (physics-only); facet on chapter/q_type instead. **(Directly relevant to the ⚠ KNOWN BUG — `/api/facets.subjects` is catalog-wide, so the Questions chips surface sims `SIM0xxx` ids, not question subjects.)**
 - DOCX math: Pandoc `html+tex_math_dollars` converts `$...$` → OMML (verified: 130 eqns in vectors-thick).
 - Don't write to `physics-textbook/queue.json` — SAMAGRA tracks approvals in its own `state/`.
 
@@ -161,7 +229,7 @@ QX `C:\SandBox\gpt_box\gpt-extract-ques` · textbook `C:\SandBox\gpt_box\physics
 
 **SAMAGRA OS (Experience track):**
 - **E2 (2026-06-21): MERGED to `main` (fast-forward, `31aa5bb`) and pushed to `origin/main`** — the 11 data apps
-  + `GET /api/org`, after a Codex pre-merge review (GO; 3 MEDIUMs fixed) (backend 106/106 + frontend 497/497).
+  + `GET /api/org`, after a Codex pre-merge review (GO; 3 MEDIUMs fixed) (backend 106/106 + frontend 501/501).
   Owner to-do = the browser-vision pixel-QA pass over the 11 E2 apps, then E3 (see the ▶ STATUS banner above for
   the full E2 write-up). The E1 detail below is retained for history.
 0. **E1 BUILT + GREEN + 3-theme/icon fidelity layer landed (2026-06-20) on `e1/samagra-os`.** The full

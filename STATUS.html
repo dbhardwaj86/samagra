@@ -58,9 +58,9 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
 </head>
 <body>
 <header class="top">
-  <h1>SAMAGRA</h1><span class="sub">SAMAGRA OS <strong>E1 MERGED to <code>main</code></strong> · <strong>E2 (11 data apps + <code>/api/org</code>) MERGED to <code>main</code> (ff <code>31aa5bb</code>) + pushed</strong> · frontend 497/497 + backend 106/106 green — <strong>next: browser-vision pixel-QA over the 11 E2 apps, then E3 (mobile)</strong> · backend active-loop (Phase 3) parked</span>
+  <h1>SAMAGRA</h1><span class="sub">SAMAGRA OS <strong>E1 MERGED to <code>main</code></strong> · <strong>E2 (11 data apps + <code>/api/org</code>) MERGED to <code>main</code> (ff <code>31aa5bb</code>) + pushed</strong> · frontend 501/501 + backend 106/106 green — <strong>next: browser-vision pixel-QA over the 11 E2 apps, then E3 (mobile)</strong> · backend active-loop (Phase 3) parked · <strong>⚠ open bug: Questions subject chips show sim-ids (next session)</strong> · <strong>⚠ direction-coherence finding open — see <a href="#coherence" style="color:inherit">Coherence</a></strong></span>
   <nav>
-    <a href="#overview">Overview</a><a href="#phases">Phases</a>
+    <a href="#overview">Overview</a><a href="#coherence">Coherence</a><a href="#phases">Phases</a>
     <a href="#samagra">SAMAGRA</a><a href="#experience">OS GUI</a><a href="#arch">Architecture</a><a href="#org">Org</a>
     <a href="#decisions">Decisions</a><a href="#next">Next</a>
   </nav>
@@ -71,6 +71,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
 <aside>
   <div class="grp">Contents</div>
   <a href="#overview">Overview</a>
+  <a href="#coherence">Direction coherence</a>
   <a href="#phases">Phase status</a>
   <a href="#samagra">SAMAGRA roadmap</a>
   <a href="#experience">SAMAGRA OS (GUI)</a>
@@ -179,7 +180,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   <div class="grid">
     <div class="card"><div class="n">E1 <span class="badge ok">merged to main · 439/439</span></div><div class="l">Shell + <strong>all 3 themes</strong> + OS utilities — window manager (draggable/resizable), dock/top-bar, Dashboard · Settings · Terminal · Clock · Notes · Snake + FastAPI serve seam. Built TDD then fidelity-passed; chairman renamed <strong>Deepak Bhardwaj</strong> + <strong>right-click context menus</strong> in every theme. Fast-forwarded <code>e1/samagra-os</code> → <code>main</code> (<code>06d88a3</code>); gate clean (lint + <code>tsc</code> + 439 Vitest + <code>vite build</code>; backend 102/102). Not yet pushed.</div></div>
     <div class="card"><div class="n">Fidelity <span class="badge ok">landed · 3 themes + icons</span></div><div class="l">Theme-driven chrome for <strong>aqua · console · samagra</strong> (Dock / Taskbar + Start menu / left Rail; per-theme window controls + wordmarks), plus the <code>Icon</code>/<code>AppIcon</code> SVG system (FD2) wired through every launcher and the six apps. RTL tests pin the fidelity hooks (aria-labels, <code>&lt;svg&gt;</code> presence, theme data-attribute/CSS-var, key token measurements). <strong>Pixel parity NOT yet claimed</strong> — next step is the browser-vision pass.</div></div>
-    <div class="card"><div class="n">E2 <span class="badge ok">merged · headless-green</span></div><div class="l">Eleven data/control apps — Org · Pipelines · Lectures · mycontentdev · Munshi · Assignments · Activity · Questions · Booklets · INSP · Sims — as thin read-only React wrappers over <code>/api/*</code>, plus one new endpoint <code>GET /api/org</code> (static <code>samagra/org.py</code>). Built TDD on <code>e2/samagra-os</code> (22 commits); backend 106/106 + frontend 497/497 green, <code>tsc</code>/<code>vite build</code> clean (22 lazy chunks). <strong>MERGED to <code>main</code> (fast-forward, <code>31aa5bb</code>) and pushed to <code>origin/main</code> 2026-06-21</strong> after a Codex pre-merge review (GO; 3 MEDIUMs fixed) — <a href="https://github.com/dbhardwaj86/samagra/pull/2">merged PR #2</a>.</div></div>
+    <div class="card"><div class="n">E2 <span class="badge ok">merged · headless-green</span></div><div class="l">Eleven data/control apps — Org · Pipelines · Lectures · mycontentdev · Munshi · Assignments · Activity · Questions · Booklets · INSP · Sims — as thin read-only React wrappers over <code>/api/*</code>, plus one new endpoint <code>GET /api/org</code> (static <code>samagra/org.py</code>). Built TDD on <code>e2/samagra-os</code> (22 commits); backend 106/106 + frontend 501/501 green, <code>tsc</code>/<code>vite build</code> clean (22 lazy chunks). <strong>MERGED to <code>main</code> (fast-forward, <code>31aa5bb</code>) and pushed to <code>origin/main</code> 2026-06-21</strong> after a Codex pre-merge review (GO; 3 MEDIUMs fixed) — <a href="https://github.com/dbhardwaj86/samagra/pull/2">merged PR #2</a>.</div></div>
     <div class="card"><div class="n">E3 <span class="badge todo">next</span></div><div class="l">Mobile device mode + remaining per-theme re-skin polish (the 3 aqua/console/samagra themes already shipped in E1).</div></div>
   </div>
   <p><strong>Linchpin architecture:</strong> all real behaviour lives in pure-TypeScript modules
@@ -211,6 +212,33 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   <strong>pytest 102/102</strong> (incl. <code>test_serve_seam.py</code>). Pixel/interaction fidelity is a
   <strong>separate browser-vision pass</strong> (owner-run, never a loop gate) — <strong>not yet run; pixel
   parity is not claimed</strong>.</p>
+
+  <h2 id="coherence">Direction coherence <span class="badge todo">open · audited 2026-06-21</span></h2>
+  <p class="lede">A dedicated coherence audit this session — an independent <strong>Codex vision review</strong>
+  plus a <strong>multi-agent implementation audit</strong> (4 mappers + 4 verifiers, live test runs) — found
+  <strong>execution coherence strong, but strategic direction drifting</strong>. This section surfaces the
+  finding so it is no longer invisible; the strategic call is the owner's.</p>
+  <div class="grid">
+    <div class="card"><div class="n">✓ <span class="badge ok">execution verified</span></div><div class="l">Every merge claim holds (E1 <code>06d88a3</code>, E2 <code>31aa5bb</code>, HEAD <code>e1cb22a</code>); the read-only safety invariant holds exactly (no <code>create_seed</code> shipped; <code>/api/org</code> static; <code>useApi</code> GET-only; the 3 POST routes are control-plane); spec↔code mapping exact (17 apps · 7 <code>lib/</code> modules · 12 engines · 3 themes · 8 shell components); live suites <strong>backend 106 + frontend 501</strong> green.</div></div>
+    <div class="card"><div class="n">⚠ <span class="badge todo">direction drifting</span></div><div class="l">The 2026-06-19 vision <em>retired</em> the word "OS" (<em>"it silently licenses OS-sized scope"</em>) and bound the project to an attention-ROI kill-criterion — yet the project pivoted to a literal 17-app "SAMAGRA OS" and parked the value-producing active loop. Codex verdict <strong>DRIFTING</strong>; audit verdict <strong>COHERENT-WITH-CAVEATS</strong> (this is the caveat).</div></div>
+  </div>
+  <p>The OS experience spec only <strong>half-reconciles</strong> this — it argues the windowing metaphor is "the
+  honest shape of the work" and firewalls write paths, but <strong>never restates the attention-ROI north-star
+  or the kill-criterion</strong>, and the value-producing <a href="#samagra">active loop (Phase 3)</a> — the
+  mechanism that actually saves owner attention — is parked while OS chrome (3 themes, a Snake game, mobile mode)
+  grows. The "frugal" first-class value sits unaddressed against a 17-app GUI. Full reviews:
+  <code>docs/superpowers/_research/samagra-os/_vision-review-output.md</code> (+ <code>_vision-review-prompt.md</code>,
+  <code>_vision-review.log</code>).</p>
+  <p><strong>Recommended reconciliation — PROPOSED, not yet ratified (owner's call):</strong></p>
+  <ol>
+    <li>Frame SAMAGRA OS explicitly as a <strong>bounded operator console / UI metaphor only</strong> — SAMAGRA stays a control plane; no app-platform scope.</li>
+    <li><strong>Restate the attention-ROI north-star + the ~3 hrs/wk kill-criterion as still binding</strong> (data source = the governance <code>events</code>/<code>review_overlay</code> ledger).</li>
+    <li>Add a <strong>scope firewall</strong> to the OS spec non-goals: no entertainment apps beyond E1's Snake, no third-party apps / marketplace, no process-scheduler model, no user-facing product identity.</li>
+    <li>Add an <strong>attention-ROI acceptance gate before E3</strong>: 2–3 concrete operator tasks with <em>measured</em> time-saved vs the old portal must pass before further theme/mobile polish.</li>
+    <li>Give <strong>Phase 3 (active loop) a dated restart commitment</strong> after the E2 visual-QA pass — it is the primary value engine, not optional.</li>
+  </ol>
+  <p class="lede">Until the owner ratifies, treat the above as an <strong>open question</strong>, not a decided
+  position. Full write-up: <code>HANDOFF.md</code> → <em>⚠ Direction-coherence finding (OPEN)</em>.</p>
 
   <h2 id="arch">Architecture</h2>
   <div class="diagram">
@@ -369,9 +397,9 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   </svg>
 
   <h2 id="tests">Tests</h2>
-  <p><span class="badge ok">frontend 497 / 497</span> <span class="badge ok">backend 106 / 106</span>
+  <p><span class="badge ok">frontend 501 / 501</span> <span class="badge ok">backend 106 / 106</span>
   (last run 2026-06-21, E2 merged to <code>main</code> at <code>31aa5bb</code>). <strong>SAMAGRA OS E2 — frontend:</strong>
-  the suite grew to <strong>497 Vitest tests across 56 files</strong> (439 E1 + 25 new pure-TS lib tests for the
+  the suite grew to <strong>501 Vitest tests across 56 files</strong> (497 at the E2 merge, +4 from post-merge <code>e1cb22a</code>; 439 E1 + 25 new pure-TS lib tests for the
   seven linchpin modules — <code>lib/api/query</code> · <code>lib/catalog/rows</code> ·
   <code>lib/pipelines/stages</code> · <code>lib/org/resolve</code> · <code>lib/kanban/columns</code> ·
   <code>lib/activity/format</code> · <code>lib/questions/facets</code>, including the +2 catalog
@@ -429,6 +457,22 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   the decided-block path; <code>dispatch_codex</code> + git mocked).</p>
 
   <h2 id="decisions">Recent decisions</h2>
+  <div class="log"><div class="d">2026-06-21 · ⚠ Known bug logged — Questions app subject chips show sim-ids (open · next session)</div>
+    The E2 LOW follow-up (the Questions app consuming <code>/api/facets</code>) was <strong>implemented</strong>
+    this session (commit <code>e1cb22a</code>, merged + pushed to <code>origin/main</code>) but
+    <strong>introduced a bug</strong>: the subject filter chips render ~500 (498 measured) <code>SIM0xxx</code> ids instead of
+    subjects. Root cause — <code>/api/facets</code> returns <strong>catalog-wide</strong> subjects
+    (<code>select distinct subject from catalog</code>, <code>samagra/catalog.py:191</code>), and the sims
+    adapter writes each simulation's folder id (<code>SIM0018</code>…<code>SIM0626</code>) into the
+    <code>subject</code> column (<code>samagra/adapters/sims.py:37</code>), so global catalog facets ≠ the
+    question bank's subject vocabulary. Clicking a <code>SIM0xxx</code> chip filters
+    <code>/api/questions?subject=SIM0xxx</code> → 0 QX rows (compounded by QX's own <code>subject</code> column
+    being physics-only/unpopulated). <strong>Fix options (next session, read-only; keep <code>npm run verify</code>
+    green):</strong> (a) source the chips from a question-scoped list — QX <code>summary().subjects</code>
+    (<code>qx.py:57</code>) via a new <code>/api/questions/facets</code> or the qx overview summary;
+    (b) intersect <code>facets.subjects</code> with subjects present in the returned questions; or (c) drop
+    subject chips and facet on chapter/q_type.
+  </div>
   <div class="log"><div class="d">2026-06-21 · E2 MERGED to <code>main</code> (ff <code>31aa5bb</code>) after Codex pre-merge review (GO; 3 MEDIUMs fixed)</div>
     SAMAGRA OS <strong>E2</strong> (the 11 data/control apps + <code>GET /api/org</code>) <strong>merged to
     <code>main</code> via fast-forward (<code>31aa5bb</code>) and pushed to <code>origin/main</code></strong> after a
@@ -437,7 +481,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     map keeps the two tokens distinct); (b) the Pipelines app humanizes pipeline owner tokens via
     <code>GET /api/org</code> + <code>ownerName</code>; (c) <code>lib/catalog/rows</code> exposes a unified,
     scheme-guarded <code>href</code> so url-only mycontentdev/munshi rows are actionable. Frontend is now
-    <strong>497 Vitest</strong> (was 495 — +2 catalog <code>href</code>/<code>safeUrl</code> tests); backend stays
+    <strong>497 Vitest</strong> at merge (later 501 after <code>e1cb22a</code>; was 495 — +2 catalog <code>href</code>/<code>safeUrl</code> tests); backend stays
     <strong>106 pytest</strong>. The merged PR is <a href="https://github.com/dbhardwaj86/samagra/pull/2">#2</a>.
     <strong>Pixel/interaction parity is NOT claimed — a separate owner-run browser-vision pass</strong> (the 11 E2
     apps now render when FastAPI-served, not just under <code>npm run dev</code>) is the next step; then Phase E3
@@ -457,7 +501,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     <code>in-review</code> status, a name-keyed <code>phases</code> Record, 7 owner ids, the chairman name living
     only in <code>dispatch.ts</code>, etc.). The plan (<code>plans/2026-06-21-samagra-os-e2.md</code>) cleared a
     4-critic adversarial pass (0 CRITICAL / 0 MAJOR; 6 minor polish fixes applied). <strong>Gate (just-run):</strong>
-    backend <strong>106 pytest</strong> + frontend <strong>497 Vitest / 56 files</strong>, <code>tsc --noEmit</code>
+    backend <strong>106 pytest</strong> + frontend <strong>497 Vitest / 56 files</strong> (later 501 after <code>e1cb22a</code>), <code>tsc --noEmit</code>
     + <code>vite build</code> clean (22 lazy chunks), no <code>.only</code>/<code>.skip</code>. <strong>E2 MERGED to
     <code>main</code> (fast-forward, <code>31aa5bb</code>) and pushed to <code>origin/main</code> on 2026-06-21</strong>
     after the Codex pre-merge review (GO; 3 MEDIUMs fixed). <strong>Pixel/interaction
@@ -611,7 +655,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   <table>
     <tr><th>Path</th><th>What</th></tr>
     <tr><td><code>frontend/</code> (React + TS + Vite app)</td><td>SAMAGRA OS E1 + fidelity layer — windowing shell, <strong>three themes</strong> (aqua/console/samagra chrome) + the <code>Icon</code>/<code>AppIcon</code> SVG system, six OS utilities; pure-TS engines in <code>src/lib/**</code> (each with a co-located Vitest), Zustand stores, theme-driven shell, apps + components, + the chairman rename and right-click context menus. 439 Vitest / 38 files green.</td></tr>
-    <tr><td><code>frontend/src/apps/**</code> (11 E2 data apps) + 7 <code>frontend/src/lib/**</code> modules</td><td><span class="badge ok">E2</span> the eleven read-only data/control app wrappers (Org · Pipelines · Lectures · mycontentdev · Munshi · Assignments · Activity · Questions · Booklets · INSP · Sims) over the seven pure-TS linchpin modules (<code>lib/api/query</code> · <code>lib/catalog/rows</code> · <code>lib/pipelines/stages</code> · <code>lib/org/resolve</code> · <code>lib/kanban/columns</code> · <code>lib/activity/format</code> · <code>lib/questions/facets</code>) + <code>useApi</code>. 497 Vitest / 56 files green; 22 lazy chunks.</td></tr>
+    <tr><td><code>frontend/src/apps/**</code> (11 E2 data apps) + 7 <code>frontend/src/lib/**</code> modules</td><td><span class="badge ok">E2</span> the eleven read-only data/control app wrappers (Org · Pipelines · Lectures · mycontentdev · Munshi · Assignments · Activity · Questions · Booklets · INSP · Sims) over the seven pure-TS linchpin modules (<code>lib/api/query</code> · <code>lib/catalog/rows</code> · <code>lib/pipelines/stages</code> · <code>lib/org/resolve</code> · <code>lib/kanban/columns</code> · <code>lib/activity/format</code> · <code>lib/questions/facets</code>) + <code>useApi</code>. 501 Vitest / 56 files green; 22 lazy chunks.</td></tr>
     <tr><td><code>samagra/org.py</code> + <code>tests/test_api_org.py</code></td><td><span class="badge ok">E2</span> static founder→board→workers registry behind <code>GET /api/org</code>; OWNER-CONFIRMED mapping (<code>claude1</code>=Claude-Deepak CEO, <code>claude2</code>=Claude-Khanak CTO) pinned by 4 new pytest.</td></tr>
     <tr><td><code>docs/superpowers/_research/samagra-os/e2-grounding.md</code> + <code>plans/2026-06-21-samagra-os-e2.md</code></td><td><span class="badge ok">E2</span> the live-source-verified <code>/api</code> contract (supersedes <code>api.md</code>; caught 11 deltas) + the dedicated 20-task E2 plan (4-critic adversarial pass: 0 CRITICAL / 0 MAJOR, 6 polish fixes).</td></tr>
     <tr><td><code>samagra/api/app.py</code> + <code>tests/test_serve_seam.py</code></td><td>FastAPI serve seam — mounts Vite <code>dist/</code>, SPA fallback (404s <code>api/*</code>, 503 if unbuilt); jinja portal route retired</td></tr>
@@ -651,7 +695,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   <strong>E2 is now MERGED to <code>main</code></strong> — the eleven data/control apps as thin read-only React
   wrappers over <code>/api/*</code> plus one new endpoint <code>GET /api/org</code> (static
   <code>samagra/org.py</code>), built TDD on branch <code>e2/samagra-os</code> (22 commits), headless-green
-  (backend <strong>106/106</strong> + frontend <strong>497/497</strong>, <code>tsc</code>/<code>vite build</code>
+  (backend <strong>106/106</strong> + frontend <strong>501/501</strong>, <code>tsc</code>/<code>vite build</code>
   clean, 22 lazy chunks), and <strong>merged to <code>main</code> (fast-forward, <code>31aa5bb</code>) and pushed
   to <code>origin/main</code> on 2026-06-21</strong> after a <strong>Codex pre-merge review (GO) in which 3 MEDIUM
   findings were fixed</strong> (commit <code>31aa5bb</code>): the <code>org.py</code> worker roster shows
@@ -664,8 +708,10 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   remaining per-theme re-skin — the 3 aqua/console/samagra themes already shipped in E1). The
   <strong>browser-vision pixel pass</strong> (owner-run, never a loop gate) — now spanning the E1 shell + the
   11 E2 apps — remains outstanding; the headless gate proves logic/tokens/icons, <strong>not</strong> pixel
-  parity, which is not yet claimed. A LOW non-blocking follow-up: the Questions app could also consume
-  <code>/api/facets</code>.
+  parity, which is not yet claimed. The E2 LOW follow-up — the Questions app consuming
+  <code>/api/facets</code> — was <strong>implemented</strong> this session (<code>e1cb22a</code>) but
+  <strong>introduced a known bug</strong> (subject chips show ~500 (498 measured) <code>SIM0xxx</code> sim-ids; see the
+  Decisions log + the Next-actions table) — to be fixed next session.
   <strong>Phase 3 — the active loop</strong> (munshi → proposed seed → board approve → capture API) is now
   <span class="badge park">parked</span> (plan complete, resumes after the Experience track); reconcile its
   plan vs the runbook when it returns. The carried-in refresh hardening (F1 per-adapter isolation + F4 stale
@@ -686,8 +732,10 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     <tr><td>SAMAGRA OS — chairman rename + right-click menus + merge to <code>main</code></td><td><span class="badge ok">done · 439/439</span></td><td>Chairman renamed <strong>Deepak Bhardwaj</strong> + <strong>right-click context menus</strong> in all 3 themes (desktop · window · dock-icon), on top of draggable windows + HIGH#4 guard + Notes a11y. Fast-forwarded <code>e1/samagra-os</code> → <code>main</code> (<code>06d88a3</code>; 96 files / ~19k ins). Advisory Codex hook ran (90s timeout, never-wedge).</td></tr>
     <tr><td>SAMAGRA OS — push <code>origin/main</code></td><td><span class="badge ok">done</span></td><td>Pushed 2026-06-21 (<code>557e6a4..6d09693</code>) — the full E1 build + tracker doc-sync now on the remote.</td></tr>
     <tr><td>SAMAGRA OS — browser-vision pixel QA</td><td><span class="badge todo">owner · next</span></td><td><strong>Next step.</strong> The visual/interaction fidelity pass over the three-theme shell + apps vs the prototype + <code>screenshots/</code> (outside any loop; has NOT run).</td></tr>
-    <tr><td>SAMAGRA OS — E2 (data/control apps)</td><td><span class="badge ok">merged · headless-green</span></td><td>Eleven read-only apps over <code>/api/*</code> + one new endpoint <code>GET /api/org</code> (static <code>samagra/org.py</code>), on 7 pure-TS linchpin modules. Built TDD on <code>e2/samagra-os</code> (22 commits); backend 106/106 + frontend 497/497 green, <code>vite build</code> clean (22 lazy chunks). Grounded on <code>e2-grounding.md</code> (supersedes <code>api.md</code>). <strong>MERGED to <code>main</code> (fast-forward, <code>31aa5bb</code>) and pushed to <code>origin/main</code> 2026-06-21</strong> after a Codex pre-merge review (GO; 3 MEDIUMs fixed) — <a href="https://github.com/dbhardwaj86/samagra/pull/2">merged PR #2</a>.</td></tr>
+    <tr><td>SAMAGRA OS — E2 (data/control apps)</td><td><span class="badge ok">merged · headless-green</span></td><td>Eleven read-only apps over <code>/api/*</code> + one new endpoint <code>GET /api/org</code> (static <code>samagra/org.py</code>), on 7 pure-TS linchpin modules. Built TDD on <code>e2/samagra-os</code> (22 commits); backend 106/106 + frontend 501/501 green, <code>vite build</code> clean (22 lazy chunks). Grounded on <code>e2-grounding.md</code> (supersedes <code>api.md</code>). <strong>MERGED to <code>main</code> (fast-forward, <code>31aa5bb</code>) and pushed to <code>origin/main</code> 2026-06-21</strong> after a Codex pre-merge review (GO; 3 MEDIUMs fixed) — <a href="https://github.com/dbhardwaj86/samagra/pull/2">merged PR #2</a>.</td></tr>
     <tr><td>SAMAGRA OS — browser-vision pixel QA (11 E2 apps)</td><td><span class="badge todo">owner · next · pending</span></td><td><strong>Next planned action.</strong> The owner-run browser-vision pixel/interaction-parity pass over the 11 E2 apps (and the E1 shell) — now that the bundling fix makes the apps render when FastAPI-served, not just under <code>npm run dev</code>. Outside any loop; has NOT run; pixel parity not claimed. Some E2 glyphs may still be unregistered in <code>components/icons-data</code> (empty-icon fallback) — a visual-polish follow-up.</td></tr>
+    <tr><td>Direction-coherence finding (OS drift)</td><td><span class="badge todo">⚠ open · owner</span></td><td><strong>Audited 2026-06-21.</strong> Codex vision review = <strong>DRIFTING</strong>; implementation audit = <strong>COHERENT-WITH-CAVEATS</strong>. Owner to ratify the recommended reconciliation (bounded operator-console framing · restate attention-ROI + kill-criterion · scope firewall · pre-E3 attention-ROI gate · dated Phase-3 restart). See the <a href="#coherence">Direction coherence</a> section + <code>HANDOFF.md</code>.</td></tr>
+    <tr><td>SAMAGRA OS — Questions subject-chips bug (facets)</td><td><span class="badge todo">⚠ open · next session</span></td><td><strong>Known bug.</strong> The Questions app's subject chips render ~500 (498 measured) <code>SIM0xxx</code> sim-ids — <code>/api/facets.subjects</code> is catalog-wide (<code>catalog.py:191</code>) and the sims adapter writes folder ids as <code>subject</code> (<code>sims.py:37</code>). Introduced by <code>e1cb22a</code> (this session, already merged/pushed). Fix next session: source a question-scoped subject list (QX <code>summary().subjects</code>) or intersect with the returned questions, or facet on chapter/q_type. Read-only; keep <code>npm run verify</code> green.</td></tr>
     <tr><td>SAMAGRA OS — E3 (mobile device mode + theme polish)</td><td><span class="badge park">planned</span></td><td>Mobile device mode (phone frame + home-screen grid + single-app mode) + remaining per-theme re-skin polish; the three desktop themes already shipped in E1. Skeletoned in the plan.</td></tr>
     <tr><td>Phase 3 — active loop (backend)</td><td><span class="badge park">parked</span></td><td>Deprioritised 2026-06-20 for the Experience track; plan complete, resumes after. Will need live munshi creds in <code>.env</code>.</td></tr>
     <tr><td>Notification channels</td><td><span class="badge todo">creds</span></td><td>Set <code>TELEGRAM_BOT_TOKEN</code>/<code>CHAT_ID</code> + gmail <code>SMTP_PASS</code> in <code>.env</code>. Until then notifications are logged only.</td></tr>
