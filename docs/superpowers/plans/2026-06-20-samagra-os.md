@@ -2142,21 +2142,25 @@ pointer files synced. Human visual-fidelity sign-off is separate (owner-run).
 
 ---
 
-## Phase E2 — Data/control apps (read-only wiring) — BUILT
+## Phase E2 — Data/control apps (read-only wiring) — MERGED
 
-> **(status banner — ✅ BUILT — headless-green, PR open, 2026-06-21)** — E2 is built TDD on branch
-> `e2/samagra-os` (22 commits) and is **headless-green**; a PR is open for review (NOT yet merged to `main` —
-> `main` is at the E2 plan-docs commit). The eleven data/control apps shipped as thin, read-only React wrappers
+> **(status banner — ✅ MERGED to `main` (fast-forward, `31aa5bb`) and pushed to `origin/main`, 2026-06-21)** —
+> E2 was built TDD on branch `e2/samagra-os` (22 commits) and **merged to `main` (fast-forward, `31aa5bb`) and
+> pushed to `origin/main` on 2026-06-21** after a **Codex pre-merge review (GO)** in which **3 MEDIUM findings
+> were fixed** (commit `31aa5bb`): (a) `org.py`'s worker roster shows "Gemini+NotebookLM" as ONE line (the owners
+> map keeps the two tokens distinct); (b) the Pipelines app humanizes pipeline owner tokens via `GET /api/org` +
+> `ownerName`; (c) `lib/catalog/rows` exposes a unified, scheme-guarded `href` so url-only mycontentdev/munshi
+> rows are actionable. The eleven data/control apps shipped as thin, read-only React wrappers
 > over the existing FastAPI `/api/*` contract, plus the one new backend endpoint `GET /api/org` (static
 > `samagra/org.py`). All real logic lives in seven pure-TS linchpin modules (`lib/api/query`, `lib/catalog/rows`,
 > `lib/pipelines/stages`, `lib/org/resolve`, `lib/kanban/columns`, `lib/activity/format`,
 > `lib/questions/facets`); the apps are thin wrappers over these + `useApi`. **Test gate (just-run):** backend
-> **106 pytest** passing (102 E1 + 4 new org); frontend **495 vitest** across **56 files** (439 E1 + 23 new lib
-> tests + 33 app render-smoke), `tsc --noEmit` clean, `vite build` green emitting **22 lazy chunks**, no
-> `.only`/`.skip`. **Two fixes during review:** (a) `org.py` owner mapping reconciled to OWNER-CONFIRMED
-> (`claude1` = Claude-Deepak CEO / substrate + engine; `claude2` = Claude-Khanak CTO / leaf apps + UX), locked by
-> `tests/test_api_org.py`; (b) a pre-existing E1 production-serve bundling bug — `App.tsx`'s
-> `/* @vite-ignore */` dynamic import left every `apps/*/index.tsx` OUT of the production bundle (so
+> **106 pytest** passing (102 E1 + 4 new org); frontend **497 vitest** across **56 files** (439 E1 + 25 new lib
+> tests incl. the catalog href/safeUrl tests + 33 app render-smoke), `tsc --noEmit` clean, `vite build` green
+> emitting **22 lazy chunks**, no `.only`/`.skip`. **Also reconciled during review:** (a) `org.py` owner mapping
+> reconciled to OWNER-CONFIRMED (`claude1` = Claude-Deepak CEO / substrate + engine; `claude2` = Claude-Khanak
+> CTO / leaf apps + UX), locked by `tests/test_api_org.py`; (b) a pre-existing E1 production-serve bundling bug —
+> `App.tsx`'s `/* @vite-ignore */` dynamic import left every `apps/*/index.tsx` OUT of the production bundle (so
 > FastAPI-served app windows rendered empty; only `npm run dev` worked) — fixed by dropping `@vite-ignore` so
 > Vite emits a lazy chunk per app (22 chunks); this affected all 17 apps in production.
 > The full TDD detail (20 tasks, exact code) lives in the dedicated plan
@@ -2164,10 +2168,14 @@ pointer files synced. Human visual-fidelity sign-off is separate (owner-run).
 > [`../_research/samagra-os/e2-grounding.md`](../_research/samagra-os/e2-grounding.md) (which supersedes `api.md`
 > for E2 — it caught 11 deltas: dual `meta_json`/`summary_json` keys, two empty-question bodies, hyphenated
 > `in-review`, name-keyed `phases` Record, 7 owner ids, chairman-name-only-in-`dispatch.ts`, etc.). Plan validated
-> by a 4-critic adversarial pass (0 CRITICAL / 0 MAJOR; 6 minor polish fixes applied). **Pixel/interaction
+> by a 4-critic adversarial pass (0 CRITICAL / 0 MAJOR; 6 minor polish fixes applied). The merged PR is
+> <https://github.com/dbhardwaj86/samagra/pull/2>. **Pixel/interaction
 > parity of the 11 apps is a separate owner-run browser-vision pass — NOT yet run, NOT claimed** (some E2 glyphs
 > may still be unregistered in `components/icons-data`, an empty-icon fallback / visual-polish follow-up). The
-> skeleton below is retained as the at-a-glance index. **Next: E2 PR review → fast-forward merge → Phase E3.**
+> skeleton below is retained as the at-a-glance index. **Next: the owner-run browser-vision pixel-QA pass over the
+> 11 E2 apps (now that the bundling fix makes them render when FastAPI-served, not just under `npm run dev`), then
+> Phase E3 (mobile device mode + remaining per-theme re-skin; the 3 themes already shipped in E1).** A LOW
+> non-blocking follow-up: the Questions app could also consume `/api/facets`.
 
 E2 adds the eleven data/control apps as thin wrappers over the **existing** read-only `/api/*`
 contract (no new write paths). The single hard backend gap is `GET /api/org` (static

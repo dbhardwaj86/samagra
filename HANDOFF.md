@@ -27,7 +27,8 @@
 > `deepak@samagra:~$`, board + `whoami`) and **right-click context menus for all 3 themes** (desktop · window ·
 > dock-icon; theme-driven surface, verified live in aqua/console/samagra). **PUSHED to `origin/main` 2026-06-21
 > (`557e6a4..6d09693`, incl. the tracker doc-sync).**
-> **▶ E2 (data/control apps) is now BUILT — headless-green, PR open (2026-06-21).** The **eleven data/control
+> **▶ E2 (data/control apps) is now MERGED to `main` (fast-forward, `31aa5bb`) and pushed to `origin/main` on
+> 2026-06-21.** The **eleven data/control
 > apps** shipped as thin, **read-only** React wrappers over the existing FastAPI `/api/*` contract, plus the one
 > new backend endpoint **`GET /api/org`** (static `samagra/org.py`). Apps: **Org Chart · Pipelines · Lectures ·
 > mycontentdev · Munshi** (owner claude-deepak) and **Assignments (kanban) · Activity · Questions · Booklets ·
@@ -44,20 +45,27 @@
 > `plans/2026-06-21-samagra-os-e2.md` cleared a **4-critic adversarial pass** (0 CRITICAL / 0 MAJOR; 6 minor
 > polish fixes applied).
 > **E2 test gate (just-run): BACKEND 106 pytest passing** (102 E1 + 4 new `tests/test_api_org.py`); **FRONTEND
-> 495 vitest passing across 56 files** (439 E1 + 23 new lib tests + 33 app render-smoke), `tsc --noEmit` clean,
-> `vite build` green emitting **22 lazy chunks** (one per app), no `.only`/`.skip`. **Two fixes during review:**
-> **(a)** `org.py` owner mapping reconciled to OWNER-CONFIRMED — `claude1` = **Claude-Deepak** (CEO — substrate &
-> engine), `claude2` = **Claude-Khanak** (CTO — leaf apps & UX) — locked by `tests/test_api_org.py`;
-> **(b)** a **pre-existing E1 production-serve bundling bug** — `App.tsx`'s `/* @vite-ignore */` dynamic import
-> left every `apps/*/index.tsx` OUT of the production bundle, so FastAPI-served app windows rendered empty (only
-> `npm run dev` worked) — fixed by dropping `@vite-ignore` so Vite emits a lazy chunk per app (22 chunks); this
-> affected all 17 apps in production, now fixed.
-> **E2 status right now:** built + headless-green on branch `e2/samagra-os`; **a PR is open for review — NOT yet
-> merged to `main`** (`main` is at the E2 plan-docs commit). **Pixel/interaction parity of the 11 apps is a
+> 497 vitest passing across 56 files** (439 E1 + 25 new lib tests incl. the catalog href/safeUrl tests + 33 app
+> render-smoke), `tsc --noEmit` clean, `vite build` green emitting **22 lazy chunks** (one per app), no
+> `.only`/`.skip`. **A Codex pre-merge review returned GO and three MEDIUM findings were fixed (commit
+> `31aa5bb`):** **(a)** `org.py`'s worker roster shows "Gemini+NotebookLM" as ONE line (the owners map keeps the
+> two tokens distinct); **(b)** the Pipelines app humanizes pipeline owner tokens via `GET /api/org` + `ownerName`;
+> **(c)** `lib/catalog/rows` exposes a unified, scheme-guarded `href` so url-only mycontentdev/munshi rows are
+> actionable. **Also reconciled during review:** `org.py` owner mapping is OWNER-CONFIRMED — `claude1` =
+> **Claude-Deepak** (CEO — substrate & engine), `claude2` = **Claude-Khanak** (CTO — leaf apps & UX) — locked by
+> `tests/test_api_org.py`; and a **pre-existing E1 production-serve bundling bug** — `App.tsx`'s
+> `/* @vite-ignore */` dynamic import left every `apps/*/index.tsx` OUT of the production bundle, so FastAPI-served
+> app windows rendered empty (only `npm run dev` worked) — was fixed by dropping `@vite-ignore` so Vite emits a
+> lazy chunk per app (22 chunks); this affected all 17 apps in production, now fixed.
+> **E2 status right now:** **MERGED to `main` (fast-forward, `31aa5bb`) and pushed to `origin/main` on 2026-06-21**
+> after the Codex pre-merge review (GO; 3 MEDIUMs fixed) — see the merged PR
+> <https://github.com/dbhardwaj86/samagra/pull/2>. **Pixel/interaction parity of the 11 apps is a
 > separate owner-run browser-vision pass — NOT yet run, NOT claimed** (some E2 glyphs may still be unregistered
-> in `components/icons-data` → empty-icon fallback; a visual-polish follow-up). **Next planned action: E2 PR
-> review (optionally an owner-triggered Codex ultrareview) → fast-forward merge to `main`; then Phase E3 (mobile
-> device mode + remaining per-theme re-skin polish — the 3 themes already shipped in E1).**
+> in `components/icons-data` → empty-icon fallback; a visual-polish follow-up). **Next planned action: the
+> owner-run browser-vision pixel-QA pass over the 11 E2 apps (now that the bundling fix makes them render when
+> FastAPI-served, not just under `npm run dev`), then Phase E3 (mobile device mode + remaining per-theme re-skin
+> polish — the 3 themes already shipped in E1).** A LOW non-blocking follow-up: the Questions app could also
+> consume `/api/facets`.
 > The full `frontend/` app (React 18 + TS + Vite) shipped TDD across E1.1–E1.25: the bootstrap + frozen
 > 17-app registry, every pure `lib/` engine (`wm/{geometry,zorder}`, `snake/{engine,cell}`,
 > `clock/{analog,stopwatch,timer,world}`, `terminal/{parser,dispatch}`, `notes/model`, `persistence`), the
@@ -79,14 +87,15 @@
 > headless-testable modules; **pixel/interaction fidelity is a separate browser-vision QA pass** (owner-run,
 > never a loop completion signal) — **it has NOT run; pixel parity is NOT claimed.** The headless gate proves
 > the markup, tokens and icon wiring are correct, not that the rendered pixels match the screenshots.
-> **Next steps:** **E2 PR review → fast-forward merge to `main`**, then **E3** (mobile device mode + remaining
+> **Next steps:** the **owner-run browser-vision pixel-QA pass over the 11 E2 apps** (now that the bundling fix
+> makes them render when FastAPI-served, not just under `npm run dev`), then **E3** (mobile device mode + remaining
 > per-theme re-skin polish + the deferred Dashboard narrow-grid HIGH#2). The **browser-vision pixel pass**
 > (owner-run, per-surface vs the prototype + `screenshots/`) — now spanning the E1 shell + the 11 E2 apps —
 > remains outstanding.
 > **Phase 3 (active loop) is PARKED** (plan complete, resumes after the Experience track; will need live
 > `MUNSHI_API_URL`/`MUNSHI_SECRET` in `.env`). Carried into Phase 3: F1/F4 refresh hardening.
 
-**Repo:** github.com/dbhardwaj86/samagra · `main` (E1 merged, `06d88a3`; E2 plan-docs on top) · **E2 built on branch `e2/samagra-os` — headless-green, PR open** · local-first Python+FastAPI.
+**Repo:** github.com/dbhardwaj86/samagra · `main` (E1 merged, `06d88a3`; **E2 merged, `31aa5bb`**) · **E2 MERGED to `main` (fast-forward, `31aa5bb`) and pushed to `origin/main` 2026-06-21 (Codex pre-merge review GO; 3 MEDIUMs fixed)** · local-first Python+FastAPI.
 **State:** Spine + portal + thin/thick exporter + semi-autonomous loop + two read-only subsystem adapters
 (mycontentdev seeds, munshi `library()`) reflecting into the catalog, **+ Phase-2 governance**: durable
 `governance.db` store (assignments / events ledger / review overlay), `GET /api/assignments` + the
@@ -151,9 +160,10 @@ QX `C:\SandBox\gpt_box\gpt-extract-ques` · textbook `C:\SandBox\gpt_box\physics
 ## Open / needs user consent
 
 **SAMAGRA OS (Experience track):**
-- **E2 (2026-06-21): BUILT, headless-green, PR open** — the 11 data apps + `GET /api/org`, on branch
-  `e2/samagra-os` (backend 106/106 + frontend 495/495). Owner to-do = review + merge the PR, then E3 (see the
-  ▶ STATUS banner above for the full E2 write-up). The E1 detail below is retained for history.
+- **E2 (2026-06-21): MERGED to `main` (fast-forward, `31aa5bb`) and pushed to `origin/main`** — the 11 data apps
+  + `GET /api/org`, after a Codex pre-merge review (GO; 3 MEDIUMs fixed) (backend 106/106 + frontend 497/497).
+  Owner to-do = the browser-vision pixel-QA pass over the 11 E2 apps, then E3 (see the ▶ STATUS banner above for
+  the full E2 write-up). The E1 detail below is retained for history.
 0. **E1 BUILT + GREEN + 3-theme/icon fidelity layer landed (2026-06-20) on `e1/samagra-os`.** The full
    `frontend/` app shipped TDD (E1.1–E1.25); a fidelity layer then added theme-driven chrome for **aqua ·
    console · samagra** (all colours/sizes from the `themes/` token map — FD1) and the `Icon`/`AppIcon` SVG
