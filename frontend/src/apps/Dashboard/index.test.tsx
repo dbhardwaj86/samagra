@@ -218,9 +218,13 @@ describe("Dashboard (fidelity — stat grid, auto-fill 140)", () => {
     // manual regex — NOT toLocaleString — so it renders "7,044" identically even on
     // a small-icu / ICU-less Node build (where toLocaleString may emit "7044").
     render(<Dashboard />);
+    // Await the async Σ value first (the headline comes from the mocked /api/overview
+    // fetch). `findByTestId` resolves on the always-present tile before the fetch
+    // settles, so a synchronous getByText("7,044") was racy under full-suite load —
+    // await the grouped text, then do the exact sync checks.
     const artifactsStat = await screen.findByTestId("stat-artifacts");
+    expect(await within(artifactsStat).findByText("7,044")).toBeInTheDocument();
     // Exact match: the comma-grouped form is present, the un-grouped "7044" is not.
-    expect(within(artifactsStat).getByText("7,044")).toBeInTheDocument();
     expect(within(artifactsStat).queryByText("7044")).toBeNull();
   });
 

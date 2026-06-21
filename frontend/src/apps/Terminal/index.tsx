@@ -121,9 +121,16 @@ export default function Terminal() {
   /** Run the effect intents the engine returned against the live stores. */
   function runEffect(effect: TermEffect): void {
     switch (effect.kind) {
-      case "openApp":
-        openApp(effect.value);
+      case "openApp": {
+        // Device-aware open (proto §1.4 step 1): on a phone the open intent must
+        // show the app full-screen via the theme store, NOT spawn a desktop window
+        // (the mobile shell never renders WindowFrames). Read the live device so a
+        // `device mobile` then `open …` in the same session routes correctly.
+        const ts = themeStore.getState();
+        if (ts.device === "mobile") ts.openMobileApp(effect.value);
+        else openApp(effect.value);
         break;
+      }
       case "setTheme":
         setTheme(effect.value);
         break;

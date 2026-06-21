@@ -306,16 +306,28 @@ describe("App (E3 mobile device mode)", () => {
   // setDevice('pc') also clears mobileApp (proto §1.11) — restores the desktop.
   const resetDevice = () => act(() => themeStore.getState().setDevice("pc"));
 
-  it("swaps the desktop chrome for the phone frame when device is mobile", () => {
+  it("swaps the aqua Dock for the phone frame when device is mobile", () => {
     act(() => themeStore.getState().setDevice("mobile"));
     render(<App />);
     expect(screen.getByTestId("mobile-frame")).toBeInTheDocument();
-    // none of the desktop dock chrome is mounted in mobile
+    // The aqua Dock is the chrome mounted at aqua/pc; it must disappear in mobile.
     expect(screen.queryByRole("toolbar", { name: /dock/i })).toBeNull();
-    expect(screen.queryByRole("toolbar", { name: /taskbar/i })).toBeNull();
-    expect(screen.queryByRole("toolbar", { name: /rail/i })).toBeNull();
     resetDevice();
     resetWm();
+  });
+
+  it("device beats theme chrome — mobile frame replaces the console Taskbar", () => {
+    // Genuine guard: the Taskbar is console-only chrome, so flipping device to
+    // mobile WHILE the theme is console proves the device branch wins over the
+    // theme's desktop chrome (the Taskbar would otherwise be present).
+    act(() => themeStore.getState().setTheme("console"));
+    act(() => themeStore.getState().setDevice("mobile"));
+    render(<App />);
+    expect(screen.getByTestId("mobile-frame")).toBeInTheDocument();
+    expect(screen.queryByRole("toolbar", { name: /taskbar/i })).toBeNull();
+    resetDevice();
+    resetWm();
+    resetTheme();
   });
 
   it("opens an app full-screen from the home grid and returns to the grid via Home", () => {

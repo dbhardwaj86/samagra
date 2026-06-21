@@ -34,7 +34,7 @@ import type { AppId, Device, Theme } from "../../types/contracts";
 // state. `vi.hoisted` so the stores + spies exist when the hoisted `vi.mock`
 // factory runs; `createStore` is imported INSIDE the factory because a static
 // import binding is itself in its TDZ when the hoisted block executes.
-const { openApp, setTheme, setDevice, wmStore, themeStore } = await vi.hoisted(
+const { openApp, openMobileApp, setTheme, setDevice, wmStore, themeStore } = await vi.hoisted(
   async () => {
     const { createStore } = await import("zustand/vanilla");
 
@@ -46,6 +46,7 @@ const { openApp, setTheme, setDevice, wmStore, themeStore } = await vi.hoisted(
           : [...s.windows, { id: `w-${id}`, app: id }],
       }));
     });
+    const openMobileApp = vi.fn();
     const setTheme = vi.fn();
     const setDevice = vi.fn();
 
@@ -62,9 +63,10 @@ const { openApp, setTheme, setDevice, wmStore, themeStore } = await vi.hoisted(
       device: "pc" as Device,
       setTheme,
       setDevice,
+      openMobileApp,
     }));
 
-    return { openApp, setTheme, setDevice, wmStore, themeStore };
+    return { openApp, openMobileApp, setTheme, setDevice, wmStore, themeStore };
   },
 );
 
@@ -75,10 +77,11 @@ import Terminal from "./index";
 
 beforeEach(() => {
   openApp.mockClear();
+  openMobileApp.mockClear();
   setTheme.mockClear();
   setDevice.mockClear();
   wmStore.setState({ windows: [], z: 0, openApp });
-  themeStore.setState({ theme: "aqua", device: "pc", setTheme, setDevice });
+  themeStore.setState({ theme: "aqua", device: "pc", setTheme, setDevice, openMobileApp });
 });
 
 afterEach(() => {
@@ -103,6 +106,20 @@ describe("Terminal (behaviour — the effect runner)", () => {
     // (b) the plan's literal residue: the WM store gains a snake window.
     const windows = wmStore.getState().windows as { app: AppId }[];
     expect(windows.some((w) => w.app === "snake")).toBe(true);
+  });
+
+  it("routes `open` to the mobile shell when device is mobile (proto §1.4 step 1)", () => {
+    // E3 fidelity fix: `openApp` is device-aware. On a phone the Terminal's
+    // `open <app>` must show the app full-screen via openMobileApp, NOT spawn an
+    // invisible desktop window (the mobile branch never renders WindowFrames).
+    themeStore.setState({ theme: "aqua", device: "mobile", setTheme, setDevice, openMobileApp });
+    render(<Terminal />);
+    const input = screen.getByRole("textbox", { name: /terminal input/i });
+    fireEvent.change(input, { target: { value: "open notes" } });
+    fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+
+    expect(openMobileApp).toHaveBeenCalledWith("notes");
+    expect(openApp).not.toHaveBeenCalled(); // no desktop window spawned on mobile
   });
 
   it("echoes the typed command as an `in` line carrying the prompt prefix", () => {
