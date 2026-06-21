@@ -18,6 +18,7 @@ from .. import catalog, config, scheduler, state
 from ..adapters import get_adapter
 from ..governance import store as gstore
 from ..lectures import render as lecture_render
+from ..org import ORG  # E2.1 static org chart
 
 # Vite build output (E1.17). Computed from config.REPO_ROOT at import time so the
 # serve seam follows config.REPO_ROOT under test (the suite reloads this module
@@ -138,6 +139,11 @@ def open_file(path: str, download: bool = False):
     filename = p.name if (download or p.suffix.lower() == ".docx") else None
     return FileResponse(str(p), media_type=media or "application/octet-stream",
                         filename=filename)
+
+
+@app.get("/api/org")
+def api_org():
+    return ORG
 
 
 # -- SPA fallback (MUST be declared LAST) -------------------------------
