@@ -58,7 +58,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
 </head>
 <body>
 <header class="top">
-  <h1>SAMAGRA</h1><span class="sub"><strong>Capture control plane LIVE</strong> (branch <code>feature/control-plane-capture</code>) — real owner-initiated captures end-to-end (Munshi item + mcd seed) + live browsing of all read-only surfaces (482 deployed sims, QX facets fixed) · backend <strong>134 pytest</strong> + frontend <strong>514 vitest / 60 files</strong> green · independent Codex review per implementation · <strong>DEC-3 amended: read-only <em>except owner-initiated capture</em></strong> — see <a href="#capture" style="color:inherit">Capture</a> · final Codex review <strong>GO-WITH-FIXES</strong> (all LOW; merge-safe) · <strong>next session (then merge): Questions correct-maths + QX-style search, + 2 review LOWs</strong></span>
+  <h1>SAMAGRA</h1><span class="sub"><strong>Capture control plane LIVE</strong> (branch <code>feature/control-plane-capture</code>) — real owner-initiated captures end-to-end (Munshi item + mcd seed) + live browsing of all read-only surfaces (482 deployed sims, QX facets fixed) · backend <strong>142 pytest</strong> + frontend <strong>524 vitest / 60 files</strong> green · independent Codex review per implementation · <strong>DEC-3 amended: read-only <em>except owner-initiated capture</em></strong> — see <a href="#capture" style="color:inherit">Capture</a> · <strong>✅ Questions now QX-backed</strong> (exact + semantic + KaTeX maths + figures; <code>88b50a0</code>) + the <strong>2 review LOWs fixed</strong> (<code>e5457ea</code>) — branch ready to merge</span>
   <nav>
     <a href="#overview">Overview</a><a href="#capture">Capture</a><a href="#coherence">Coherence</a><a href="#phases">Phases</a>
     <a href="#samagra">SAMAGRA</a><a href="#experience">OS GUI</a><a href="#arch">Architecture</a><a href="#org">Org</a>
@@ -413,8 +413,11 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   </svg>
 
   <h2 id="tests">Tests</h2>
-  <p><span class="badge ok">frontend 514 / 514 · 60 files</span> <span class="badge ok">backend 134 / 134</span>
-  (last run 2026-06-21, branch <code>feature/control-plane-capture</code>). <strong>Capture track</strong> added the
+  <p><span class="badge ok">frontend 524 / 524 · 60 files</span> <span class="badge ok">backend 142 / 142</span>
+  (last run 2026-06-22, branch <code>feature/control-plane-capture</code>). The <strong>Questions QX-backed</strong> upgrade
+  added backend <code>qx_client</code> / <code>questions_proxy</code> / <code>api_questions</code> tests (+8 → 142) and frontend
+  questions-lib + component tests (+10 → 524), all TDD; QX's own <code>tools/qx/tests/test_json_search.py</code> (5) is green too.
+  <strong>Capture track</strong> added the
   write clients + endpoints (<code>create_item</code>, <code>create_seed</code>, <code>/api/munshi/capture</code>,
   <code>/api/mcd/seeds</code>), the live-read passthroughs, the deployed-sims parser + <code>/api/sims</code>,
   the question-scoped <code>/api/questions/facets</code>, and the pure-TS builders
@@ -480,6 +483,25 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   the decided-block path; <code>dispatch_codex</code> + git mocked).</p>
 
   <h2 id="decisions">Recent decisions</h2>
+  <div class="log"><div class="d">2026-06-22 · Questions app is now QX-backed (exact + semantic + maths + figures)</div>
+    The Questions app was a thin <code>LIKE</code> slice over QX's sqlite (raw <code>$…$</code> LaTeX, literal
+    <code>[fig]</code>, no semantic). Per the owner's decision — <em>"deploy QX on localhost and use its backend
+    directly"</em> — it now <strong>reuses the real QX engine</strong> as a localhost sidecar. QX gained a tested
+    <code>GET /api/qsearch</code> (<code>tools/qx/json_search.py</code>) wrapping <code>run_search</code> (exact
+    <strong>+ semantic</strong> BGE over the 67k-vector index + facets) and rendering each question to standalone HTML
+    (KaTeX maths + figure <code>&lt;img&gt;</code>) via QX's own <code>render_segs</code>. SAMAGRA's
+    <code>/api/questions</code> proxies it (<code>QxClient</code> → <code>config.QX_SERVER_URL</code> default
+    <code>:8783</code>; figure URLs absolutized; QX-down → graceful <code>{results:[], error}</code>). The Questions
+    app got a search box + <strong>exact/semantic toggle</strong> + subject/chapter/qtype facet chips + KaTeX
+    typesetting + a degraded note. The carried review LOWs <strong>F1</strong> (Munshi/mcd render <code>data?.error</code>)
+    and <strong>S3 LOW-1</strong> (<code>sims_manifest</code> per-grade subject reset) are fixed in the same branch.
+    <strong>Live-verified</strong> through QX <code>:8783</code>: exact (180) + real semantic (67,276, <code>degraded
+    False</code>), figures as absolute QX URLs. TDD: backend <strong>142 pytest</strong> + frontend <strong>524
+    vitest</strong> + <code>npm run verify</code> green. Commits <code>e5457ea</code> (LOWs) + <code>88b50a0</code>
+    (QX-backed). <strong>Activation:</strong> the always-up QX <code>:8783</code> must run the new code (restarted this
+    session); new frontend dep <code>katex</code>; the 3 QX-repo files are <strong>staged</strong> in the QX repo
+    (commit in its own flow). <strong>Contract change:</strong> <code>/api/questions</code> now returns the QX payload
+    (<code>results[].html</code> + <code>mode/degraded/facets</code>; params <code>q/mode/subject/chapter/qtype/page</code>).</div>
   <div class="log"><div class="d">2026-06-21 · Capture control plane LIVE + DEC-3 amended (Chairman)</div>
     The read-only firewall was <strong>amended by the Chairman</strong> to allow <strong>owner-initiated
     capture</strong>: exactly two write paths — <code>POST /api/munshi/capture</code> (a munshi item) and

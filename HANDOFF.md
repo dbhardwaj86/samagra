@@ -1,6 +1,35 @@
 # SAMAGRA — Handoff
 
-> **▶▶ LATEST — Capture control plane is LIVE (2026-06-21).** The SAMAGRA OS now does **real
+> **▶▶ LATEST — Questions app is now QX-backed (2026-06-22).** The Questions app was a thin `LIKE`
+> slice over QX's sqlite (raw `$…$` LaTeX, literal `[fig]`, no semantic). It now **reuses the real QX
+> engine** as a localhost sidecar (owner decision — "deploy QX on localhost and use its backend
+> directly"). QX gained a tested `GET /api/qsearch` route (`tools/qx/json_search.py`) wrapping
+> `tools.qx.search.run_search` (exact **+ semantic** + facets) and rendering each question to standalone
+> HTML (KaTeX `data-tex` spans + figure `<img>`) via QX's own `render_html.render_segs`. SAMAGRA's
+> `/api/questions` **proxies** it (`samagra/clients/qx_client.py` → `config.QX_SERVER_URL`, default
+> `http://127.0.0.1:8783`; `samagra/questions_proxy.py` absolutizes figure `/asset` URLs to the QX
+> server; QX-down → graceful `{results:[], error}`, never a 500). The **Questions app**
+> (`frontend/src/apps/Questions/index.tsx`) got a search box + **exact/semantic toggle** +
+> subject/chapter/qtype **facet chips** + **KaTeX** typesetting (equation-image fallback) + a degraded
+> note. **The two carried review LOWs are also fixed: F1** (Munshi/mcd render `data?.error`) and **S3
+> LOW-1** (`sims_manifest` resets `subject` per `##` grade).
+> - **TDD throughout:** backend **142 pytest** + frontend **524 vitest** + `npm run verify` green; QX
+>   `tools/qx/tests/test_json_search.py` **5** + browser/search/semantic suites green (no regressions).
+> - **LIVE-VERIFIED end-to-end** through the running QX `:8783`: exact (**180** results, KaTeX spans,
+>   figures as **absolute** QX URLs, facets = real subjects, no SIM-ids) and **real semantic** (mode
+>   `semantic`, `degraded False`, **67,276** over the 67k-vector BGE index).
+> - **Commits:** `e5457ea` (LOWs) + `88b50a0` (QX-backed) on `feature/control-plane-capture`.
+> - **⚙ ACTIVATION (durable):** the always-up QX server **must run the new code** — restarted this
+>   session (`python -X utf8 gui/qx_browser.py` on `:8783`). New frontend dep **`katex`** (run
+>   `npm install` in `frontend/`). **The 3 QX-repo files (`tools/qx/json_search.py`, its test,
+>   `gui/qx_browser.py`) are STAGED in the QX repo but NOT committed** (they sit amid other in-flight QX
+>   work) — commit them in QX's own flow.
+> - **▶ Contract change:** `GET /api/questions` now returns the QX payload —
+>   `{results:[{q_uid,slug,q_type,subject,chapter,difficulty,snippet,html}], total, page, page_size,
+>   mode, degraded, facets}` with params `q/mode/subject/chapter/qtype/page` (the old `limit` + flat
+>   `text` row are gone). `/api/questions/facets` is **unchanged** (still question-scoped subjects).
+>
+> **▶▶ Capture control plane is LIVE (2026-06-21).** The SAMAGRA OS now does **real
 > owner-initiated captures end-to-end** and browses every read-only surface with live data, on branch
 > **`feature/control-plane-capture`** (not yet merged). Built TDD + an **independent Codex review per
 > implementation** (reports `docs/codex-reviews/14–17`).
@@ -30,19 +59,20 @@
 >   with the Questions work, then merge.
 >
 > **▶▶ NEXT SESSION — on branch `feature/control-plane-capture`, then merge (PR):**
-> 1. **Questions narrow fix (owner-requested):** the Questions app shows **raw LaTeX source** (`$\sqrt{…}$`) and
->    literal `[fig]` placeholders — render **correct maths** (KaTeX/MathJax; "LaTeX not required" = render it, don't
->    print source) + handle figures, and add **QX-style search with exact + semantic options**. *Scope note: the OS
->    data apps are deliberately **thin read-only wrappers**, NOT full reskins of the originals — this is a targeted
->    upgrade to Questions (maths + search) only, not full QX feature-parity.*
-> 2. **F1 (review LOW):** the live-read capture apps render only `useApi`'s hook error (set on non-2xx), so an
->    upstream read failure (which returns `200 {results:[], error:"…read failed"}`) shows the misleading "set creds"
->    empty-state. Fix: type the reads as `SearchResponse & {error?: string}` and render `data?.error`
->    (`frontend/src/apps/{Munshi,Mycontentdev}/index.tsx`).
-> 3. **S3 LOW-1 (review LOW):** reset `subject = None` on a new `##` grade heading in
->    `samagra/sims_manifest.py:parse_deployed_sims` (latent cross-grade subject bleed; unreachable in the current manifest).
-> 4. **Optional test-coverage cleanup:** QX facets degradation-branch tests (S4 LOW); sims parser robustness +
->    non-vacuous chip-removal assertion (S3 LOW-2/3/4). Test-only.
+> 1. ~~**Questions narrow fix (owner-requested):** raw LaTeX + literal `[fig]` + no semantic.~~ **✅ DONE
+>    (2026-06-22, `88b50a0`)** — the Questions app is now QX-backed: real exact **+ semantic** search,
+>    KaTeX maths, inline figures, facet chips (see the LATEST banner above). Approach upgraded from
+>    "thin wrapper" to **reuse the real QX engine via a localhost sidecar** (owner decision); QX gained a
+>    `GET /api/qsearch` JSON route; SAMAGRA proxies it.
+> 2. ~~**F1 (review LOW):** Munshi/mcd misleading creds empty-state on a 200-body read error.~~ **✅ DONE
+>    (`e5457ea`)** — type as `SearchResponse & {error?}` + render `data?.error`.
+> 3. ~~**S3 LOW-1 (review LOW):** cross-grade subject bleed in `sims_manifest`.~~ **✅ DONE (`e5457ea`)** —
+>    reset `subject = None` on each `##` grade.
+> 4. **Optional test-coverage cleanup (still open, test-only):** QX facets degradation-branch tests
+>    (S4 LOW); sims parser robustness + non-vacuous chip-removal assertion (S3 LOW-2/3/4).
+> 5. **Merge:** present `superpowers:finishing-a-development-branch` options and open the PR for the whole
+>    `feature/control-plane-capture` branch (capture control plane + Questions QX-backed + the LOWs).
+>    **Before merge, also commit the 3 staged QX-repo files** in the QX repo (see ⚙ ACTIVATION above).
 >
 > **✅ DEC-3 AMENDMENT (2026-06-21, Chairman Deepak).** The morning's DEC-3 read-only firewall is amended:
 > **owner-initiated capture** (a munshi item + an mcd seed) is now **in-scope** — the project's only two
@@ -148,7 +178,12 @@
 > **Phase 3 (active loop) is PARKED** (plan complete, resumes after the Experience track; will need live
 > `MUNSHI_API_URL`/`MUNSHI_SECRET` in `.env`). Carried into Phase 3: F1/F4 refresh hardening.
 >
-> **⚠ KNOWN BUG (open — take up next session): Questions app subject chips show sim-ids, not subjects.**
+> **✅ RESOLVED (2026-06-22, `88b50a0`):** the Questions app no longer derives chips from catalog-wide
+> facets at all — it now renders **filter-scoped facets straight from the QX engine** (`/api/qsearch`
+> → `search.facet_counts`: subject/chapter/qtype), so the `SIM0xxx` leak is structurally impossible.
+> The original bug write-up is retained below for history.
+>
+> **⚠ KNOWN BUG (RESOLVED — see above): Questions app subject chips show sim-ids, not subjects.**
 > The Questions app (`frontend/src/apps/Questions/index.tsx`) renders its subject filter chips from
 > `GET /api/facets`, whose `subjects` is **catalog-wide** (`select distinct subject from catalog`,
 > `samagra/catalog.py:191`). The sims adapter writes each simulation's folder id (`SIM0018`…`SIM0626`) into the
