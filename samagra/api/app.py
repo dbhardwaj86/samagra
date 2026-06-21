@@ -230,6 +230,15 @@ def api_sims():
     return {"sims": sims, "total": len(sims)}
 
 
+@app.get("/api/questions/facets")
+def api_questions_facets():
+    qx = get_adapter("qx")
+    if not qx or not qx.available():
+        return {"subjects": []}
+    subjects = (qx.summary() or {}).get("subjects") or {}
+    return {"subjects": list(subjects.keys())}
+
+
 # -- SPA fallback (MUST be declared LAST) -------------------------------
 # Catch-all for client-side routes: serve the Vite-built index.html so the React
 # router can take over. Declared last so it never shadows the API, the lecture
