@@ -2144,7 +2144,13 @@ pointer files synced. Human visual-fidelity sign-off is separate (owner-run).
 
 ## Phase E2 — Data/control apps (read-only wiring) — SKELETON
 
-> **(status banner — ⬜ NOT STARTED)** — filled to full TDD detail at the E1→E2 boundary.
+> **(status banner — 🟡 PLAN DETAILED, BUILD NOT STARTED, 2026-06-21)** — the E1→E2-boundary expansion is done:
+> the full TDD detail (20 tasks, exact code) now lives in the dedicated plan
+> [`2026-06-21-samagra-os-e2.md`](2026-06-21-samagra-os-e2.md), grounded on the live-verified contract
+> [`../_research/samagra-os/e2-grounding.md`](../_research/samagra-os/e2-grounding.md) (which supersedes `api.md`
+> for E2 — it caught 11 deltas: dual `meta_json`/`summary_json` keys, two empty-question bodies, hyphenated
+> `in-review`, name-keyed `phases` Record, 7 owner ids, etc.). Plan validated by a 4-critic adversarial pass
+> (0 CRITICAL / 0 MAJOR; 6 minor polish fixes applied). The skeleton below is retained as the at-a-glance index.
 
 E2 adds the eleven data/control apps as thin wrappers over the **existing** read-only `/api/*`
 contract (no new write paths). The single hard backend gap is `GET /api/org` (static
