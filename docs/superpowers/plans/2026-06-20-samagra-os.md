@@ -2142,15 +2142,32 @@ pointer files synced. Human visual-fidelity sign-off is separate (owner-run).
 
 ---
 
-## Phase E2 — Data/control apps (read-only wiring) — SKELETON
+## Phase E2 — Data/control apps (read-only wiring) — BUILT
 
-> **(status banner — 🟡 PLAN DETAILED, BUILD NOT STARTED, 2026-06-21)** — the E1→E2-boundary expansion is done:
-> the full TDD detail (20 tasks, exact code) now lives in the dedicated plan
+> **(status banner — ✅ BUILT — headless-green, PR open, 2026-06-21)** — E2 is built TDD on branch
+> `e2/samagra-os` (22 commits) and is **headless-green**; a PR is open for review (NOT yet merged to `main` —
+> `main` is at the E2 plan-docs commit). The eleven data/control apps shipped as thin, read-only React wrappers
+> over the existing FastAPI `/api/*` contract, plus the one new backend endpoint `GET /api/org` (static
+> `samagra/org.py`). All real logic lives in seven pure-TS linchpin modules (`lib/api/query`, `lib/catalog/rows`,
+> `lib/pipelines/stages`, `lib/org/resolve`, `lib/kanban/columns`, `lib/activity/format`,
+> `lib/questions/facets`); the apps are thin wrappers over these + `useApi`. **Test gate (just-run):** backend
+> **106 pytest** passing (102 E1 + 4 new org); frontend **495 vitest** across **56 files** (439 E1 + 23 new lib
+> tests + 33 app render-smoke), `tsc --noEmit` clean, `vite build` green emitting **22 lazy chunks**, no
+> `.only`/`.skip`. **Two fixes during review:** (a) `org.py` owner mapping reconciled to OWNER-CONFIRMED
+> (`claude1` = Claude-Deepak CEO / substrate + engine; `claude2` = Claude-Khanak CTO / leaf apps + UX), locked by
+> `tests/test_api_org.py`; (b) a pre-existing E1 production-serve bundling bug — `App.tsx`'s
+> `/* @vite-ignore */` dynamic import left every `apps/*/index.tsx` OUT of the production bundle (so
+> FastAPI-served app windows rendered empty; only `npm run dev` worked) — fixed by dropping `@vite-ignore` so
+> Vite emits a lazy chunk per app (22 chunks); this affected all 17 apps in production.
+> The full TDD detail (20 tasks, exact code) lives in the dedicated plan
 > [`2026-06-21-samagra-os-e2.md`](2026-06-21-samagra-os-e2.md), grounded on the live-verified contract
 > [`../_research/samagra-os/e2-grounding.md`](../_research/samagra-os/e2-grounding.md) (which supersedes `api.md`
 > for E2 — it caught 11 deltas: dual `meta_json`/`summary_json` keys, two empty-question bodies, hyphenated
-> `in-review`, name-keyed `phases` Record, 7 owner ids, etc.). Plan validated by a 4-critic adversarial pass
-> (0 CRITICAL / 0 MAJOR; 6 minor polish fixes applied). The skeleton below is retained as the at-a-glance index.
+> `in-review`, name-keyed `phases` Record, 7 owner ids, chairman-name-only-in-`dispatch.ts`, etc.). Plan validated
+> by a 4-critic adversarial pass (0 CRITICAL / 0 MAJOR; 6 minor polish fixes applied). **Pixel/interaction
+> parity of the 11 apps is a separate owner-run browser-vision pass — NOT yet run, NOT claimed** (some E2 glyphs
+> may still be unregistered in `components/icons-data`, an empty-icon fallback / visual-polish follow-up). The
+> skeleton below is retained as the at-a-glance index. **Next: E2 PR review → fast-forward merge → Phase E3.**
 
 E2 adds the eleven data/control apps as thin wrappers over the **existing** read-only `/api/*`
 contract (no new write paths). The single hard backend gap is `GET /api/org` (static
