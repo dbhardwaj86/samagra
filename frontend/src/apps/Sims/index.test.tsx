@@ -22,10 +22,14 @@ describe("Sims app", () => {
     const link = row.querySelector("a");
     expect(link).not.toBeNull();
     expect(link!.getAttribute("href")).toContain("pratyakshsims.com");
-    // No SIM0xxx subject chips.
-    for (const chip of screen.queryAllByTestId("subject-chip")) {
-      expect(chip.textContent ?? "").not.toMatch(/^SIM\d/);
-    }
+    // S3 LOW-4: the SIM-id chip leak is gone STRUCTURALLY — the deployed-manifest
+    // Sims app renders NO subject chips at all (the old catalog-wide chip UI was
+    // removed). Assert the absence directly (a non-vacuous guard) rather than
+    // looping over an empty set, and confirm the old catalog source is not called.
+    expect(screen.queryAllByTestId("subject-chip")).toHaveLength(0);
+    expect(useApiMock).not.toHaveBeenCalledWith(
+      expect.stringContaining("source=sims"),
+    );
   });
   it("error inline + still mounts", () => {
     useApiMock.mockReturnValue({ data: null, loading: false, error: "HTTP 500" });

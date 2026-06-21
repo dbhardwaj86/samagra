@@ -11,7 +11,13 @@ _ITEM = re.compile(r"^-\s*(\d{3,4})\s*[—-]\s*(.+?)\s*$")
 def sim_url(sim_id: str) -> str:
     # Canonical deployed URL is extensionless — the .html form 308-redirects to
     # this; linking directly avoids the redirect hop and lands on a 200.
-    n = str(sim_id).strip().zfill(4)
+    # Enforce the parser-validated id space (1–4 digits, _ITEM accepts \d{3,4}):
+    # a non-conforming id (letters, >4 digits, empty) would otherwise zero-pad
+    # into a malformed canonical URL silently (S3 LOW-2).
+    sid = str(sim_id).strip()
+    if not re.fullmatch(r"\d{1,4}", sid):
+        raise ValueError(f"sim id must be 1-4 digits, got {sim_id!r}")
+    n = sid.zfill(4)
     return f"{SITE}/sims/SIM{n}/SIM{n}_sim"
 
 
