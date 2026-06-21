@@ -48,8 +48,15 @@ should be one focused, committable unit.
   Write paths already had `*_unconfigured → 503` coverage. Frontend renders it gracefully
   (`Munshi/index.tsx` shows `data.error ?? "Munshi not available — set MUNSHI_API_URL/MUNSHI_SECRET."`).
   Gate: backend **154 pytest / 0 failures** (live_reads 4→6). No production code change.
-- [ ] **A-4 · Questions ⇄ QX.** Start the QX sidecar `:8783`; verify Questions exact + semantic + KaTeX
-  + figures through the tunnel-bound backend. Add a health-check banner when QX is down (don't 500).
+- [x] **A-4 · Questions ⇄ QX. DONE 2026-06-22.** QX sidecar already up on `:8783`; verified end-to-end
+  through the FastAPI `:8799` proxy. **Exact** `q=capacitor` → 488 results, 25 rows (browser screenshot
+  shows a real question with a **rendered circuit-diagram figure** + options + `mcq_single · physics ·
+  Electrostatics`), `degraded:false`. **Semantic** `q=projectile motion` → 67,276 results, `degraded:false`.
+  **KaTeX**: 15 math spans, all 15 typeset (`.katex` count == `.ktx[data-tex]` count). **Figures**: 26
+  rendered. Filter-scoped facet chips (subject/chapter/qtype) present. **Zero console errors.** Graceful
+  banner already present: frontend `Questions/index.tsx` renders `error`/`questions-notice`/
+  `questions-degraded`; backend `tests/test_api_questions.py::test_graceful_when_qx_unreachable` proves a
+  QX "connection refused" returns a graceful `{error: "…unavailable…"}` (no 500). No code change needed.
 - [ ] **A-5 · Mobile pass.** In the phone frame, open every app via the grid + favorites dock; fix
   overflow/clipping; verify open → Home for each. Screenshot a representative set.
 - [ ] **A-6 · Theme pass.** Exercise console + samagra across every app + the shell chrome; fix any
@@ -97,3 +104,9 @@ _(loop appends new tasks and `BLOCKED:` notes here)_
   then `preview_start({name:"samagra"})` spawns it on 8799. Recorded so later UI iterations don't re-derive.
 - **D-3 · Cold-start latency.** First `/api/*` request after uvicorn start can take ~2–3s (catalog/init).
   Any automated smoke/health check must allow for it (warm the server with one request before asserting).
+- **D-4 · QX sidecar is a hard deploy dependency.** Questions only works while the QX engine runs on
+  `:8783` (separate repo `C:\SandBox\gpt_box\gpt-extract-ques`, `python -X utf8 gui/qx_browser.py`) with
+  the `GET /api/qsearch` code active. It's currently up and serving real exact+semantic results. **B-1**
+  must start/health-check `:8783` alongside `:8799`; **B-5** runbook must document it. Keep `:8783`
+  internal — only `:8799` is tunnelled (reached via the same-origin `/api/questions` proxy). If QX isn't
+  running, Questions degrades gracefully (banner) rather than 500 — verified.
