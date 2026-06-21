@@ -39,5 +39,18 @@ class MunshiClient:
         r.raise_for_status()
         return r.json()
 
+    def create_item(self, kind: str, fields: dict) -> dict:
+        # Owner-initiated capture. Deterministic /api/item write; same stateless
+        # cookie auth as library(). kind must be todo|note|followup (the worker
+        # rejects others). The secret is never logged.
+        r = requests.post(
+            f"{self.api_url}/api/item",
+            headers={"Cookie": self._cookie(), "content-type": "application/json"},
+            json={"kind": kind, **fields},
+            timeout=_TIMEOUT,
+        )
+        r.raise_for_status()
+        return r.json()
+
     def __repr__(self) -> str:  # never leak the secret
         return f"MunshiClient(api_url={self.api_url!r}, secret=<set:{bool(self._secret)}>)"

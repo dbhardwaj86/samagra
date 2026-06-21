@@ -133,3 +133,22 @@ def test_munshi_repr_never_leaks_secret():
     c = munshi_client.MunshiClient(api_url="https://munshi.example.dev",
                                    secret="COOKIE-SECRET")
     assert "COOKIE-SECRET" not in repr(c)
+
+
+def test_munshi_create_item_posts_json_with_cookie(monkeypatch):
+    from samagra.clients import munshi_client
+    fake = FakeRequests({"item_id": 99})
+    monkeypatch.setattr(munshi_client, "requests", fake)
+    c = munshi_client.MunshiClient(api_url="https://m.example.dev", secret="S")
+    out = c.create_item("todo", {"assignee": "Ravi", "task": "call parent"})
+    assert out == {"item_id": 99}
+    assert fake.last["method"] == "POST"
+    assert fake.last["url"] == "https://m.example.dev/api/item"
+    assert fake.last["headers"]["Cookie"] == "munshi=S"
+    assert fake.last["json"] == {"kind": "todo", "assignee": "Ravi", "task": "call parent"}
+
+
+def test_munshi_create_item_repr_never_leaks_secret():
+    from samagra.clients import munshi_client
+    c = munshi_client.MunshiClient(api_url="https://m.example.dev", secret="TOPSECRET")
+    assert "TOPSECRET" not in repr(c)
