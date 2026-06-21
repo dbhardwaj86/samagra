@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useApi } from "../../hooks/useApi";
 import { useApiPost } from "../../hooks/useApiPost";
 import Icon from "../../components/Icon";
-import { buildQuery } from "../../lib/api/query";
 import { catalogRows } from "../../lib/catalog/rows";
 import { buildMunshiCapture } from "../../lib/capture/munshi";
 import type { SearchResponse, MunshiKind, MunshiCaptureForm } from "../../types/contracts";
@@ -29,8 +28,9 @@ const inputStyle = {
 export default function Munshi() {
   // reloadKey bumps the GET path so useApi refetches the library after a capture.
   const [reloadKey, setReloadKey] = useState(0);
-  const path = "/api/search" + buildQuery({ source: "munshi", limit: 200 })
-    + (reloadKey ? `&_r=${reloadKey}` : "");
+  // Live read straight from the deployed Munshi worker (not the catalog), so a
+  // fresh capture appears on the next refetch (reloadKey bump).
+  const path = "/api/munshi/library" + (reloadKey ? `?_r=${reloadKey}` : "");
   const { data, loading, error } = useApi<SearchResponse>(path);
   const rows = catalogRows(data);
 
@@ -97,7 +97,7 @@ export default function Munshi() {
       <section data-testid="catalog-list" aria-busy={loading} style={{ marginTop: 16, display: "grid", gap: 8 }}>
         {rows.length === 0 ? (
           <div data-testid="catalog-empty" style={{ color: V.muted }}>
-            {loading ? "Loading…" : "Munshi not available — set MUNSHI creds and run a refresh."}
+            {loading ? "Loading…" : "Munshi not available — set MUNSHI_API_URL / MUNSHI_SECRET."}
           </div>
         ) : rows.map((r) => (
           <article key={r.uid} data-testid="catalog-row"

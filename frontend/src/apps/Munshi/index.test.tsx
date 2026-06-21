@@ -11,10 +11,10 @@ const data = { results: [
 
 describe("Munshi app", () => {
   beforeEach(() => useApiMock.mockReset());
-  it("calls /api/search?source=munshi and lists items", () => {
+  it("reads /api/munshi/library (live) and lists items", () => {
     useApiMock.mockReturnValue({ data, loading: false, error: null });
     render(<Munshi />);
-    expect(useApiMock).toHaveBeenCalledWith("/api/search?source=munshi&limit=200");
+    expect(useApiMock).toHaveBeenCalledWith("/api/munshi/library");
     expect(screen.getByTestId("munshi")).toBeInTheDocument();
     expect(screen.getByText("Call vendor")).toBeInTheDocument();
   });

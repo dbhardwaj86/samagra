@@ -2,7 +2,6 @@ import { useRef, useState } from "react";
 import { useApi } from "../../hooks/useApi";
 import { useApiPost } from "../../hooks/useApiPost";
 import Icon from "../../components/Icon";
-import { buildQuery } from "../../lib/api/query";
 import { catalogRows } from "../../lib/catalog/rows";
 import { buildSeed, SEED_TYPES } from "../../lib/capture/seed";
 import type { SearchResponse, SeedType, SeedForm } from "../../types/contracts";
@@ -21,8 +20,9 @@ const inputStyle = {
 export default function Mycontentdev() {
   // reloadKey bumps the GET path so useApi refetches the list after a seed capture.
   const [reloadKey, setReloadKey] = useState(0);
-  const path = "/api/search" + buildQuery({ source: "mycontentdev", limit: 200 })
-    + (reloadKey ? `&_r=${reloadKey}` : "");
+  // Live read straight from the deployed mycontentdev worker (not the catalog),
+  // so a freshly captured seed appears on the next refetch (reloadKey bump).
+  const path = "/api/mcd/seeds" + (reloadKey ? `?_r=${reloadKey}` : "");
   const { data, loading, error } = useApi<SearchResponse>(path);
   const rows = catalogRows(data);
 
@@ -98,7 +98,7 @@ export default function Mycontentdev() {
       <section data-testid="catalog-list" aria-busy={loading} style={{ marginTop: 16, display: "grid", gap: 8 }}>
         {rows.length === 0 ? (
           <div data-testid="catalog-empty" style={{ color: V.muted }}>
-            {loading ? "Loading…" : "mycontentdev not available — set MCD creds and run a refresh."}
+            {loading ? "Loading…" : "mycontentdev not available — set mcd-cloud.json adminKey."}
           </div>
         ) : rows.map((r) => (
           <article key={r.uid} data-testid="catalog-row"

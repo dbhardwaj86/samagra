@@ -17,3 +17,14 @@ def test_questions_facets_absent_qx(monkeypatch):
     monkeypatch.setattr(api_app, "get_adapter", lambda name: None)
     r = TestClient(api_app.app).get("/api/questions/facets")
     assert r.status_code == 200 and r.json() == {"subjects": []}
+
+
+def test_questions_facets_drops_numeric_subject_codes(monkeypatch):
+    # Some QX corpora store numeric subject codes (e.g. {1: 32285}); a bare "1"
+    # chip is useless. Only alphabetic subject names should survive.
+    class FakeQx:
+        def available(self): return True
+        def summary(self): return {"subjects": {1: 32285, "Mechanics": 40, "2": 9}}
+    monkeypatch.setattr(api_app, "get_adapter", lambda name: FakeQx() if name == "qx" else None)
+    r = TestClient(api_app.app).get("/api/questions/facets")
+    assert r.status_code == 200 and r.json()["subjects"] == ["Mechanics"]

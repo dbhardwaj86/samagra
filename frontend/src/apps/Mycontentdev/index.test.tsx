@@ -11,17 +11,17 @@ const data = { results: [
 
 describe("mycontentdev app", () => {
   beforeEach(() => useApiMock.mockReset());
-  it("calls /api/search?source=mycontentdev and lists seeds", () => {
+  it("reads /api/mcd/seeds (live) and lists seeds", () => {
     useApiMock.mockReturnValue({ data, loading: false, error: null });
     render(<Mcd />);
-    expect(useApiMock).toHaveBeenCalledWith("/api/search?source=mycontentdev&limit=200");
+    expect(useApiMock).toHaveBeenCalledWith("/api/mcd/seeds");
     expect(screen.getByTestId("mycontentdev")).toBeInTheDocument();
     expect(screen.getByText("Seed A")).toBeInTheDocument();
   });
   it("creds-gated empty state when no rows", () => {
     useApiMock.mockReturnValue({ data: { results: [] }, loading: false, error: null });
     render(<Mcd />);
-    expect(screen.getByTestId("catalog-empty")).toHaveTextContent(/creds/i);
+    expect(screen.getByTestId("catalog-empty")).toHaveTextContent(/available|adminKey/i);
   });
   it("error inline + still mounts", () => {
     useApiMock.mockReturnValue({ data: null, loading: false, error: "HTTP 500" });

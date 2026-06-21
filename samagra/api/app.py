@@ -7,6 +7,7 @@ and a safe local-file opener constrained to configured source roots.
 from __future__ import annotations
 
 import mimetypes
+from dataclasses import asdict
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -236,7 +237,38 @@ def api_questions_facets():
     if not qx or not qx.available():
         return {"subjects": []}
     subjects = (qx.summary() or {}).get("subjects") or {}
-    return {"subjects": list(subjects.keys())}
+    # Only human-meaningful subject names (must contain a letter). Some QX corpora
+    # store numeric subject codes (e.g. {1: 32285}); a bare "1" chip is useless and
+    # was the eyesore replacing the old SIM0xxx leak — drop non-alphabetic keys.
+    names = [str(s) for s in subjects.keys() if any(ch.isalpha() for ch in str(s))]
+    return {"subjects": names}
+
+
+# -- live subsystem read passthroughs (always-fresh; capture appears immediately)
+# These read the LIVE deployed Munshi/mycontentdev via their adapters (not the
+# rebuildable catalog), so the capture apps show real data without a catalog
+# refresh and a fresh capture is visible on the next refetch. Read-only,
+# creds-gated, never leak upstream/secret detail.
+@app.get("/api/munshi/library")
+def api_munshi_library():
+    ad = get_adapter("munshi")
+    if not ad or not ad.available():
+        return {"results": [], "error": "munshi not configured — set MUNSHI_API_URL/MUNSHI_SECRET"}
+    try:
+        return {"results": [asdict(a) for a in ad.artifacts()]}
+    except Exception:  # noqa: BLE001 — never surface upstream/secret detail
+        return {"results": [], "error": "munshi read failed"}
+
+
+@app.get("/api/mcd/seeds")
+def api_mcd_seeds():
+    ad = get_adapter("mycontentdev")
+    if not ad or not ad.available():
+        return {"results": [], "error": "mycontentdev not configured — set mcd-cloud.json adminKey"}
+    try:
+        return {"results": [asdict(a) for a in ad.artifacts()]}
+    except Exception:  # noqa: BLE001 — never surface upstream/secret detail
+        return {"results": [], "error": "mycontentdev read failed"}
 
 
 # -- SPA fallback (MUST be declared LAST) -------------------------------
