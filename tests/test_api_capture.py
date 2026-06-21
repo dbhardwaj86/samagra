@@ -97,3 +97,13 @@ def test_mcd_seed_unconfigured(monkeypatch):
     monkeypatch.setattr(api_app, "McdClient", lambda: type("F", (), {"available": lambda s: False})())
     r = _client().post("/api/mcd/seeds", json={"type": "rough_idea", "raw_text": "x"})
     assert r.status_code == 503
+
+def test_mcd_seed_upstream_failure_502(monkeypatch):
+    class FakeMcd:
+        def available(self): return True
+        def create_seed(self, fields): raise RuntimeError("secret: x-mcd-admin=adminKEY123 https://mcd.internal")
+    monkeypatch.setattr(api_app, "McdClient", lambda: FakeMcd())
+    r = _client().post("/api/mcd/seeds", json={"type": "rough_idea", "raw_text": "idea"})
+    assert r.status_code == 502
+    body = r.text
+    assert "adminKEY123" not in body and "mcd.internal" not in body and "x-mcd-admin" not in body
