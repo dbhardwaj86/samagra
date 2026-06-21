@@ -14,7 +14,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 import samagra
-from .. import catalog, config, scheduler, state
+from .. import catalog, config, scheduler, sims_manifest, state
 from ..adapters import get_adapter
 from ..clients import McdClient, MunshiClient
 from ..governance import store as gstore
@@ -219,6 +219,15 @@ def api_mcd_create_seed(payload: dict):
     except Exception:  # noqa: BLE001
         raise HTTPException(502, "mycontentdev seed create failed")
     return {"ok": True, "seed": created}
+
+
+@app.get("/api/sims")
+def api_sims():
+    p = config.SIMS_ROOT / "deployed-sims-by-grade.md"
+    if not p.exists():
+        return {"sims": [], "total": 0}
+    sims = sims_manifest.parse_deployed_sims(p.read_text(encoding="utf-8"))
+    return {"sims": sims, "total": len(sims)}
 
 
 # -- SPA fallback (MUST be declared LAST) -------------------------------
