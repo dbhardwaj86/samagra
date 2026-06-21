@@ -420,10 +420,15 @@
         step is never automated), and the OS does <em>not</em> auto-promote a note into a content idea. At the
         same time the <strong>Simulations screen now lists only the 482 truly-published sims</strong> (with working
         links to the live site), and the <strong>Questions screen's subject-filter glitch is fixed</strong> (it no
-        longer shows internal simulation codes). Every change got its <strong>own independent Codex review</strong>;
-        tests are green (backend 134, frontend 514). The immediate next step is simply to <strong>fold this branch
-        into the main build (a pull request)</strong>; after that, the long-planned <strong>phone version</strong>
-        and the per-screen visual polish remain.</p>
+        longer shows internal simulation codes). Every change got its <strong>own independent Codex review</strong> (the final
+        once-over said "good to merge, only tiny polish left"); tests are green (backend 134, frontend 514).
+        <strong>Next session, before merging:</strong> the <strong>Questions screen</strong> currently shows maths as
+        raw code (e.g. <code>$\sqrt{…}$</code>) instead of real symbols — we'll make the <strong>maths display
+        correctly</strong> and add proper <strong>search (exact and "find similar")</strong>, like the original
+        question tool. (Honest note: these screens are <em>simple windows onto the data</em>, not full copies of the
+        original tools — so this is a targeted upgrade to the Questions screen, not a rebuild.) Two tiny review
+        nits ride along. <strong>Then</strong> we fold the branch into the main build; the long-planned
+        <strong>phone version</strong> and per-screen visual polish still follow.</p>
       </div>
     </section>
 

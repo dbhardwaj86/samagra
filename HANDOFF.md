@@ -22,7 +22,27 @@
 >   mcd seed (`seed_01KVNN90…`, status `captured`, seeds 1→2) through the running server; both appear in
 >   the live-read apps. Negative guards (bad kind / empty text) → 400. Backend **134 pytest** + frontend
 >   **514 vitest / 60 files** green; advisory gate clean. Two benign labelled smoke records remain in
->   prod (owner can dismiss/archive). **Pending: merge `feature/control-plane-capture` (PR).**
+>   prod (owner can dismiss/archive).
+> - **Final integrated Codex review (`docs/codex-reviews/18-capture-final.report.md`): GO-WITH-FIXES** — 0
+>   CRITICAL / 0 HIGH / 0 MEDIUM; confirmed no secret/exception-text leak, `asdict`↔`SearchResult` contract
+>   match, QX filter safe, write paths unchanged. Branch is **merge-safe**.
+> - **▶ DECISION (owner, Option B): do NOT merge yet** — carry the small review LOWs into the next session
+>   with the Questions work, then merge.
+>
+> **▶▶ NEXT SESSION — on branch `feature/control-plane-capture`, then merge (PR):**
+> 1. **Questions narrow fix (owner-requested):** the Questions app shows **raw LaTeX source** (`$\sqrt{…}$`) and
+>    literal `[fig]` placeholders — render **correct maths** (KaTeX/MathJax; "LaTeX not required" = render it, don't
+>    print source) + handle figures, and add **QX-style search with exact + semantic options**. *Scope note: the OS
+>    data apps are deliberately **thin read-only wrappers**, NOT full reskins of the originals — this is a targeted
+>    upgrade to Questions (maths + search) only, not full QX feature-parity.*
+> 2. **F1 (review LOW):** the live-read capture apps render only `useApi`'s hook error (set on non-2xx), so an
+>    upstream read failure (which returns `200 {results:[], error:"…read failed"}`) shows the misleading "set creds"
+>    empty-state. Fix: type the reads as `SearchResponse & {error?: string}` and render `data?.error`
+>    (`frontend/src/apps/{Munshi,Mycontentdev}/index.tsx`).
+> 3. **S3 LOW-1 (review LOW):** reset `subject = None` on a new `##` grade heading in
+>    `samagra/sims_manifest.py:parse_deployed_sims` (latent cross-grade subject bleed; unreachable in the current manifest).
+> 4. **Optional test-coverage cleanup:** QX facets degradation-branch tests (S4 LOW); sims parser robustness +
+>    non-vacuous chip-removal assertion (S3 LOW-2/3/4). Test-only.
 >
 > **✅ DEC-3 AMENDMENT (2026-06-21, Chairman Deepak).** The morning's DEC-3 read-only firewall is amended:
 > **owner-initiated capture** (a munshi item + an mcd seed) is now **in-scope** — the project's only two

@@ -58,7 +58,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
 </head>
 <body>
 <header class="top">
-  <h1>SAMAGRA</h1><span class="sub"><strong>Capture control plane LIVE</strong> (branch <code>feature/control-plane-capture</code>) — real owner-initiated captures end-to-end (Munshi item + mcd seed) + live browsing of all read-only surfaces (482 deployed sims, QX facets fixed) · backend <strong>134 pytest</strong> + frontend <strong>514 vitest / 60 files</strong> green · independent Codex review per implementation · <strong>DEC-3 amended: read-only <em>except owner-initiated capture</em></strong> — see <a href="#capture" style="color:inherit">Capture</a> · <strong>next: merge the branch (PR)</strong></span>
+  <h1>SAMAGRA</h1><span class="sub"><strong>Capture control plane LIVE</strong> (branch <code>feature/control-plane-capture</code>) — real owner-initiated captures end-to-end (Munshi item + mcd seed) + live browsing of all read-only surfaces (482 deployed sims, QX facets fixed) · backend <strong>134 pytest</strong> + frontend <strong>514 vitest / 60 files</strong> green · independent Codex review per implementation · <strong>DEC-3 amended: read-only <em>except owner-initiated capture</em></strong> — see <a href="#capture" style="color:inherit">Capture</a> · final Codex review <strong>GO-WITH-FIXES</strong> (all LOW; merge-safe) · <strong>next session (then merge): Questions correct-maths + QX-style search, + 2 review LOWs</strong></span>
   <nav>
     <a href="#overview">Overview</a><a href="#capture">Capture</a><a href="#coherence">Coherence</a><a href="#phases">Phases</a>
     <a href="#samagra">SAMAGRA</a><a href="#experience">OS GUI</a><a href="#arch">Architecture</a><a href="#org">Org</a>
@@ -490,7 +490,16 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     visible in the live-read apps). Also: capture apps now read the live workers
     (<code>/api/munshi/library</code>, <code>/api/mcd/seeds</code>); Simulations shows the <strong>482 deployed
     pratyaksh sims</strong>; the <strong>Questions sim-id facet bug is FIXED</strong> (question-scoped facets).
-    Pending: merge the branch (PR).</div>
+    <strong>Final integrated Codex review: GO-WITH-FIXES</strong> (0 CRITICAL/HIGH/MEDIUM; report
+    <code>docs/codex-reviews/18-capture-final.report.md</code>) — branch merge-safe. <strong>Owner decision
+    (Option B): do not merge yet</strong> — carry the small review LOWs into the next session with the Questions
+    work, then merge.</div>
+  <div class="log"><div class="d">2026-06-21 · Scope clarified — OS data apps are thin wrappers, not full reskins</div>
+    The Questions browser shows raw LaTeX + <code>[fig]</code> placeholders. Clarified that the E2 data apps were
+    spec'd/built as <strong>thin read-only wrappers over <code>/api/*</code></strong>, not feature-complete reskins
+    of the original tools — so they lack the original QX browser's maths/figure/preview features. <strong>Next
+    session</strong> does a <em>narrow</em> upgrade to Questions only: <strong>render correct maths + QX-style
+    search (exact + semantic)</strong> — not full QX feature-parity.</div>
   <div class="log"><div class="d">2026-06-21 · ⚠ Known bug logged — Questions app subject chips show sim-ids (FIXED 2026-06-21, see above)</div>
     The E2 LOW follow-up (the Questions app consuming <code>/api/facets</code>) was <strong>implemented</strong>
     this session (commit <code>e1cb22a</code>, merged + pushed to <code>origin/main</code>) but
@@ -712,7 +721,15 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   </table>
 
   <h2 id="next">Next actions</h2>
-  <p>Phase 0 (rename), the vision fold (D9–D12), Track A (stabilize) and Phase 1 (subsystem adapters) are
+  <p><strong>Immediate (next session — on branch <code>feature/control-plane-capture</code>, then merge via PR):</strong></p>
+  <ol>
+    <li><strong>Questions narrow fix (owner-requested):</strong> render <strong>correct maths</strong> (currently shows raw LaTeX source + literal <code>[fig]</code>) and add <strong>QX-style search — exact + semantic</strong>. Narrow upgrade to Questions only, not full QX feature-parity (the data apps are thin wrappers by design).</li>
+    <li><strong>F1 (review LOW):</strong> the live-read capture apps render only <code>useApi</code>'s hook error; an upstream read failure returns <code>200 {results:[], error:…}</code> and shows the misleading "set creds" empty-state. Type the reads as <code>SearchResponse &amp; {error?:string}</code> and render <code>data?.error</code>.</li>
+    <li><strong>S3 LOW-1 (review LOW):</strong> reset <code>subject = None</code> on a new grade heading in <code>sims_manifest.parse_deployed_sims</code>.</li>
+    <li>Optional: QX facets degradation tests (S4 LOW); sims parser-robustness tests (S3 LOW-2/3/4) — test-only.</li>
+    <li>Then <strong>merge <code>feature/control-plane-capture</code></strong> (final Codex review already GO-WITH-FIXES, all LOW → merge-safe).</li>
+  </ol>
+  <p><strong>Background (pre-capture-track):</strong> Phase 0 (rename), the vision fold (D9–D12), Track A (stabilize) and Phase 1 (subsystem adapters) are
   <strong>merged to <code>main</code> and pushed to <code>origin/main</code></strong>. <strong>Phase 2 —
   governance</strong> is now <strong>built TDD on <code>main</code> (suite 63 → 98 green)</strong>, reconciled
   to runbook <strong>D5</strong> (advisory-local hook) and <strong>D6</strong> (durable <code>governance.db</code>),
