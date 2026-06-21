@@ -1,8 +1,9 @@
+import { useState } from "react";
 import { useApi } from "../../hooks/useApi";
 import Icon from "../../components/Icon";
 import { buildQuery } from "../../lib/api/query";
 import { QTYPES, questionRows, questionError } from "../../lib/questions/facets";
-import type { QuestionsResponse } from "../../types/contracts";
+import type { QuestionsResponse, Facets } from "../../types/contracts";
 
 const V = {
   text: "var(--samagra-text)", muted: "var(--samagra-muted)", line: "var(--samagra-line)",
@@ -10,10 +11,16 @@ const V = {
   accent: "var(--samagra-accent)", font: "var(--samagra-font)",
 } as const;
 
-const PATH = "/api/questions" + buildQuery({ limit: 50 });
+const ACTIVE_BG = "color-mix(in srgb, var(--samagra-accent) 18%, transparent)";
 
 export default function Questions() {
-  const { data, loading, error } = useApi<QuestionsResponse>(PATH);
+  // Selected subject is baked into the /api/questions path; empty = no filter.
+  // useApi re-fires when the path string changes, so this drives the refetch.
+  const [subject, setSubject] = useState("");
+  const qPath = "/api/questions" + buildQuery({ subject, limit: 50 });
+  const { data, loading, error } = useApi<QuestionsResponse>(qPath);
+  const { data: facetData } = useApi<Facets>("/api/facets");
+  const subjects = Array.isArray(facetData?.subjects) ? facetData!.subjects : [];
   const rows = questionRows(data);
   const notice = questionError(data);   // in-body QX-absent notice (optional)
   return (
@@ -26,6 +33,21 @@ export default function Questions() {
       </header>
       {error ? <div role="alert" style={{ color: V.text, marginTop: 8 }}>{error}</div> : null}
       {notice ? <div data-testid="questions-notice" style={{ color: V.muted, marginTop: 8 }}>{notice}</div> : null}
+      {subjects.length ? (
+        <div data-testid="subject-filters" style={{ marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {subjects.map((s) => {
+            const active = subject === s;
+            return (
+              <button key={s} type="button" data-testid="subject-chip"
+                      aria-pressed={active}
+                      onClick={() => setSubject(active ? "" : s)}
+                      style={{ background: active ? ACTIVE_BG : V.subBg, color: active ? V.text : V.muted,
+                               border: `1px solid ${active ? V.accent : V.line}`, cursor: "pointer",
+                               fontSize: 11, borderRadius: 999, padding: "2px 8px", fontFamily: V.font }}>{s}</button>
+            );
+          })}
+        </div>
+      ) : null}
       <div style={{ marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>
         {QTYPES.map((t) => (
           <span key={t} data-testid="qtype-chip"
