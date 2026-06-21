@@ -9,8 +9,10 @@ _ITEM = re.compile(r"^-\s*(\d{3,4})\s*[—-]\s*(.+?)\s*$")
 
 
 def sim_url(sim_id: str) -> str:
+    # Canonical deployed URL is extensionless — the .html form 308-redirects to
+    # this; linking directly avoids the redirect hop and lands on a 200.
     n = str(sim_id).strip().zfill(4)
-    return f"{SITE}/sims/SIM{n}/SIM{n}_sim.html"
+    return f"{SITE}/sims/SIM{n}/SIM{n}_sim"
 
 
 def parse_deployed_sims(text: str) -> list[dict]:

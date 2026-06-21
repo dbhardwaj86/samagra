@@ -19,5 +19,5 @@ def test_parse_groups_and_urls():
     phys = [r for r in rows if r["subject"] == "Physics"][0]
     assert phys["grade"] == "Class 11" and phys["title"].startswith("Vector Algebra")
 def test_sim_url_pads():
-    assert sm.sim_url("18") == "https://pratyakshsims.com/sims/SIM0018/SIM0018_sim.html"
-    assert sm.sim_url("0466") == "https://pratyakshsims.com/sims/SIM0466/SIM0466_sim.html"
+    assert sm.sim_url("18") == "https://pratyakshsims.com/sims/SIM0018/SIM0018_sim"
+    assert sm.sim_url("0466") == "https://pratyakshsims.com/sims/SIM0466/SIM0466_sim"

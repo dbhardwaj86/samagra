@@ -10,7 +10,7 @@ def test_api_sims_reads_manifest(tmp_path, monkeypatch):
     assert r.status_code == 200
     body = r.json()
     assert body["total"] == 1
-    assert body["sims"][0]["url"].endswith("/sims/SIM0020/SIM0020_sim.html")
+    assert body["sims"][0]["url"].endswith("/sims/SIM0020/SIM0020_sim")
 
 def test_api_sims_absent_manifest(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "SIMS_ROOT", tmp_path)  # no manifest file
