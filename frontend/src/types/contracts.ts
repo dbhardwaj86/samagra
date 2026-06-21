@@ -98,3 +98,14 @@ export interface OrgChart {
   chairman: OrgPerson; board: OrgPerson[]; workers: OrgPerson[];
   owners: Record<string, { name: string; role: string }>;  // token -> identity (7 owner ids)
 }
+
+// ── Capture / sims / facets (control-plane: POST capture + read-only sims/facets) ──
+export type MunshiKind = "todo" | "note" | "followup";
+export interface MunshiCaptureForm { kind: MunshiKind; [field: string]: string; }
+export interface SeedForm { type: SeedType; title?: string; raw_text: string; source_ref?: string; }
+export type SeedType =
+  | "concept" | "question" | "snippet" | "simulation_idea"
+  | "experiment" | "notebooklm_link" | "rough_idea";
+export interface SimRow { id: string; title: string; subject: string | null; grade: string | null; url: string; }
+export interface SimsResponse { sims: SimRow[]; total: number; }
+export interface QuestionFacets { subjects: string[]; }
