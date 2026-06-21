@@ -36,3 +36,65 @@ export interface ApiClient {
   pipelines(): Promise<unknown>;
   assignments(): Promise<unknown>;
 }
+
+// ── Catalog / search (GET /api/search, /api/facets) ──────────────────────────
+export interface SearchResult {
+  uid: string; source: string; kind: string; title: string;
+  subject: string | null; unit: string | null; chapter: string | null;
+  status: string | null; path: string | null; url: string | null;
+  updated_at: string | null;
+  meta: Record<string, unknown>;     // parsed from meta_json
+  meta_json?: string;                 // raw string ALSO present on the wire
+}
+export interface SearchResponse { results: SearchResult[]; }
+export interface Facets { sources: string[]; kinds: string[]; subjects: string[]; }
+
+// ── Questions (GET /api/questions) ───────────────────────────────────────────
+export interface Question {
+  q_uid: string; slug: string; q_type: string | null;
+  subject: string | null; chapter: string | null;
+  difficulty: string | null; text: string | null;   // value is text_projection (a snippet)
+}
+export interface QuestionsResponse { results: Question[]; error?: string; }  // error OPTIONAL
+
+// ── Overview (GET /api/overview) — promote Dashboard's inline types ───────────
+export interface OverviewSource {
+  source: string; label: string; available: number;   // 0 | 1
+  n_artifacts: number; refreshed_at: string;
+  summary: Record<string, unknown>;
+  summary_json?: string;             // raw string ALSO present on the wire
+}
+export interface Overview { sources: OverviewSource[]; refreshed_at: string | null; }
+
+// ── Pipelines (GET /api/pipelines) ───────────────────────────────────────────
+export type PipelineStatus = "pending" | "in_progress" | "awaiting_gate" | "done" | "failed" | "blocked";
+export interface Phase {
+  status: PipelineStatus; owner: string | null; gate: boolean;
+  started: string | null; finished: string | null; artifacts: string[]; error: string | null;
+}
+export interface Pipeline {
+  pipeline: string; label: string; created: string; updated: string;
+  current: string; phases: Record<string, Phase>;     // keyed by phase NAME, not array
+}
+export interface PipelinesResponse { pipelines: Pipeline[]; }
+
+// ── Assignments + events (GET /api/assignments) ──────────────────────────────
+export type AssignmentStatus = "queued" | "running" | "in-review" | "approved" | "changes";  // HYPHEN
+export interface Assignment {
+  id: string; agent: string; outbox_path: string;
+  pipeline: string | null; seed_ref: string | null; artifact_ref: string | null;
+  expected_output: string | null; review_by: string | null;
+  status: AssignmentStatus; created_at: string; updated_at: string;
+}
+export interface EventItem {
+  id: number; ts: string; actor: string; verb: string;
+  assignment_id: string | null; subsystem: string | null; subsystem_ref: string | null; note: string | null;
+}
+export interface AssignmentsResponse { assignments: Assignment[]; events: EventItem[]; }
+
+// ── Org chart (GET /api/org — built in E2.1; shape mirrors samagra/org.py) ────
+export interface OrgPerson { id: string; name: string; role: string; }
+export interface OrgChart {
+  chairman: OrgPerson; board: OrgPerson[]; workers: OrgPerson[];
+  owners: Record<string, { name: string; role: string }>;  // token -> identity (7 owner ids)
+}
