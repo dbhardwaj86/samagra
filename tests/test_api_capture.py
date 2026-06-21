@@ -71,3 +71,29 @@ def test_munshi_capture_upstream_failure_502(monkeypatch):
     assert r.status_code == 502
     body = r.text
     assert "token" not in body and "munshi.internal" not in body and "abc123" not in body
+
+
+def test_mcd_seed_happy(monkeypatch):
+    captured = {}
+    class FakeMcd:
+        def available(self): return True
+        def create_seed(self, fields): captured.update(fields); return {"id": "s1", "status": "captured"}
+    monkeypatch.setattr(api_app, "McdClient", lambda: FakeMcd())
+    r = _client().post("/api/mcd/seeds", json={"type": "rough_idea", "raw_text": "idea"})
+    assert r.status_code == 200 and r.json()["seed"]["id"] == "s1"
+    assert captured == {"type": "rough_idea", "raw_text": "idea"}
+
+def test_mcd_seed_bad_type(monkeypatch):
+    monkeypatch.setattr(api_app, "McdClient", lambda: type("F", (), {"available": lambda s: True})())
+    r = _client().post("/api/mcd/seeds", json={"type": "nope", "raw_text": "x"})
+    assert r.status_code == 400
+
+def test_mcd_seed_empty_text(monkeypatch):
+    monkeypatch.setattr(api_app, "McdClient", lambda: type("F", (), {"available": lambda s: True})())
+    r = _client().post("/api/mcd/seeds", json={"type": "rough_idea", "raw_text": "  "})
+    assert r.status_code == 400
+
+def test_mcd_seed_unconfigured(monkeypatch):
+    monkeypatch.setattr(api_app, "McdClient", lambda: type("F", (), {"available": lambda s: False})())
+    r = _client().post("/api/mcd/seeds", json={"type": "rough_idea", "raw_text": "x"})
+    assert r.status_code == 503

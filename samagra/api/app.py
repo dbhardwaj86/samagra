@@ -194,6 +194,33 @@ def api_munshi_capture(payload: dict):
     return {"ok": True, "item": created}
 
 
+_SEED_TYPES = {"concept", "question", "snippet", "simulation_idea",
+               "experiment", "notebooklm_link", "rough_idea"}
+
+
+@app.post("/api/mcd/seeds")
+def api_mcd_create_seed(payload: dict):
+    typ = (payload or {}).get("type")
+    raw_text = str((payload or {}).get("raw_text") or "").strip()
+    if typ not in _SEED_TYPES:
+        raise HTTPException(400, "type must be one of: " + ", ".join(sorted(_SEED_TYPES)))
+    if not raw_text:
+        raise HTTPException(400, "raw_text is required")
+    client = McdClient()
+    if not client.available():
+        raise HTTPException(503, "mycontentdev not configured — set mcd-cloud.json adminKey")
+    fields = {"type": typ, "raw_text": raw_text}
+    for opt in ("title", "source_ref"):
+        v = str((payload or {}).get(opt) or "").strip()
+        if v:
+            fields[opt] = v
+    try:
+        created = client.create_seed(fields)
+    except Exception:  # noqa: BLE001
+        raise HTTPException(502, "mycontentdev seed create failed")
+    return {"ok": True, "seed": created}
+
+
 # -- SPA fallback (MUST be declared LAST) -------------------------------
 # Catch-all for client-side routes: serve the Vite-built index.html so the React
 # router can take over. Declared last so it never shadows the API, the lecture
