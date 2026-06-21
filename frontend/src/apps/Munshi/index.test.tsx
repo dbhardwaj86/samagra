@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 const useApiMock = vi.fn();
 vi.mock("../../hooks/useApi", () => ({ useApi: (p: string) => useApiMock(p) }));
@@ -28,5 +28,26 @@ describe("Munshi app", () => {
     render(<Munshi />);
     expect(screen.getByRole("alert")).toBeInTheDocument();
     expect(screen.getByTestId("munshi")).toBeInTheDocument();
+  });
+});
+
+describe("Munshi capture composer", () => {
+  beforeEach(() => {
+    useApiMock.mockReset();
+    useApiMock.mockReturnValue({ data: { results: [] }, loading: false, error: null });
+    vi.spyOn(globalThis, "fetch").mockImplementation((url) =>
+      Promise.resolve(new Response(
+        String(url).includes("/api/munshi/capture")
+          ? JSON.stringify({ ok: true, item: { item_id: 1 } })
+          : JSON.stringify({ results: [] }),
+        { status: 200, headers: { "content-type": "application/json" } })));
+  });
+  it("captures a todo", async () => {
+    render(<Munshi />);
+    fireEvent.change(screen.getByTestId("capture-kind"), { target: { value: "todo" } });
+    fireEvent.change(screen.getByLabelText("assignee"), { target: { value: "Ravi" } });
+    fireEvent.change(screen.getByLabelText("task"), { target: { value: "Call parent" } });
+    fireEvent.click(screen.getByTestId("capture-submit"));
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledWith("/api/munshi/capture", expect.objectContaining({ method: "POST" })));
   });
 });
