@@ -27,3 +27,47 @@ def test_munshi_capture_unconfigured(monkeypatch):
     monkeypatch.setattr(api_app, "MunshiClient", lambda: type("F", (), {"available": lambda s: False})())
     r = _client().post("/api/munshi/capture", json={"kind": "todo", "assignee": "A", "task": "T"})
     assert r.status_code == 503
+
+def test_munshi_capture_optional_field_passed(monkeypatch):
+    captured = {}
+    class FakeClient:
+        def available(self): return True
+        def create_item(self, kind, fields): captured.update(kind=kind, fields=fields); return {"item_id": 1}
+    monkeypatch.setattr(api_app, "MunshiClient", lambda: FakeClient())
+    r = _client().post("/api/munshi/capture", json={"kind": "todo", "assignee": "A", "task": "T", "due": "tmrw"})
+    assert r.status_code == 200
+    assert captured["fields"] == {"assignee": "A", "task": "T", "due": "tmrw"}
+
+def test_munshi_capture_strips_unknown_fields(monkeypatch):
+    captured = {}
+    class FakeClient:
+        def available(self): return True
+        def create_item(self, kind, fields): captured.update(kind=kind, fields=fields); return {"item_id": 2}
+    monkeypatch.setattr(api_app, "MunshiClient", lambda: FakeClient())
+    r = _client().post("/api/munshi/capture", json={
+        "kind": "todo", "assignee": "A", "task": "T",
+        "status": "done", "id": 99, "ts": "x", "label": "spoof",
+    })
+    assert r.status_code == 200
+    # only contract-allowed fields forwarded to the production write
+    assert captured["fields"] == {"assignee": "A", "task": "T"}
+
+def test_munshi_capture_nonstring_kind(monkeypatch):
+    monkeypatch.setattr(api_app, "MunshiClient", lambda: type("F", (), {"available": lambda s: True})())
+    r = _client().post("/api/munshi/capture", json={"kind": ["todo"], "assignee": "A", "task": "T"})
+    assert r.status_code == 400
+
+def test_munshi_capture_nonstring_required_value(monkeypatch):
+    monkeypatch.setattr(api_app, "MunshiClient", lambda: type("F", (), {"available": lambda s: True})())
+    r = _client().post("/api/munshi/capture", json={"kind": "todo", "assignee": 123, "task": "T"})
+    assert r.status_code == 400
+
+def test_munshi_capture_upstream_failure_502(monkeypatch):
+    class FakeClient:
+        def available(self): return True
+        def create_item(self, kind, fields): raise RuntimeError("secret: token=abc123 https://munshi.internal")
+    monkeypatch.setattr(api_app, "MunshiClient", lambda: FakeClient())
+    r = _client().post("/api/munshi/capture", json={"kind": "todo", "assignee": "A", "task": "T"})
+    assert r.status_code == 502
+    body = r.text
+    assert "token" not in body and "munshi.internal" not in body and "abc123" not in body

@@ -152,16 +152,36 @@ _MUNSHI_REQUIRED = {
     "note": ("student", "issue"),
     "followup": ("date", "note"),
 }
+# Contract passthrough — must mirror the TS buildMunshiCapture OPTIONAL whitelist
+# (frontend/src/lib/capture/munshi.ts). The server is the real trust boundary for
+# this production write, so it independently whitelists allowed fields.
+_MUNSHI_OPTIONAL = {
+    "todo": ("due",),
+    "note": ("label",),
+    "followup": ("person",),
+}
 
 
 @app.post("/api/munshi/capture")
 def api_munshi_capture(payload: dict):
     kind = (payload or {}).get("kind")
-    required = _MUNSHI_REQUIRED.get(kind)
-    if not required:
+    if not isinstance(kind, str) or kind not in _MUNSHI_REQUIRED:
         raise HTTPException(400, "kind must be one of: todo, note, followup")
-    fields = {k: v for k, v in payload.items() if k != "kind"}
-    missing = [k for k in required if not str(fields.get(k) or "").strip()]
+    required = _MUNSHI_REQUIRED[kind]
+    allowed = required + _MUNSHI_OPTIONAL[kind]
+    # Whitelist + sanitize: only contract-allowed keys with string values are
+    # forwarded to the live worker. Unknown keys (status, id, ts, ...) are dropped.
+    fields: dict[str, str] = {}
+    for k in allowed:
+        if k not in payload:
+            continue
+        v = payload[k]
+        if not isinstance(v, str):
+            raise HTTPException(400, f"field {k!r} must be a string")
+        v = v.strip()
+        if v:
+            fields[k] = v
+    missing = [k for k in required if k not in fields]
     if missing:
         raise HTTPException(400, f"missing required field(s): {', '.join(missing)}")
     client = MunshiClient()
