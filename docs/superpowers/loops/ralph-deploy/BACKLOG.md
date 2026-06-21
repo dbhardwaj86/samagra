@@ -28,12 +28,15 @@ should be one focused, committable unit.
     `/api` hit after cold server start and fires two calls (`/api/pipelines`+`/api/org`); at 3s it fully
     renders 5 pipeline cards. Cold-start latency only — note for any timed smoke test.
   - Drives A-2 (no-op, see below) and substantially satisfies A-3's live-data path.
-- [ ] **A-2 · Register missing app icons.** **AUDIT (A-1): NO missing glyphs** — all 17 AppIds have a
-  non-empty entry in `frontend/src/components/icons-data.ts` (dashboard, terminal, questions, lectures,
-  booklets, insp, sims, pipelines, assignments, org, munshi, mycontentdev, activity, clock, snake, notes,
-  settings) and every dock tile rendered a real `<svg>`. No fix needed → reduce A-2 to a **regression
-  test** asserting every `AppId` (from `registry.ORDER`) maps to a non-empty `ICONS[id]` (TDD: add to an
-  icons-data test). Then check off.
+- [x] **A-2 · Register missing app icons. DONE 2026-06-22.** A-1 found NO missing glyphs (all 17 AppIds
+  have a non-empty `ICONS` entry; every dock tile rendered a real `<svg>`), so no production fix was
+  needed. Locked it in with a **regression guard** `frontend/src/components/icons-data.test.ts` (TDD:
+  proved it bites — temporarily set `ICONS.pipelines=""` → test went RED with
+  `ICONS["pipelines"] is empty → empty-icon fallback`, then restored byte-identical). It asserts, keyed
+  off the authoritative `registry.ORDER`, that every launched AppId has real non-empty path data (each
+  `|`-segment non-empty, starts with `M`) and that `keys(ICONS) === keys(APPS)` — gaps the existing
+  `Icon.test.tsx` (`Object.keys(ICONS)` loop) could not catch. Gate: frontend **543 vitest / 62 files**
+  (+2) green; lint+tsc+`vite build` green. No backend change.
 - [ ] **A-3 · Data paths per app.** **AUDIT (A-1): live-data path VERIFIED** for all 17 against the real
   FastAPI backend (data apps show real catalog data; munshi/mcd show **live** data with `.env` creds;
   Activity/Assignments show correct graceful empties). **Remaining:** verify the **creds-absent** graceful
