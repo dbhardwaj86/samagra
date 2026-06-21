@@ -22,7 +22,7 @@ export default function Assignments() {
       </header>
       {error ? <div role="alert" style={{ color: V.text, marginTop: 8 }}>{error}</div> : null}
       <section aria-busy={loading} style={{ marginTop: 16, display: "grid",
-               gridTemplateColumns: `repeat(${KANBAN_COLUMNS.length}, 1fr)`, gap: 10 }}>
+               gridTemplateColumns: "repeat(auto-fit, minmax(96px, 1fr))", gap: 10 }}>
         {KANBAN_COLUMNS.map((c) => (
           <div key={c.key} data-testid="kanban-column"
                style={{ background: V.subBg, border: `1px solid ${V.line}`, borderRadius: 10, padding: 10 }}>

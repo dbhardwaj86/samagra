@@ -30,4 +30,18 @@ describe("Assignments app", () => {
     render(<Assignments />);
     expect(screen.getAllByTestId("kanban-column")).toHaveLength(5);
   });
+  // A-5 (ship loop) mobile no-overflow guard: in the phone frame the screen is
+  // overflow:hidden, so a rigid `repeat(5, 1fr)` board (1fr has a min-content floor)
+  // overflows ~15px and gets CLIPPED. The fix uses auto-fit + minmax so the 5 columns
+  // reflow/shrink on a narrow screen (and still fill the row on desktop). jsdom can't
+  // measure layout, so assert the shrink-capable CSS contract that prevents the clip.
+  it("kanban grid is shrink-capable, not a rigid 5×1fr (A-5 mobile-overflow guard)", () => {
+    useApiMock.mockReturnValue({ data: { assignments: [], events: [] }, loading: false, error: null });
+    render(<Assignments />);
+    const section = screen.getAllByTestId("kanban-column")[0].parentElement as HTMLElement;
+    const tmpl = section.style.gridTemplateColumns;
+    expect(tmpl).toMatch(/auto-fit/);
+    expect(tmpl).toMatch(/minmax/);
+    expect(tmpl).not.toMatch(/repeat\(\s*5/); // the rigid template that clipped
+  });
 });

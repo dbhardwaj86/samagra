@@ -23,7 +23,7 @@ export default function Insp() {
         <h1 style={{ color: V.text, fontSize: 18, margin: 0 }}>INSP / Olympiad</h1>
       </header>
       {error ? <div role="alert" style={{ color: V.text, marginTop: 8 }}>{error}</div> : null}
-      <section data-testid="catalog-list" aria-busy={loading} style={{ marginTop: 16, display: "grid", gap: 8 }}>
+      <section data-testid="catalog-list" aria-busy={loading} style={{ marginTop: 16, display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 8 }}>
         {rows.length === 0 ? (
           <div data-testid="catalog-empty" style={{ color: V.muted }}>
             {loading ? "Loading…" : "No INSP/Olympiad sets yet — run a catalog refresh."}
@@ -32,8 +32,8 @@ export default function Insp() {
           <article key={r.uid} data-testid="catalog-row"
                    style={{ background: V.cardBg, border: `1px solid ${V.line}`, borderRadius: 10,
                             padding: "10px 12px", display: "flex", justifyContent: "space-between", gap: 12 }}>
-            <div>
-              <div style={{ color: V.text, fontWeight: 600 }}>{r.title}</div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ color: V.text, fontWeight: 600, overflowWrap: "break-word" }}>{r.title}</div>
               <div style={{ color: V.muted, fontSize: 12 }}>{r.kind}</div>
             </div>
             {r.href ? (

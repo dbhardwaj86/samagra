@@ -29,4 +29,25 @@ describe("INSP app", () => {
     render(<Insp />);
     expect(screen.getByTestId("catalog-empty")).toBeInTheDocument();
   });
+  // A-5 (ship loop) mobile no-overflow guard: catalog-row is a flex row; without
+  // min-width:0 on the text block a long unbreakable title forces ~145px of horizontal
+  // overflow that the phone screen (overflow:hidden) clips. Assert the shrink-enabling
+  // contract (min-width:0 + break-word) so a revert re-introduces the clip-test red.
+  it("catalog row title block can shrink (A-5 mobile-overflow guard)", () => {
+    useApiMock.mockReturnValue({ data, loading: false, error: null });
+    render(<Insp />);
+    const titleBlock = screen.getByTestId("catalog-row").firstElementChild as HTMLElement;
+    expect(titleBlock.style.minWidth).toMatch(/^0(px)?$/);
+    const titleText = titleBlock.firstElementChild as HTMLElement;
+    expect(titleText.style.overflowWrap).toBe("break-word");
+  });
+  it("catalog list column is width-capped, not auto-grow (A-5 mobile-overflow guard)", () => {
+    useApiMock.mockReturnValue({ data, loading: false, error: null });
+    render(<Insp />);
+    // Without an explicit column the implicit `auto` track grows to the rows' max-content
+    // (long single-line titles) and overflows the phone screen. minmax(0,1fr) caps it to
+    // the container so rows wrap instead of forcing ~145px of clipped horizontal overflow.
+    const tmpl = screen.getByTestId("catalog-list").style.gridTemplateColumns;
+    expect(tmpl).toMatch(/minmax\(\s*0/);
+  });
 });

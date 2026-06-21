@@ -57,8 +57,26 @@ should be one focused, committable unit.
   banner already present: frontend `Questions/index.tsx` renders `error`/`questions-notice`/
   `questions-degraded`; backend `tests/test_api_questions.py::test_graceful_when_qx_unreachable` proves a
   QX "connection refused" returns a graceful `{error: "…unavailable…"}` (no 500). No code change needed.
-- [ ] **A-5 · Mobile pass.** In the phone frame, open every app via the grid + favorites dock; fix
-  overflow/clipping; verify open → Home for each. Screenshot a representative set.
+- [x] **A-5 · Mobile pass. DONE 2026-06-22.** Switched to mobile device mode (desktop right-click →
+  "Switch to Mobile") and walked all **17 apps** in the phone frame (`shell/Mobile.tsx`, 392×812) via the
+  17-app grid + 4-app favorites dock. **Result: 17/17 open, render real data, and open → Home works; max
+  horizontal overflow now 1px** (sims sub-pixel rounding) — **0 console errors**. Found & FIXED **2 real
+  clipping bugs** (the phone screen is `overflow:hidden`, so horizontal overflow is *cut off*, not
+  scrollable):
+  - **INSP** was **145px** over (content 522 vs 377 screen): the `catalog-list` `<section>` had no
+    explicit grid column, so its single implicit `auto` track grew to the rows' max-content (long
+    single-line filename titles). Fixed with `gridTemplateColumns: minmax(0,1fr)` (caps the column to
+    the container) **and** `minWidth:0` + `overflowWrap:break-word` on the flex title block (so long
+    unbreakable tokens wrap). Re-measured **0px**, titles wrap, 136 rows.
+  - **Assignments** was **15px** over: the rigid `repeat(5, 1fr)` kanban grid (`1fr` has a min-content
+    floor). Fixed with `repeat(auto-fit, minmax(96px,1fr))` — the 5 columns reflow to 3+2 rows on the
+    phone yet still fill the row on desktop (test still sees 5 columns). Re-measured **0px**.
+  Added **3 durable regression guards** (jsdom has no layout engine, so they assert the shrink-capable
+  CSS contract — all provably bite vs the prior source): Assignments grid uses `auto-fit`+`minmax` (not
+  `repeat(5`); INSP title block has `min-width:0` + `overflow-wrap:break-word`; INSP list column is
+  `minmax(0,…)`. Gates: **frontend 546 vitest / 62 files** (+3) + lint+tsc+`vite build ✓`; **backend 154
+  pytest / 0 failures** (no backend change). Browser proof: home-grid, Assignments (reflowed 3+2), INSP
+  (wrapped titles) screenshots.
 - [ ] **A-6 · Theme pass.** Exercise console + samagra across every app + the shell chrome; fix any
   aqua-only leakage; confirm windows open/clamp correctly per theme (E3 theme-aware WM geometry).
 - [ ] **A-7 · Console-error sweep.** Across every app × {pc, mobile} × {aqua, console, samagra}, confirm
@@ -110,3 +128,12 @@ _(loop appends new tasks and `BLOCKED:` notes here)_
   must start/health-check `:8783` alongside `:8799`; **B-5** runbook must document it. Keep `:8783`
   internal — only `:8799` is tunnelled (reached via the same-origin `/api/questions` proxy). If QX isn't
   running, Questions degrades gracefully (banner) rather than 500 — verified.
+- **D-5 · Driving mobile mode in the browser (2026-06-22).** The stores aren't on `window`. To enter
+  mobile: dispatch a `contextmenu` MouseEvent on `#samagra-os-shell` (the bare-desktop handler checks
+  `e.target===e.currentTarget`, so dispatching on the shell node itself passes) → click the
+  `button[role=menuitem]` "Switch to Mobile". **Mobile mode has NO desktop context menu** (by design —
+  no right-click on a phone), so to switch *back* to PC use the Settings app DEVICE toggle **or** just
+  reload (`device` is in-memory, defaults `pc`, `stores/theme.ts:36`). Launchers are
+  `[data-testid=mobile-grid] button[title="<AppName>"]`; Home is `[data-testid=mobile-home-indicator]`.
+  Overflow/clip metric: `mobile-app.scrollWidth - clientWidth` (screen is `overflow:hidden`). Reused by
+  A-6/A-7.
