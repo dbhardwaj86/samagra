@@ -49,13 +49,25 @@ export interface SearchResult {
 export interface SearchResponse { results: SearchResult[]; }
 export interface Facets { sources: string[]; kinds: string[]; subjects: string[]; }
 
-// ── Questions (GET /api/questions) ───────────────────────────────────────────
+// ── Questions (GET /api/questions) — proxied from the live QX engine ──────────
+export type QuestionMode = "exact" | "semantic";
 export interface Question {
   q_uid: string; slug: string; q_type: string | null;
-  subject: string | null; chapter: string | null;
-  difficulty: string | null; text: string | null;   // value is text_projection (a snippet)
+  subject: string | null; chapter: string | null; difficulty: string | null;
+  snippet: string;   // flat text_projection preview
+  html: string;      // QX-rendered question HTML (KaTeX maths + figure <img>)
 }
-export interface QuestionsResponse { results: Question[]; error?: string; }  // error OPTIONAL
+export type FacetPair = [string, number];   // [value, count]
+export interface QuestionFacetCounts {
+  subject: FacetPair[]; chapter: FacetPair[]; qtype: FacetPair[];
+}
+export interface QuestionsResponse {
+  results: Question[];
+  total: number; page: number; page_size: number;
+  mode: QuestionMode; degraded: boolean;     // degraded = semantic asked, exact served
+  facets: QuestionFacetCounts;
+  error?: string;                            // present (HTTP 200) when QX is unreachable
+}
 
 // ── Overview (GET /api/overview) — promote Dashboard's inline types ───────────
 export interface OverviewSource {

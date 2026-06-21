@@ -10,5 +10,6 @@ from __future__ import annotations
 
 from .mcd_client import McdClient
 from .munshi_client import MunshiClient
+from .qx_client import QxClient
 
-__all__ = ["McdClient", "MunshiClient"]
+__all__ = ["McdClient", "MunshiClient", "QxClient"]

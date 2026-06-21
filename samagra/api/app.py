@@ -15,9 +15,9 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 import samagra
-from .. import catalog, config, scheduler, sims_manifest, state
+from .. import catalog, config, questions_proxy, scheduler, sims_manifest, state
 from ..adapters import get_adapter
-from ..clients import McdClient, MunshiClient
+from ..clients import McdClient, MunshiClient, QxClient
 from ..governance import store as gstore
 from ..lectures import render as lecture_render
 from ..org import ORG  # E2.1 static org chart
@@ -81,12 +81,20 @@ def api_search(q: str = "", source: str | None = None,
 @app.get("/api/questions")
 def api_questions(q: str = "", subject: str | None = None,
                   chapter: str | None = None, qtype: str | None = None,
-                  limit: int = 50):
-    qx = get_adapter("qx")
-    if not qx or not qx.available():
-        return {"results": [], "error": "QX source not present"}
-    return {"results": qx.search_questions(
-        q, subject=subject, chapter=chapter, qtype=qtype, limit=limit)}
+                  mode: str = "exact", page: int = 1):
+    # Proxy the always-up QX engine (gui/qx_browser.py :8783) which owns the real
+    # exact + semantic search, KaTeX maths and figure rendering. QX renders the
+    # question HTML with relative /asset URLs -> absolutize them to the QX server
+    # so figures load. QX unreachable -> graceful empty + error (never a 500).
+    client = QxClient()
+    try:
+        payload = client.search(q=q, mode=mode, subject=subject,
+                                chapter=chapter, qtype=qtype, page=page)
+    except Exception:  # noqa: BLE001 — connection refused / timeout / bad JSON
+        return {"results": [], "total": 0, "page": page, "page_size": 0,
+                "mode": mode, "degraded": False, "facets": {},
+                "error": "questions backend unavailable — is the QX server running on :8783?"}
+    return questions_proxy.absolutize_assets(payload, client.base_url)
 
 
 @app.get("/api/pipelines")

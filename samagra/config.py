@@ -51,6 +51,11 @@ QUESTIONDB_URL = os.environ.get(
     "SAMAGRA_QUESTIONDB_URL", "https://dbhardwaj86-questiondb.hf.space"
 )
 
+# --- QX live server (the question engine, run locally as a sidecar) ---
+# `python gui/qx_browser.py` -> :8783 exposes GET /api/qsearch (exact + semantic
+# search with rendered maths + figures). SAMAGRA's /api/questions proxies it.
+QX_SERVER_URL = os.environ.get("SAMAGRA_QX_SERVER_URL", "http://127.0.0.1:8783")
+
 # --- SAMAGRA-owned data (all gitignored) ---
 # DATA_DB is the REBUILDABLE catalog (FTS5 index over the subsystems); it may be
 # deleted and rebuilt at will. GOVERNANCE_DB is the DURABLE governance store
