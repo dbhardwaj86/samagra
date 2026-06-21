@@ -5,7 +5,8 @@
       "name": "samagra",
       "runtimeExecutable": ".venv/Scripts/python.exe",
       "runtimeArgs": ["-m", "uvicorn", "samagra.api.app:app", "--host", "127.0.0.1", "--port", "8799"],
-      "port": 8799
+      "port": 8799,
+      "autoPort": false
     },
     {
       "name": "samagra-os-ui",

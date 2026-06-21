@@ -17,15 +17,27 @@ should be one focused, committable unit.
   binary + pre-emptive Phase-B tunnel-secret patterns (`*.pem`, `cloudflared/*.json`, `mcd-cloud.json`).
 
 ## Phase A — make it fully working (functional DoD A1–A8)
-- [ ] **A-1 · Production-serve audit.** `npm run build`, start uvicorn `:8799`, and with the `preview_*`
-  tools open EACH of the 17 apps (aqua/pc). Screenshot each; record every broken/empty window or
-  empty-icon glyph in a checklist here. (This drives A-2…A-7.)
-- [ ] **A-2 · Register missing app icons.** Fix any empty-icon fallback in
-  `frontend/src/components/icons-data.ts` so every app glyph renders a real `<svg>` (FD2) — likely some
-  E2 apps. Add/extend the icon tests.
-- [ ] **A-3 · Data paths per app.** For each app, confirm it renders real data from `/api/*` when
-  FastAPI-served; creds-gated munshi/mcd show graceful states without creds and live data with them.
-  Fix any app that renders empty/errored against the real backend.
+- [x] **A-1 · Production-serve audit. DONE 2026-06-22.** Built `dist/` (via `npm run verify`), served by
+  FastAPI on `:8799` (preview-owned; killed a stale orphan uvicorn first — see Discovered). Walked all
+  **17 apps in aqua/pc** with `preview_*` (dock-launcher click → read window `[role=dialog]` innerText →
+  close). **Result: 17/17 open and render real data — 0 empty windows, 0 empty-icon glyphs, 0 console
+  errors.** Evidence: Dashboard + Pipelines screenshots; per-app innerText capture (Org tree, Questions
+  search+facets 7KB, Lectures 4.5KB, INSP 6KB, Simulations 24KB, Munshi **live** items w/ creds, mcd
+  live seeds, Notes/Clock/Terminal/Snake interactive, Activity+Assignments graceful empties, Settings).
+  - **Non-bug found & cleared:** Pipelines first appeared empty at a 1.4s batch wait — it's the *first*
+    `/api` hit after cold server start and fires two calls (`/api/pipelines`+`/api/org`); at 3s it fully
+    renders 5 pipeline cards. Cold-start latency only — note for any timed smoke test.
+  - Drives A-2 (no-op, see below) and substantially satisfies A-3's live-data path.
+- [ ] **A-2 · Register missing app icons.** **AUDIT (A-1): NO missing glyphs** — all 17 AppIds have a
+  non-empty entry in `frontend/src/components/icons-data.ts` (dashboard, terminal, questions, lectures,
+  booklets, insp, sims, pipelines, assignments, org, munshi, mycontentdev, activity, clock, snake, notes,
+  settings) and every dock tile rendered a real `<svg>`. No fix needed → reduce A-2 to a **regression
+  test** asserting every `AppId` (from `registry.ORDER`) maps to a non-empty `ICONS[id]` (TDD: add to an
+  icons-data test). Then check off.
+- [ ] **A-3 · Data paths per app.** **AUDIT (A-1): live-data path VERIFIED** for all 17 against the real
+  FastAPI backend (data apps show real catalog data; munshi/mcd show **live** data with `.env` creds;
+  Activity/Assignments show correct graceful empties). **Remaining:** verify the **creds-absent** graceful
+  states for munshi/mcd (temporarily unset creds, confirm no 500 / friendly empty), then check off.
 - [ ] **A-4 · Questions ⇄ QX.** Start the QX sidecar `:8783`; verify Questions exact + semantic + KaTeX
   + figures through the tunnel-bound backend. Add a health-check banner when QX is down (don't 500).
 - [ ] **A-5 · Mobile pass.** In the phone frame, open every app via the grid + favorites dock; fix
@@ -65,3 +77,13 @@ should be one focused, committable unit.
 ---
 ### Discovered / blocked (append below)
 _(loop appends new tasks and `BLOCKED:` notes here)_
+
+- **D-1 · Stale orphan uvicorn on `:8799` (2026-06-22, handled).** On entry, a prior-session `python`
+  uvicorn (PID from `01:37`) still held `:8799` (the gotcha HANDOFF §2 warned about). A-1 killed it and
+  let `preview_start` own a fresh serve. **Action for B-1:** the bring-up script should detect/clear a
+  stale `:8799` listener before starting (and likewise the QX `:8783`).
+- **D-2 · `preview_start` must own the server.** It refuses to attach to an externally-started uvicorn;
+  set `"autoPort": false` on the `samagra` config in `.claude/launch.json` (done) and free `:8799` first,
+  then `preview_start({name:"samagra"})` spawns it on 8799. Recorded so later UI iterations don't re-derive.
+- **D-3 · Cold-start latency.** First `/api/*` request after uvicorn start can take ~2–3s (catalog/init).
+  Any automated smoke/health check must allow for it (warm the server with one request before asserting).
