@@ -12,7 +12,7 @@
 
 ---
 
-> **⚠ Coherence note (OPEN — added 2026-06-21 by a coherence audit; owner has not yet ratified).**
+> **✅ Coherence decision (RATIFIED 2026-06-21 by Deepak, Founder & Chairman; supersedes the OPEN finding).**
 > This spec re-adopts "OS" as the product metaphor, but the **2026-06-19 evolution spec deliberately
 > *retired* the word "OS"** — *"it silently licenses OS-sized scope"* — and bound SAMAGRA to an
 > **attention-ROI north-star + a kill-criterion** (freeze if not saving the owner ~3 hrs/wk by Phase 2). An
@@ -20,13 +20,13 @@
 > COHERENT-WITH-CAVEATS)** found this track *half-reconciles* the reversal (it argues §1's "honest shape of the
 > work" and firewalls write paths) but **never restates the attention-ROI metric or the kill-criterion**, and
 > parks the value-producing active loop while OS chrome (3 themes, a Snake game, mobile mode) grows; the "frugal"
-> value sits unaddressed. **Recommended (PROPOSED, not ratified):** (1) frame SAMAGRA OS as a *bounded operator
+> value sits unaddressed. **Decided (now BINDING — see HANDOFF DEC-1…DEC-5; firewall in §3, gate in §2):** (1) frame SAMAGRA OS as a *bounded operator
 > console / UI-metaphor only* — no app-platform scope; (2) restate the attention-ROI north-star + ~3 hrs/wk
 > kill-criterion as still binding (data source = the governance `events`/`review_overlay` ledger); (3) add a
 > scope firewall to §3 non-goals (no entertainment apps beyond E1's Snake, no third-party apps/marketplace, no
 > process-scheduler model, no user-facing identity); (4) add an attention-ROI acceptance gate before E3; (5) give
 > Phase 3 a dated restart commitment after the E2 visual-QA pass. Full write-up: `HANDOFF.md` → *Direction-coherence
-> finding (OPEN)*; reviews in `docs/superpowers/_research/samagra-os/_vision-review-output.md`.
+> DECISION (ratified 2026-06-21)*; reviews in `docs/superpowers/_research/samagra-os/_vision-review-output.md`.
 
 ## 1. Overview & goal
 
@@ -81,10 +81,20 @@ full green gate before the next begins.
 Min window size **360×280**. Aqua chrome: top bar **30px**, Dock bottom-center radius 20,
 window radius 13, traffic-light controls on the **left**.
 
+> **E3 is gated (DEC-4, ratified 2026-06-21).** Before any E3 work (mobile device mode / further theme polish)
+> begins, an **attention-ROI acceptance gate** must pass: 2–3 representative operator tasks measured for owner
+> time-saved via SAMAGRA OS vs the old portal; **fail → freeze GUI expansion and reprioritize Phase 3** (the
+> active loop). The attention-ROI north-star + kill-criterion (the 2026-06-19 vision §1) remain **binding**
+> (DEC-2). See `HANDOFF.md` → *Direction-coherence DECISION*.
+
 ---
 
 ## 3. Non-goals
 
+- **Scope firewall (DEC-3, ratified 2026-06-21).** SAMAGRA OS is a **bounded operator console — a UI metaphor
+  only.** No entertainment apps beyond E1's Snake; no third-party apps / app marketplace; no process- or
+  scheduler-as-platform model; no user-facing product identity. SAMAGRA stays a control plane and does **not**
+  acquire app-platform scope — adding any of these is a Chairman decision, not routine engineering.
 - **No new write paths.** Every backend touch in E2 is **read-only**. Munshi's prototype has a
   live capture input + mic FAB; the backend adapter is **intake/read-only** and there is **no
   write endpoint** — capture/write is explicitly out of scope. The human publish gate stays the

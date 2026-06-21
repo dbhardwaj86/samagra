@@ -114,7 +114,7 @@
 > (`catalog.py:199`) can never equal the question bank's subject vocabulary; the durable read-only fix is
 > question-scoped facets (`qx.summary().subjects`), not catalog-wide facets.
 
-## ⚠ Direction-coherence finding (OPEN — owner decision; audited 2026-06-21)
+## ✅ Direction-coherence DECISION (RATIFIED 2026-06-21 by Deepak, Founder & Chairman)
 
 A dedicated coherence audit this session — an independent **Codex vision review** plus a **multi-agent
 implementation audit** (4 mappers + 4 verifiers, live test runs) — found **execution coherence strong but
@@ -137,26 +137,36 @@ and live suites are **backend 106 pytest + frontend 501 vitest** green. **The dr
   reviews: `docs/superpowers/_research/samagra-os/_vision-review-output.md` (+ `_vision-review-prompt.md`,
   `_vision-review.log`); audit synthesis is summarised in STATUS.html → *Direction coherence*.
 
-**Recommended reconciliation — PROPOSED, NOT yet ratified (owner's call):**
-1. Frame SAMAGRA OS explicitly as a **bounded operator console / UI metaphor only** — SAMAGRA stays a control
-   plane and does **not** gain app-platform scope.
-2. **Restate the attention-ROI north-star + the ~3 hrs/wk kill-criterion as still binding**, with the governance
-   `events`/`review_overlay` ledger as the data source.
-3. Add a **scope firewall** to the OS spec non-goals: no entertainment apps beyond E1's Snake, no third-party
-   apps / marketplace, no process-scheduler model, no user-facing product identity.
-4. Add an **attention-ROI acceptance gate before E3**: 2–3 concrete operator tasks with *measured* time-saved
-   vs the old portal must pass before any further theme/mobile polish.
-5. Give **Phase 3 (active loop) a dated restart commitment** after the E2 visual-QA pass — it is the primary
-   value engine, not optional.
+**Decision (ratified 2026-06-21 by Deepak — these are now BINDING):**
+1. **DEC-1 · Scope.** SAMAGRA OS is a **bounded operator console — a UI metaphor only.** SAMAGRA remains a
+   control plane; it does **not** acquire app-platform scope. The windowing GUI is inward-facing operator
+   infrastructure, never a product.
+2. **DEC-2 · North-star binding.** The **attention-ROI north-star** (minutes-of-owner-attention per published
+   artifact) and the **kill-criterion** from the 2026-06-19 vision remain **BINDING** and are not voided by the
+   OS track. Data source = the governance `events`/`review_overlay` ledger. (The ~3 hrs/wk figure stays the seed
+   proposal; the owner ratifies the exact threshold when the DEC-4 gauge first runs.)
+3. **DEC-3 · Scope firewall** (now a hard non-goal, mirrored into OS spec §3): **no** entertainment apps beyond
+   E1's Snake; **no** third-party apps / app marketplace; **no** process- or scheduler-as-platform model; **no**
+   user-facing product identity. Adding any of these is a Chairman decision, not routine engineering.
+4. **DEC-4 · Attention-ROI acceptance gate before E3.** Before any E3 work (mobile device mode / further theme
+   polish) begins, a gate must pass: pick **2–3 representative operator tasks** (e.g. (a) triage the day's munshi
+   captures into seed-candidates vs ops; (b) read pipeline + gate status across all 5 pipelines; (c) locate and
+   open a specific catalog artifact — owner-confirmable), **measure owner wall-clock time** doing each via
+   SAMAGRA OS vs the prior tabbed portal / point tools. **Pass** = the GUI demonstrably *reduces* total owner
+   time (net-positive attention-ROI). **Fail** = freeze GUI expansion (per DEC-2's kill-criterion) and
+   reprioritize Phase 3.
+5. **DEC-5 · Phase 3 is the primary value engine.** The active loop (munshi → seed → board-approve → publish)
+   restarts **after the E2 visual-QA pass and the DEC-4 gate**, ahead of further theme/mobile polish — it is not
+   optional. (No calendar date is set; it is gated on those two conditions.)
 
-Until the owner ratifies, treat the above as an **open question**, not a decided position. (This finding is
-recorded across the spec, STATUS.html and SUMMARY.html so it is no longer invisible.)
+This decision is recorded across STATUS.html (*Direction coherence*), SUMMARY.html, both specs and CLAUDE.md, so
+it travels with the project. Reviews that informed it: `docs/superpowers/_research/samagra-os/_vision-review-output.md`.
 
 **Single next-action order (reconciled this session):**
 1. Fix the Questions facets bug (read-only; `npm run verify` green) — see ⚠ KNOWN BUG above.
 2. Owner **browser-vision pixel-QA** pass over the E1 shell + the 11 E2 apps.
-3. **Ratify the direction-coherence finding** above; if accepted, add the attention-ROI gate (§4).
-4. **E3** — mobile device mode + remaining per-theme re-skin polish.
+3. **Run the DEC-4 attention-ROI acceptance gate** — required to pass before any E3 work begins.
+4. **E3** — mobile device mode + remaining per-theme re-skin polish (gated on DEC-4).
 
 (Backend pytest exits 1 on Windows from a tmpdir symlink-cleanup teardown *after* all 106 pass — cosmetic, not
 a failure; run with `--basetemp` to silence.)

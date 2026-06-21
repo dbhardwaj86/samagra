@@ -363,17 +363,19 @@
         <div class="ph"><span class="s later">later</span><div class="n">The one write</div><div class="d">Turn a phone note into a draft idea. (After the control room.)</div></div>
       </div>
       <p class="muted" style="margin-top:22px">Earlier: the governance layer was built and switched on — a place to track who's assigned what, a record of every decision, and an advisory code gate that asks a reviewer before risky changes land (it warns, can be overridden with a logged reason, and a broken reviewer never blocks work; only the human publish step is ever a hard stop). <strong>Now (20 Jun): the control room's first floor is built — and dressed.</strong> SAMAGRA OS — an OS-style screen with windows, a dock, and small built-in apps (a clock, notes, a terminal, a calculator-style settings panel, a game) — is up and running on tested foundations, and it now comes in <strong>three looks</strong> (a light one, a dark "mission-control" one, and a warm Indian-editorial one) with proper hand-drawn icons everywhere instead of plain letters. The trick that makes it solid: every piece of real behaviour (how windows move and stack, how the clock and game tick, how the terminal reads commands) lives in small, separately-tested building blocks — so the screen is now checked by <strong>439 automated tests, all green</strong>, on top of the backend's 102. Windows now drag and resize, every screen (in all three looks) has a right-click menu, and the whole thing is addressed to the chairman by name (Deepak Bhardwaj). The tests also lock down the look details a machine <em>can</em> judge: the right icons are drawn, each look uses its own colours, the window buttons are labelled. All of this has now been <strong>folded into the main build and published to the shared copy</strong>. <strong>Now (21 Jun): the real tool screens are in.</strong> Eleven of them — the org chart, the pipelines board, lectures, questions, booklets, the assignments board, the activity log, and more — now open as windows inside the control room, each one <strong>read-only</strong> (it only shows what's there; it never changes anything). Same trick as before: the real work lives in small, separately-tested building blocks, so these screens add up to <strong>501 automated tests, all green</strong> (plus the backend's 106, which gained a tiny new "who's who" lookup for the org chart). A reviewer (Codex) looked the batch over and gave the <strong>go-ahead</strong>, with three middling fixes made first: the worker list now shows "Gemini+NotebookLM" as one line, the pipelines screen spells out owner names properly, and the list screens make web links clickable. A couple of other things got tidied along the way: the org chart's who-reports-to-whom was corrected (Claude-Deepak is the CEO, Claude-Khanak the CTO), and a <strong>real bug from the earlier build was caught and fixed</strong> — when the screen was served the normal way (not the developer's preview), the app windows were coming up <em>empty</em>; a packaging setting was quietly leaving every app out of the shipped bundle. That's now fixed, so every window fills in properly. This new batch is now <strong>reviewed, folded into the main build, and published to the shared copy</strong> (21 Jun). What's still left is the one thing tests can't judge — a <strong>person eyeballing each screen against the design pictures</strong> to confirm it truly looks right (a few of the new app icons may still show a blank placeholder — a small polish item). That look-check hasn't happened, so we are <em>not</em> claiming a pixel-perfect match. <strong>Next:</strong> the eyeball pass over the eleven screens (now that they show up properly when served the normal way) — and after that, a phone version. The single write (a phone note → a draft idea) comes last.</p>
-      <div class="card" style="margin-top:22px; border-color:var(--accent-line)">
-        <h3><span class="dot" style="background:var(--warn)"></span>One open question we're now tracking</h3>
+      <div class="card" style="margin-top:22px; border-color:var(--good)">
+        <h3><span class="dot" style="background:var(--good)"></span>A course-correction we just made (21 Jun)</h3>
         <p style="color:var(--muted); font-size:15px; line-height:1.6">We've been building the <strong>control
         room</strong> (the screens) ahead of the <strong>one write</strong> — turning a phone note into a draft,
         the part that actually saves Deepak time. A coherence check this session asked the honest question: is a
         full "OS-style" desktop the right thing to build first, or is it quietly growing bigger than a one-person
-        back-office tool needs? Two independent reviews said the build is solid but the <em>direction</em> has
-        drifted from the original plan, which had deliberately dropped the word "OS". The recommendation: keep the
-        control room as a <strong>plain operator console</strong> (not a product), <strong>write the "is it saving
-        time?" test back down</strong>, and <strong>get back to the one write soon</strong>. Nothing is decided
-        yet — it's flagged for Deepak to call.</p>
+        back-office tool needs? Two independent reviews said the build is solid but the <em>direction</em> had
+        drifted from the original plan, which had deliberately dropped the word "OS". <strong>Deepak's call (now
+        decided):</strong> keep the control room a <strong>plain operator console</strong> — a way to see and run
+        the work, never a product; <strong>no new toys</strong> (no games beyond the one we have, no app store, no
+        outside apps); and <strong>before we build a phone version, we measure it</strong> — does the control room
+        actually save time on a few real tasks versus the old way? If not, we stop dressing it up and get back to
+        the one write. The one write stays the real prize.</p>
       </div>
     </section>
 
@@ -389,6 +391,8 @@
             <li>Reuse the <strong>existing topic list</strong><small>~100 tags we already have — never a sprawling map.</small></li>
             <li>First self-driving lane is <strong>refreshing read-only data</strong><small>The safest possible thing to automate — and only later.</small></li>
             <li>Published work <strong>may go public</strong><small>Through a separate front — never SAMAGRA itself.</small></li>
+            <li>The control room stays a <strong>plain console</strong><small>A way to see and run the work — never a product; no extra apps or games.</small></li>
+            <li><strong>Measure before building more</strong><small>A phone version waits until the screens prove they save real time.</small></li>
           </ul>
         </div>
         <div class="col">

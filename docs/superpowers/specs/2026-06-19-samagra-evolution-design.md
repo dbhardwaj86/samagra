@@ -4,14 +4,16 @@
 **Supersedes planning in:** `SAMAGRA-HANDOFF.md` (§9 open questions, all now decided)
 **Integration contracts in this doc were verified** against the live repos on 2026-06-19 (read-only fan-out, 5 agents). File/line citations are real.
 
-> **▶ 2026-06-21 coherence-audit pointer (OPEN).** The project's *current* top priority pivoted to a literal
+> **▶ 2026-06-21 coherence DECISION (ratified by Deepak).** The project's *current* top priority pivoted to a literal
 > "SAMAGRA OS" windowing GUI (see `specs/2026-06-20-samagra-os-experience-design.md`) — which re-introduces the
 > "OS" framing this spec **deliberately retired in §1**, and parks the Phase-3 active loop (§8) below it. A
 > coherence audit flagged this as a direction drift (Codex vision review: **DRIFTING**; implementation audit:
 > **COHERENT-WITH-CAVEATS**). **The attention-ROI north-star (§1) and the kill-criterion (§1) remain the binding
-> test and have NOT been voided.** This is an **open owner decision** — see `HANDOFF.md` → *Direction-coherence
-> finding (OPEN)*. The phased plan (rename → adapters → governance → active loop) is unchanged on the merits;
-> only the *sequencing* (GUI ahead of the value-producing loop) is the open question.
+> test and have NOT been voided.** **Ratified 2026-06-21:** SAMAGRA OS is bounded to a *UI-metaphor operator
+> console* (scope firewall + a pre-E3 attention-ROI gate; DEC-1…DEC-5), and Phase 3 (the active loop) restarts
+> after the E2 visual-QA pass + that gate — see `HANDOFF.md` → *Direction-coherence DECISION*. The phased plan
+> (rename → adapters → governance → active loop) is unchanged on the merits; the *sequencing* (GUI first) is now
+> bounded and conditional, not open-ended.
 
 ---
 

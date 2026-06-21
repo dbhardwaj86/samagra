@@ -58,7 +58,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
 </head>
 <body>
 <header class="top">
-  <h1>SAMAGRA</h1><span class="sub">SAMAGRA OS <strong>E1 MERGED to <code>main</code></strong> · <strong>E2 (11 data apps + <code>/api/org</code>) MERGED to <code>main</code> (ff <code>31aa5bb</code>) + pushed</strong> · frontend 501/501 + backend 106/106 green — <strong>next: browser-vision pixel-QA over the 11 E2 apps, then E3 (mobile)</strong> · backend active-loop (Phase 3) parked · <strong>⚠ open bug: Questions subject chips show sim-ids (next session)</strong> · <strong>⚠ direction-coherence finding open — see <a href="#coherence" style="color:inherit">Coherence</a></strong></span>
+  <h1>SAMAGRA</h1><span class="sub">SAMAGRA OS <strong>E1 MERGED to <code>main</code></strong> · <strong>E2 (11 data apps + <code>/api/org</code>) MERGED to <code>main</code> (ff <code>31aa5bb</code>) + pushed</strong> · frontend 501/501 + backend 106/106 green — <strong>next: browser-vision pixel-QA over the 11 E2 apps, then E3 (mobile)</strong> · backend active-loop (Phase 3) parked · <strong>⚠ open bug: Questions subject chips show sim-ids (next session)</strong> · <strong>direction reconciled: bounded operator-console (ratified 2026-06-21) — see <a href="#coherence" style="color:inherit">Coherence</a></strong></span>
   <nav>
     <a href="#overview">Overview</a><a href="#coherence">Coherence</a><a href="#phases">Phases</a>
     <a href="#samagra">SAMAGRA</a><a href="#experience">OS GUI</a><a href="#arch">Architecture</a><a href="#org">Org</a>
@@ -213,11 +213,12 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   <strong>separate browser-vision pass</strong> (owner-run, never a loop gate) — <strong>not yet run; pixel
   parity is not claimed</strong>.</p>
 
-  <h2 id="coherence">Direction coherence <span class="badge todo">open · audited 2026-06-21</span></h2>
+  <h2 id="coherence">Direction coherence <span class="badge ok">reconciled · ratified 2026-06-21</span></h2>
   <p class="lede">A dedicated coherence audit this session — an independent <strong>Codex vision review</strong>
   plus a <strong>multi-agent implementation audit</strong> (4 mappers + 4 verifiers, live test runs) — found
-  <strong>execution coherence strong, but strategic direction drifting</strong>. This section surfaces the
-  finding so it is no longer invisible; the strategic call is the owner's.</p>
+  <strong>execution coherence strong, but strategic direction drifting</strong>. The drift has now been
+  <strong>reconciled by an owner decision (ratified 2026-06-21 by Deepak)</strong>; both the finding and the
+  binding decision are recorded below.</p>
   <div class="grid">
     <div class="card"><div class="n">✓ <span class="badge ok">execution verified</span></div><div class="l">Every merge claim holds (E1 <code>06d88a3</code>, E2 <code>31aa5bb</code>, HEAD <code>e1cb22a</code>); the read-only safety invariant holds exactly (no <code>create_seed</code> shipped; <code>/api/org</code> static; <code>useApi</code> GET-only; the 3 POST routes are control-plane); spec↔code mapping exact (17 apps · 7 <code>lib/</code> modules · 12 engines · 3 themes · 8 shell components); live suites <strong>backend 106 + frontend 501</strong> green.</div></div>
     <div class="card"><div class="n">⚠ <span class="badge todo">direction drifting</span></div><div class="l">The 2026-06-19 vision <em>retired</em> the word "OS" (<em>"it silently licenses OS-sized scope"</em>) and bound the project to an attention-ROI kill-criterion — yet the project pivoted to a literal 17-app "SAMAGRA OS" and parked the value-producing active loop. Codex verdict <strong>DRIFTING</strong>; audit verdict <strong>COHERENT-WITH-CAVEATS</strong> (this is the caveat).</div></div>
@@ -229,16 +230,15 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   grows. The "frugal" first-class value sits unaddressed against a 17-app GUI. Full reviews:
   <code>docs/superpowers/_research/samagra-os/_vision-review-output.md</code> (+ <code>_vision-review-prompt.md</code>,
   <code>_vision-review.log</code>).</p>
-  <p><strong>Recommended reconciliation — PROPOSED, not yet ratified (owner's call):</strong></p>
+  <p><strong>Decision (ratified 2026-06-21 by Deepak — now binding):</strong></p>
   <ol>
-    <li>Frame SAMAGRA OS explicitly as a <strong>bounded operator console / UI metaphor only</strong> — SAMAGRA stays a control plane; no app-platform scope.</li>
-    <li><strong>Restate the attention-ROI north-star + the ~3 hrs/wk kill-criterion as still binding</strong> (data source = the governance <code>events</code>/<code>review_overlay</code> ledger).</li>
-    <li>Add a <strong>scope firewall</strong> to the OS spec non-goals: no entertainment apps beyond E1's Snake, no third-party apps / marketplace, no process-scheduler model, no user-facing product identity.</li>
-    <li>Add an <strong>attention-ROI acceptance gate before E3</strong>: 2–3 concrete operator tasks with <em>measured</em> time-saved vs the old portal must pass before further theme/mobile polish.</li>
-    <li>Give <strong>Phase 3 (active loop) a dated restart commitment</strong> after the E2 visual-QA pass — it is the primary value engine, not optional.</li>
+    <li><strong>DEC-1 · Scope.</strong> SAMAGRA OS is a <strong>bounded operator console — a UI metaphor only</strong>; SAMAGRA remains a control plane and does not acquire app-platform scope.</li>
+    <li><strong>DEC-2 · North-star binding.</strong> The attention-ROI north-star + the kill-criterion remain <strong>binding</strong> and are not voided by the OS track (data source = the governance <code>events</code>/<code>review_overlay</code> ledger; the ~3 hrs/wk figure stays the seed proposal pending the DEC-4 gauge).</li>
+    <li><strong>DEC-3 · Scope firewall</strong> (hard non-goal, mirrored into OS spec §3): no entertainment apps beyond E1's Snake, no third-party apps / marketplace, no process-scheduler model, no user-facing product identity.</li>
+    <li><strong>DEC-4 · Attention-ROI acceptance gate before E3:</strong> 2–3 representative operator tasks (triage munshi captures · read pipeline/gate status · find + open a catalog artifact) measured for owner time-saved vs the old portal must pass before any E3 work; fail → freeze GUI expansion + reprioritize Phase 3.</li>
+    <li><strong>DEC-5 · Phase 3 is the primary value engine</strong> — the active loop restarts after the E2 visual-QA pass and the DEC-4 gate, ahead of further theme/mobile polish.</li>
   </ol>
-  <p class="lede">Until the owner ratifies, treat the above as an <strong>open question</strong>, not a decided
-  position. Full write-up: <code>HANDOFF.md</code> → <em>⚠ Direction-coherence finding (OPEN)</em>.</p>
+  <p class="lede">Full write-up: <code>HANDOFF.md</code> → <em>✅ Direction-coherence DECISION (ratified 2026-06-21)</em>.</p>
 
   <h2 id="arch">Architecture</h2>
   <div class="diagram">
@@ -734,9 +734,10 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     <tr><td>SAMAGRA OS — browser-vision pixel QA</td><td><span class="badge todo">owner · next</span></td><td><strong>Next step.</strong> The visual/interaction fidelity pass over the three-theme shell + apps vs the prototype + <code>screenshots/</code> (outside any loop; has NOT run).</td></tr>
     <tr><td>SAMAGRA OS — E2 (data/control apps)</td><td><span class="badge ok">merged · headless-green</span></td><td>Eleven read-only apps over <code>/api/*</code> + one new endpoint <code>GET /api/org</code> (static <code>samagra/org.py</code>), on 7 pure-TS linchpin modules. Built TDD on <code>e2/samagra-os</code> (22 commits); backend 106/106 + frontend 501/501 green, <code>vite build</code> clean (22 lazy chunks). Grounded on <code>e2-grounding.md</code> (supersedes <code>api.md</code>). <strong>MERGED to <code>main</code> (fast-forward, <code>31aa5bb</code>) and pushed to <code>origin/main</code> 2026-06-21</strong> after a Codex pre-merge review (GO; 3 MEDIUMs fixed) — <a href="https://github.com/dbhardwaj86/samagra/pull/2">merged PR #2</a>.</td></tr>
     <tr><td>SAMAGRA OS — browser-vision pixel QA (11 E2 apps)</td><td><span class="badge todo">owner · next · pending</span></td><td><strong>Next planned action.</strong> The owner-run browser-vision pixel/interaction-parity pass over the 11 E2 apps (and the E1 shell) — now that the bundling fix makes the apps render when FastAPI-served, not just under <code>npm run dev</code>. Outside any loop; has NOT run; pixel parity not claimed. Some E2 glyphs may still be unregistered in <code>components/icons-data</code> (empty-icon fallback) — a visual-polish follow-up.</td></tr>
-    <tr><td>Direction-coherence finding (OS drift)</td><td><span class="badge todo">⚠ open · owner</span></td><td><strong>Audited 2026-06-21.</strong> Codex vision review = <strong>DRIFTING</strong>; implementation audit = <strong>COHERENT-WITH-CAVEATS</strong>. Owner to ratify the recommended reconciliation (bounded operator-console framing · restate attention-ROI + kill-criterion · scope firewall · pre-E3 attention-ROI gate · dated Phase-3 restart). See the <a href="#coherence">Direction coherence</a> section + <code>HANDOFF.md</code>.</td></tr>
+    <tr><td>Direction-coherence decision (OS drift)</td><td><span class="badge ok">decided · ratified 2026-06-21</span></td><td><strong>Ratified by Deepak.</strong> SAMAGRA OS = bounded operator console (UI metaphor only); attention-ROI north-star + kill-criterion remain binding; scope firewall + the pre-E3 attention-ROI gate (DEC-4) now in force; Phase 3 (active loop) restarts after the E2 visual-QA pass + DEC-4. See the <a href="#coherence">Direction coherence</a> section + <code>HANDOFF.md</code>.</td></tr>
+    <tr><td>SAMAGRA OS — attention-ROI gate (DEC-4)</td><td><span class="badge todo">required before E3</span></td><td><strong>New gate.</strong> Measure owner time-saved on 2–3 representative operator tasks via SAMAGRA OS vs the old portal; must pass before any E3 (mobile / theme-polish) work. Fail → freeze GUI expansion + reprioritize Phase 3 (active loop).</td></tr>
     <tr><td>SAMAGRA OS — Questions subject-chips bug (facets)</td><td><span class="badge todo">⚠ open · next session</span></td><td><strong>Known bug.</strong> The Questions app's subject chips render ~500 (498 measured) <code>SIM0xxx</code> sim-ids — <code>/api/facets.subjects</code> is catalog-wide (<code>catalog.py:191</code>) and the sims adapter writes folder ids as <code>subject</code> (<code>sims.py:37</code>). Introduced by <code>e1cb22a</code> (this session, already merged/pushed). Fix next session: source a question-scoped subject list (QX <code>summary().subjects</code>) or intersect with the returned questions, or facet on chapter/q_type. Read-only; keep <code>npm run verify</code> green.</td></tr>
-    <tr><td>SAMAGRA OS — E3 (mobile device mode + theme polish)</td><td><span class="badge park">planned</span></td><td>Mobile device mode (phone frame + home-screen grid + single-app mode) + remaining per-theme re-skin polish; the three desktop themes already shipped in E1. Skeletoned in the plan.</td></tr>
+    <tr><td>SAMAGRA OS — E3 (mobile device mode + theme polish)</td><td><span class="badge park">planned</span></td><td>Mobile device mode (phone frame + home-screen grid + single-app mode) + remaining per-theme re-skin polish; the three desktop themes already shipped in E1. Skeletoned in the plan. <strong>Gated on the DEC-4 attention-ROI gate</strong> (see Direction coherence).</td></tr>
     <tr><td>Phase 3 — active loop (backend)</td><td><span class="badge park">parked</span></td><td>Deprioritised 2026-06-20 for the Experience track; plan complete, resumes after. Will need live munshi creds in <code>.env</code>.</td></tr>
     <tr><td>Notification channels</td><td><span class="badge todo">creds</span></td><td>Set <code>TELEGRAM_BOT_TOKEN</code>/<code>CHAT_ID</code> + gmail <code>SMTP_PASS</code> in <code>.env</code>. Until then notifications are logged only.</td></tr>
     <tr><td>Google Docs export</td><td><span class="badge todo">creds</span></td><td>Set <code>GOOGLE_OAUTH_CLIENT</code> (Desktop OAuth JSON); HTML + DOCX already work.</td></tr>
