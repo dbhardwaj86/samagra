@@ -99,8 +99,19 @@ should be one focused, committable unit.
   - **0 console errors** in both themes. **No production code change** (verification pass, like A-4) — the
     3-theme system from E1/E3 is correct. Tree byte-identical to A-5 HEAD, so gates hold (frontend 546 /
     backend 154).
-- [ ] **A-7 · Console-error sweep.** Across every app × {pc, mobile} × {aqua, console, samagra}, confirm
-  `preview_console_logs` shows zero errors; fix any that appear.
+- [x] **A-7 · Console-error sweep. DONE 2026-06-22.** Swept **every app × {pc, mobile} × {aqua, console,
+  samagra}** — the full 17×6 = 102 app-instance matrix — with `preview_console_logs` (error level)
+  reading **zero errors** in every cell:
+  | device \ theme | aqua | console | samagra |
+  |---|---|---|---|
+  | **pc** | ✅ 0 (A-1) | ✅ 0 (A-6) | ✅ 0 (A-6) |
+  | **mobile** | ✅ 0 (A-5) | ✅ 0 (A-7) | ✅ 0 (A-7) |
+  This iteration filled the two uncovered cells: **mobile+console** (17/17 open→Home, text `#e7eef8`) and
+  **mobile+samagra** (17/17 open→Home, accent `#d9601a` — launcher icons correctly unify to the samagra
+  accent; max overflow 1px, so the A-5 clip fixes hold under samagra too). Across two page sessions
+  covering all the activity (17 desktop windows, theme reskins, WM geometry, both mobile sweeps) the error
+  buffer stayed empty. Verification pass — no code change. Screenshots: mobile+console (dark), mobile+
+  samagra (warm).
 - [ ] **A-8 · Adversarial review + gates.** Run an adversarial-review workflow over the accumulated diff;
   fix confirmed findings. Final gate: backend pytest + `npm run verify`, no `.only`/`.skip`. Paste output.
 
