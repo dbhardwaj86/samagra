@@ -48,7 +48,7 @@ and every read-only surface browses *real* data.
 Four functional outcomes:
 
 1. **Munshi capture (write).** From the Munshi app, the owner captures a front-desk item
-   (note / todo / issue / question / followup) that is written to the **live prod munshi Worker**
+   (`todo` / `note` / `followup` — the deterministic kinds the worker accepts) written to the **live prod munshi Worker**
    and appears in `library()`.
 2. **mycontentdev seed capture (write).** From the mycontentdev app, the owner creates a **seed**
    (type + title + raw_text) written to the **live mycontentdev** backend.
@@ -120,7 +120,7 @@ React app  ──POST /api/mcd/seeds──────►  FastAPI route  ──
 
 | Pure module | Owns | Headlessly testable because |
 |---|---|---|
-| `lib/capture/munshi.ts` | `buildMunshiCapture(form) → {ok, body} \| {ok:false, error}`: kind enum (`note/todo/issue/question/followup`), kind→payload-key mapping (mirrors `adapters/munshi.py _TITLE_KEYS_BY_KIND`), non-empty validation, optional person/due/tags | pure `(formState) → result`; assert body shape + validation per kind |
+| `lib/capture/munshi.ts` | `buildMunshiCapture(form) → {ok, body} \| {ok:false, error}`: kind enum (`todo`/`note`/`followup` only), per-kind required fields (`todo`→assignee+task, `note`→student+issue, `followup`→date+note), per-kind optional passthrough (due/label/person), non-empty validation | pure `(formState) → result`; assert per-kind body shape + missing-field error |
 | `lib/capture/seed.ts` | `buildSeed(form) → {ok, body} \| {ok:false, error}`: type enum (`concept/question/snippet/simulation_idea/experiment/notebooklm_link/rough_idea`), title-optional-derive-from-raw_text, raw_text required | pure; assert body + validation |
 | `lib/sims/deployed.ts` | shape/sort/filter/search over the deployed-sims rows returned by `GET /api/sims` (group by grade/subject, text filter) | pure array transforms over plain rows |
 
@@ -135,10 +135,10 @@ caching. Components call `buildX(form)` (pure) → `post(...)` → on success re
 
 ### 4.4 Components stay thin
 
-- **Munshi app** gains a **capture composer** (kind `<select>` + text `<textarea>` + Capture
-  button) above the existing read-only library list. Submit → `buildMunshiCapture` →
-  `POST /api/munshi/capture` → refetch `library()`. *(Mic/photo FAB from the prototype is **not**
-  in scope — text capture only; noted as a future option.)*
+- **Munshi app** gains a **capture composer** (kind `<select>` of `todo`/`note`/`followup` +
+  the selected kind's per-field inputs + Capture button) above the existing read-only library list.
+  Submit → `buildMunshiCapture` → `POST /api/munshi/capture` → refetch `library()`. *(Mic/photo FAB
+  from the prototype is **not** in scope — text capture only; noted as a future option.)*
 - **mycontentdev app** gains a **New seed composer** (type `<select>` + title `<input>` +
   raw_text `<textarea>` + Create button) → `buildSeed` → `POST /api/mcd/seeds` → refetch.
 - **Sims app** is rewired to `GET /api/sims` (deployed manifest), rendering grade/subject groups,
@@ -155,16 +155,15 @@ caching. Components call `buildX(form)` (pure) → `post(...)` → on success re
 
 - **Read (live-verified):** `GET /api/library` (cookie `munshi=<urlencoded secret>`) →
   `{items[], people[], total}`; item `{id,kind,payload,person,due,tags,status,ts}`.
-- **Write:** `POST {MUNSHI_API_URL}/api/item` (same cookie; `content-type: application/json`),
-  body forwarded opaquely to the Durable-Object agent's `/item` route. **Exact body shape to be
-  grounded against `myProd/src/agent.ts` + `tools.ts insertItem` in the build** — expected
-  `{kind, payload:{<kind-specific keys>}, person?, due?, tags?}`.
-- **Client:** add `MunshiClient.create_item(kind, payload, *, person=None, due=None, tags=None)`;
-  factor a shared `_headers(write=False)` (Cookie always; +`content-type` for writes). Reuses the
-  identical, already-verified cookie auth.
-- **FastAPI:** `POST /api/munshi/capture` — body `{kind, text, person?, due?, tags?}`; builds the
-  per-kind payload server-side too (defense-in-depth), 503 if unavailable, 400 on bad kind/empty
-  text, returns the created item (or the worker's response).
+- **Write (grounded `agent.ts:227-236` + `tools.ts`):** `POST {MUNSHI_API_URL}/api/item` (same
+  cookie; `content-type: application/json`), **flat JSON** body `{kind, ...fields}`. The worker
+  accepts **only** `kind ∈ {todo, note, followup}` (others → 400) with kind-specific fields:
+  `todo`→`{assignee, task, due?}`, `note`→`{student, issue, label?}`, `followup`→`{date, note, person?}`.
+- **Client:** add `MunshiClient.create_item(kind, fields)` → `POST /api/item` with
+  `json={"kind": kind, **fields}`, reusing the existing `_cookie()` auth. Secret never logged.
+- **FastAPI:** `POST /api/munshi/capture` — body `{kind, ...fields}`; validates `kind` ∈ the three
+  + that each kind's required fields are non-empty (400 otherwise), 503 if unavailable, returns the
+  created item.
 
 ### Slice 2 — mycontentdev seed capture
 
