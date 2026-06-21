@@ -95,10 +95,13 @@ window radius 13, traffic-light controls on the **left**.
   only.** No entertainment apps beyond E1's Snake; no third-party apps / app marketplace; no process- or
   scheduler-as-platform model; no user-facing product identity. SAMAGRA stays a control plane and does **not**
   acquire app-platform scope — adding any of these is a Chairman decision, not routine engineering.
-- **No new write paths.** Every backend touch in E2 is **read-only**. Munshi's prototype has a
-  live capture input + mic FAB; the backend adapter is **intake/read-only** and there is **no
-  write endpoint** — capture/write is explicitly out of scope. The human publish gate stays the
-  only sacred, never-automated mutation.
+- **No new write paths in E2.** Every backend touch in E2 was **read-only**.
+  > **⚠ AMENDED 2026-06-21 (DEC-3 amendment, Chairman) — post-E2 capture track.** Owner-initiated
+  > capture is now in-scope as a separate track (branch `feature/control-plane-capture`): exactly two
+  > write paths — `POST /api/munshi/capture` (a munshi item) and `POST /api/mcd/seeds` (an mcd seed).
+  > The human publish gate stays the **only never-automated mutation**, there is **no munshi→mcd
+  > bridge**, and the invariant becomes *"read-only except owner-initiated capture."* See
+  > `docs/superpowers/specs/2026-06-21-samagra-control-plane-capture-design.md`.
 - **The active loop stays parked.** Former Phase 3 of `docs/superpowers/plans/2026-06-19-samagra-evolution.md`
   (autonomous active loop) remains planned but deprioritized. This track does not build, schedule,
   or wire it. `scheduler.py` is kept (SAMAGRA reuses it) but no new tick is installed.

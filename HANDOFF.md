@@ -1,5 +1,37 @@
 # SAMAGRA — Handoff
 
+> **▶▶ LATEST — Capture control plane is LIVE (2026-06-21).** The SAMAGRA OS now does **real
+> owner-initiated captures end-to-end** and browses every read-only surface with live data, on branch
+> **`feature/control-plane-capture`** (not yet merged). Built TDD + an **independent Codex review per
+> implementation** (reports `docs/codex-reviews/14–17`).
+> - **Munshi capture (write):** `POST /api/munshi/capture` → live `MunshiClient.create_item` →
+>   `POST {MUNSHI_API_URL}/api/item` (cookie auth). Kinds **todo/note/followup** only (the worker's
+>   deterministic set), per-kind required fields, server-validated, creds-gated.
+> - **mycontentdev seed capture (write):** `POST /api/mcd/seeds` → live `McdClient.create_seed` →
+>   `POST {apiUrl}/api/seeds` **form-encoded**, `x-mcd-admin: <adminKey>` (the existing read key
+>   authorizes the write — verified; **no `APP_PASSWORD` needed**).
+> - **Live-read passthroughs** `GET /api/munshi/library` + `GET /api/mcd/seeds` — the capture apps read
+>   the **live deployed workers** (not the catalog), so real data shows without a refresh and a fresh
+>   capture appears on refetch. (`/api/search?source=munshi|mycontentdev` was catalog-backed → empty.)
+> - **Simulations = deployed-only:** `GET /api/sims` parses `pratyaksh-May-deploy/deployed-sims-by-grade.md`
+>   (**482 sims**), grade-grouped, linking the canonical extensionless `pratyakshsims.com/sims/SIM<NNNN>/SIM<NNNN>_sim`.
+> - **QX browser fixed + separate:** `GET /api/questions/facets` is question-scoped (`qx.summary()`),
+>   the SIM-id chip bug is gone, and degenerate numeric subject codes are filtered (clean chips). The
+>   Questions app stays a standalone read-only browser (50 live QX rows, real q-type chips).
+> - **LIVE-VERIFIED this session:** captured a real Munshi todo (`item_id 53`, library 13→14) and a real
+>   mcd seed (`seed_01KVNN90…`, status `captured`, seeds 1→2) through the running server; both appear in
+>   the live-read apps. Negative guards (bad kind / empty text) → 400. Backend **134 pytest** + frontend
+>   **514 vitest / 60 files** green; advisory gate clean. Two benign labelled smoke records remain in
+>   prod (owner can dismiss/archive). **Pending: merge `feature/control-plane-capture` (PR).**
+>
+> **✅ DEC-3 AMENDMENT (2026-06-21, Chairman Deepak).** The morning's DEC-3 read-only firewall is amended:
+> **owner-initiated capture** (a munshi item + an mcd seed) is now **in-scope** — the project's only two
+> subsystem write paths. **Still binding & unchanged:** the human publish gate is **never automated**;
+> **no automated munshi→mcd bridge** (promotion is a later explicit Chairman action); no app-platform
+> scope (DEC-1); attention-ROI north-star + kill-criterion (DEC-2) + the pre-E3 gate (DEC-4) hold;
+> Phase-3's full active loop stays parked (DEC-5). **New invariant wording: "read-only *except
+> owner-initiated capture*."** Spec/plan: `docs/superpowers/{specs/2026-06-21-samagra-control-plane-capture-design.md,plans/2026-06-21-samagra-control-plane-capture.md}`.
+>
 > **▶ STATUS:** The project is **SAMAGRA** (package `samagra`) — a company-structured agent org
 > folding in `mycontentdev` + `munshi`, with an advisory pre-commit Codex review and a CEO prompt-outbox.
 > **Phase 0 (rename), Track A (stabilize) and Phase 1 (read-only subsystem adapters) are merged to `main`
@@ -119,8 +151,10 @@
 A dedicated coherence audit this session — an independent **Codex vision review** plus a **multi-agent
 implementation audit** (4 mappers + 4 verifiers, live test runs) — found **execution coherence strong but
 strategic direction drifting.** Execution verified clean: every merge claim holds (E1 `06d88a3`, E2 `31aa5bb`,
-HEAD `e1cb22a`), the **read-only safety invariant holds exactly** (no `create_seed` shipped anywhere;
-`GET /api/org` is static; `useApi` is the only fetch and GET-only; the 3 POST routes are control-plane), the
+HEAD `e1cb22a`), the **read-only safety invariant held exactly at the time of that audit** (no `create_seed`
+shipped; `GET /api/org` static; `useApi` GET-only; the 3 POST routes control-plane) — **superseded 2026-06-21
+by the DEC-3 amendment** (see the LATEST banner at the top): the invariant is now *"read-only except
+owner-initiated capture"* with exactly two write paths (`/api/munshi/capture`, `/api/mcd/seeds`), the
 spec↔code mapping is exact (17 apps · 7 linchpin `lib/` modules · 12 engines · 3 themes · 8 shell components),
 and live suites are **backend 106 pytest + frontend 501 vitest** green. **The drift is strategic, not factual:**
 

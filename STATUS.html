@@ -58,9 +58,9 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
 </head>
 <body>
 <header class="top">
-  <h1>SAMAGRA</h1><span class="sub">SAMAGRA OS <strong>E1 MERGED to <code>main</code></strong> · <strong>E2 (11 data apps + <code>/api/org</code>) MERGED to <code>main</code> (ff <code>31aa5bb</code>) + pushed</strong> · frontend 501/501 + backend 106/106 green — <strong>next: browser-vision pixel-QA over the 11 E2 apps, then the DEC-4 attention-ROI gate, then E3 (mobile)</strong> · backend active-loop (Phase 3) parked (restarts after E2 QA + DEC-4) · <strong>⚠ open bug: Questions subject chips show sim-ids (next session)</strong> · <strong>direction reconciled: bounded operator-console (ratified 2026-06-21) — see <a href="#coherence" style="color:inherit">Coherence</a></strong></span>
+  <h1>SAMAGRA</h1><span class="sub"><strong>Capture control plane LIVE</strong> (branch <code>feature/control-plane-capture</code>) — real owner-initiated captures end-to-end (Munshi item + mcd seed) + live browsing of all read-only surfaces (482 deployed sims, QX facets fixed) · backend <strong>134 pytest</strong> + frontend <strong>514 vitest / 60 files</strong> green · independent Codex review per implementation · <strong>DEC-3 amended: read-only <em>except owner-initiated capture</em></strong> — see <a href="#capture" style="color:inherit">Capture</a> · <strong>next: merge the branch (PR)</strong></span>
   <nav>
-    <a href="#overview">Overview</a><a href="#coherence">Coherence</a><a href="#phases">Phases</a>
+    <a href="#overview">Overview</a><a href="#capture">Capture</a><a href="#coherence">Coherence</a><a href="#phases">Phases</a>
     <a href="#samagra">SAMAGRA</a><a href="#experience">OS GUI</a><a href="#arch">Architecture</a><a href="#org">Org</a>
     <a href="#decisions">Decisions</a><a href="#next">Next</a>
   </nav>
@@ -143,6 +143,22 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   Suite <strong>34 → 63 green</strong>; fast-forward-merged to <code>main</code>. The refresh-isolation +
   stale-visibility hardening (F1/F4) is carried into Phase 2 (its <code>stale</code> column touches the
   Phase-1 schema-freeze). <code>create_seed</code> remains deferred to Phase 3 (no write path shipped).</p>
+
+  <h2 id="capture">Capture control plane <span class="badge ok">LIVE · 2026-06-21</span></h2>
+  <p>The SAMAGRA OS now performs <strong>real owner-initiated captures end-to-end</strong> and browses every
+  read-only surface with live data. Built TDD on branch <code>feature/control-plane-capture</code> with an
+  <strong>independent Codex review per implementation</strong> (reports <code>docs/codex-reviews/14–17</code>).
+  Per the <strong>DEC-3 amendment</strong> (Chairman, 2026-06-21) the read-only firewall now allows exactly two
+  write paths; the human publish gate stays never-automated; no munshi→mcd bridge. Invariant:
+  <em>"read-only except owner-initiated capture."</em></p>
+  <div class="grid">
+    <div class="card"><div class="n">Munshi <span class="badge ok">write</span></div><div class="l"><code>POST /api/munshi/capture</code> → live <code>MunshiClient.create_item</code> → <code>/api/item</code> (cookie). Kinds <strong>todo/note/followup</strong>, per-kind required fields, server-validated, creds-gated.</div></div>
+    <div class="card"><div class="n">mcd seed <span class="badge ok">write</span></div><div class="l"><code>POST /api/mcd/seeds</code> → live <code>McdClient.create_seed</code> → <code>/api/seeds</code> (form-encoded, <code>x-mcd-admin</code>). Existing adminKey authorizes the write — no APP_PASSWORD needed.</div></div>
+    <div class="card"><div class="n">Live reads <span class="badge ok">done</span></div><div class="l"><code>GET /api/munshi/library</code> + <code>GET /api/mcd/seeds</code> read the live deployed workers (not the catalog), so captures appear on refetch without a refresh.</div></div>
+    <div class="card"><div class="n">Sims <span class="badge ok">deployed-only</span></div><div class="l"><code>GET /api/sims</code> parses <code>deployed-sims-by-grade.md</code> — <strong>482 sims</strong>, grade-grouped, linking canonical <code>pratyakshsims.com/sims/SIM&lt;NNNN&gt;/SIM&lt;NNNN&gt;_sim</code>.</div></div>
+    <div class="card"><div class="n">QX facets <span class="badge ok">fixed</span></div><div class="l"><code>GET /api/questions/facets</code> is question-scoped (<code>qx.summary()</code>) — SIM-id chip bug gone; degenerate numeric subject codes filtered. Questions stays a standalone read-only browser.</div></div>
+    <div class="card"><div class="n">Verified <span class="badge ok">live</span></div><div class="l">Captured a real Munshi todo (<code>item_id 53</code>, library 13→14) + a real mcd seed (<code>captured</code>, seeds 1→2); both appear in the live-read apps. 400 on bad kind / empty text. <strong>134 pytest + 514 vitest</strong> green.</div></div>
+  </div>
 
   <h2 id="phases">Phase status — Slice 1 (built)</h2>
   <div class="grid">
@@ -397,8 +413,15 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   </svg>
 
   <h2 id="tests">Tests</h2>
-  <p><span class="badge ok">frontend 501 / 501</span> <span class="badge ok">backend 106 / 106</span>
-  (last run 2026-06-21, E2 merged to <code>main</code> at <code>31aa5bb</code>). <strong>SAMAGRA OS E2 — frontend:</strong>
+  <p><span class="badge ok">frontend 514 / 514 · 60 files</span> <span class="badge ok">backend 134 / 134</span>
+  (last run 2026-06-21, branch <code>feature/control-plane-capture</code>). <strong>Capture track</strong> added the
+  write clients + endpoints (<code>create_item</code>, <code>create_seed</code>, <code>/api/munshi/capture</code>,
+  <code>/api/mcd/seeds</code>), the live-read passthroughs, the deployed-sims parser + <code>/api/sims</code>,
+  the question-scoped <code>/api/questions/facets</code>, and the pure-TS builders
+  (<code>lib/capture/{munshi,seed}</code>, <code>lib/sims/deployed</code>) + <code>useApiPost</code> — all TDD,
+  mocked (no live calls in the suite); live end-to-end verified separately against the running server.
+  (Backend summary line is suppressed by a cosmetic Windows tmpdir teardown; 0 failures across runs.)
+  <strong>Prior E2 baseline (history):</strong>
   the suite grew to <strong>501 Vitest tests across 56 files</strong> (497 at the E2 merge, +4 from post-merge <code>e1cb22a</code>; 439 E1 + 25 new pure-TS lib tests for the
   seven linchpin modules — <code>lib/api/query</code> · <code>lib/catalog/rows</code> ·
   <code>lib/pipelines/stages</code> · <code>lib/org/resolve</code> · <code>lib/kanban/columns</code> ·
@@ -457,7 +480,18 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   the decided-block path; <code>dispatch_codex</code> + git mocked).</p>
 
   <h2 id="decisions">Recent decisions</h2>
-  <div class="log"><div class="d">2026-06-21 · ⚠ Known bug logged — Questions app subject chips show sim-ids (open · next session)</div>
+  <div class="log"><div class="d">2026-06-21 · Capture control plane LIVE + DEC-3 amended (Chairman)</div>
+    The read-only firewall was <strong>amended by the Chairman</strong> to allow <strong>owner-initiated
+    capture</strong>: exactly two write paths — <code>POST /api/munshi/capture</code> (a munshi item) and
+    <code>POST /api/mcd/seeds</code> (an mcd seed). The human <strong>publish gate stays never-automated</strong>,
+    there is <strong>no munshi→mcd bridge</strong>, and the invariant becomes <em>"read-only except
+    owner-initiated capture."</em> Built TDD on <code>feature/control-plane-capture</code> with an independent
+    Codex review per implementation; <strong>live-verified</strong> (real Munshi todo + mcd seed created and
+    visible in the live-read apps). Also: capture apps now read the live workers
+    (<code>/api/munshi/library</code>, <code>/api/mcd/seeds</code>); Simulations shows the <strong>482 deployed
+    pratyaksh sims</strong>; the <strong>Questions sim-id facet bug is FIXED</strong> (question-scoped facets).
+    Pending: merge the branch (PR).</div>
+  <div class="log"><div class="d">2026-06-21 · ⚠ Known bug logged — Questions app subject chips show sim-ids (FIXED 2026-06-21, see above)</div>
     The E2 LOW follow-up (the Questions app consuming <code>/api/facets</code>) was <strong>implemented</strong>
     this session (commit <code>e1cb22a</code>, merged + pushed to <code>origin/main</code>) but
     <strong>introduced a bug</strong>: the subject filter chips render ~500 (498 measured) <code>SIM0xxx</code> ids instead of
