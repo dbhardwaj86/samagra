@@ -16,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 import samagra
 from .. import catalog, config, scheduler, state
 from ..adapters import get_adapter
+from ..clients import McdClient, MunshiClient
 from ..governance import store as gstore
 from ..lectures import render as lecture_render
 from ..org import ORG  # E2.1 static org chart
@@ -144,6 +145,33 @@ def open_file(path: str, download: bool = False):
 @app.get("/api/org")
 def api_org():
     return ORG
+
+
+_MUNSHI_REQUIRED = {
+    "todo": ("assignee", "task"),
+    "note": ("student", "issue"),
+    "followup": ("date", "note"),
+}
+
+
+@app.post("/api/munshi/capture")
+def api_munshi_capture(payload: dict):
+    kind = (payload or {}).get("kind")
+    required = _MUNSHI_REQUIRED.get(kind)
+    if not required:
+        raise HTTPException(400, "kind must be one of: todo, note, followup")
+    fields = {k: v for k, v in payload.items() if k != "kind"}
+    missing = [k for k in required if not str(fields.get(k) or "").strip()]
+    if missing:
+        raise HTTPException(400, f"missing required field(s): {', '.join(missing)}")
+    client = MunshiClient()
+    if not client.available():
+        raise HTTPException(503, "munshi not configured — set MUNSHI_API_URL/MUNSHI_SECRET")
+    try:
+        created = client.create_item(kind, fields)
+    except Exception:  # noqa: BLE001 — never surface the upstream/secret details
+        raise HTTPException(502, "munshi capture failed")
+    return {"ok": True, "item": created}
 
 
 # -- SPA fallback (MUST be declared LAST) -------------------------------
