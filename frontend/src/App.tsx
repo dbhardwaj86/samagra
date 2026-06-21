@@ -90,7 +90,7 @@ function appComponent(id: AppId): ComponentType {
   if (cached) return cached;
   const dir = APP_DIR[id];
   const Comp = lazy(() =>
-    import(/* @vite-ignore */ `./apps/${dir}/index.tsx`).catch(() => ({
+    import(`./apps/${dir}/index.tsx`).catch(() => ({
       default: () => null,
     })),
   ) as ComponentType;
