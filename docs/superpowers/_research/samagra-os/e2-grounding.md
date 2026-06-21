@@ -77,10 +77,9 @@ WORKERS
 **Token ↔ display-name mismatch org.py must own:** owner ids are lowercase machine tokens; the roster uses
 Title-Case display names. Not a clean 1:1 — roster has `Claude-Deepak/Claude-Khanak/Grok/Hermes` absent from
 the owner set; owner set has `teachingos` + the `claude1`/`claude2` split absent from the roster;
-`Gemini+NotebookLM` is one roster line but two owner ids. **The `claude1`↔CTO / `claude2`↔CEO pairing is the
-ONE inferred (not source-verified) judgement call** — the E2 plan defaults to NOT asserting that pairing
-(keeps `claude1`/`claude2` as neutral engineering identities in the owners map; the board hierarchy uses the
-source-verified roster).
+`Gemini+NotebookLM` is one roster line but two owner ids. **The `claude1`/`claude2` mapping is OWNER-CONFIRMED
+(2026-06-21): `claude1` = Claude-Deepak (CEO — substrate & engine), `claude2` = Claude-Khanak (CTO — leaf apps &
+UX)** — org.py asserts this in `tests/test_api_org.py`.
 
 ---
 
@@ -340,7 +339,7 @@ workflow's owner guess was corrected against it:
 11. **SPA fallback 503 if not built; `/assets` mount is import-time conditional** — build before serving;
     restart if the build lands late.
 12. **Org three-copies risk:** the chairman roster lives only in `dispatch.ts`. Make `/api/org` the single
-    source; the Org app fetches it. The `claude1↔CTO / claude2↔CEO` token mapping is the one inferred decision —
-    E2 defaults to neutral engineering identities for `claude1`/`claude2` rather than asserting the pairing.
+    source; the Org app fetches it. The `claude1`/`claude2` token mapping is OWNER-CONFIRMED: `claude1` =
+    Claude-Deepak (CEO), `claude2` = Claude-Khanak (CTO) — asserted in `tests/test_api_org.py`.
 
 **Net new for the org endpoint:** `samagra/org.py`, `GET /api/org` in `samagra/api/app.py`, `tests/test_api_org.py`.

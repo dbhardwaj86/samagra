@@ -160,8 +160,8 @@ Legend: `headless` (loop-completable) = E2.1–E2.8, E2.20 + the render-smoke su
 
 The single hard backend gap (grounding §3). A static org chart — no DB, no I/O. The `owners` token→identity map
 covers all 7 `state.PIPELINES[*].owners` ids so the Pipelines/Org apps can resolve a phase-owner token to a name.
-The `claude1↔CTO / claude2↔CEO` pairing is the one inferred call — **we do NOT assert it**: `claude1`/`claude2`
-stay neutral engineering identities; the board hierarchy uses the source-verified roster.
+The `claude1`/`claude2` → identity mapping is **owner-confirmed (2026-06-21): `claude1` = Claude-Deepak (CEO —
+substrate & engine), `claude2` = Claude-Khanak (CTO — leaf apps & UX)** — asserted in the test below.
 
 - [ ] **Step 1: Write the failing test.** Create `tests/test_api_org.py`:
 ```python
@@ -184,6 +184,9 @@ def test_org_dict_shape():
     }
     # every owner entry has a name + role
     assert all({"name", "role"} <= set(v) for v in o["owners"].values())
+    # owner-confirmed identity mapping (claude1 = CEO Deepak, claude2 = CTO Khanak)
+    assert o["owners"]["claude1"]["name"] == "Claude-Deepak"
+    assert o["owners"]["claude2"]["name"] == "Claude-Khanak"
 
 
 def test_org_owner_ids_align_to_pipeline_owners():
@@ -212,8 +215,8 @@ Expected: `ModuleNotFoundError: No module named 'samagra.org'` (red).
 `owners` maps every machine owner-token used in state.PIPELINES[*].owners to a
 display identity, so the Org/Pipelines GUI apps can resolve a phase owner to a
 person + role. The board hierarchy is the source-verified frontend roster
-(terminal `agents`/`whoami`). The claude1/claude2 -> CEO/CTO pairing is NOT
-asserted here (it is unverified); claude1/claude2 are neutral engineering ids.
+(terminal `agents`/`whoami`). Owner-confirmed (2026-06-21): claude1 = Claude-Deepak
+(CEO), claude2 = Claude-Khanak (CTO).
 """
 from __future__ import annotations
 
@@ -233,8 +236,8 @@ ORG: dict = {
     # token -> identity; covers all 7 distinct state.PIPELINES owner ids.
     "owners": {
         "codex": {"name": "Codex", "role": "Reviewer — pre-merge gate"},
-        "claude1": {"name": "Claude (engineering)", "role": "Pipeline worker"},
-        "claude2": {"name": "Claude (engineering)", "role": "Pipeline worker"},
+        "claude1": {"name": "Claude-Deepak", "role": "CEO — substrate & engine"},
+        "claude2": {"name": "Claude-Khanak", "role": "CTO — leaf apps & UX"},
         "gemini": {"name": "Gemini", "role": "Research & synthesis"},
         "notebooklm": {"name": "NotebookLM", "role": "Research & synthesis"},
         "teachingos": {"name": "TeachingOS", "role": "Build / export automation"},

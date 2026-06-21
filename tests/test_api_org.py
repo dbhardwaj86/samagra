@@ -17,6 +17,9 @@ def test_org_dict_shape():
     }
     # every owner entry has a name + role
     assert all({"name", "role"} <= set(v) for v in o["owners"].values())
+    # owner-confirmed identity mapping (claude1 = CEO Deepak, claude2 = CTO Khanak)
+    assert o["owners"]["claude1"]["name"] == "Claude-Deepak"
+    assert o["owners"]["claude2"]["name"] == "Claude-Khanak"
 
 
 def test_org_owner_ids_align_to_pipeline_owners():
