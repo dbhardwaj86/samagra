@@ -1,13 +1,14 @@
-"""Read-only admin-API client for mycontentdev (editorial subsystem).
+"""Admin-API client for mycontentdev (editorial subsystem).
 
 Mirrors mycontentdev/scripts/_cloud.mjs: config from mcd-cloud.json
 {apiUrl,adminKey} at the mycontentdev repo root, or env MCD_API_URL /
 MCD_ADMIN_KEY / MCD_APP_KEY. Trailing slashes on the URL are trimmed.
 
-SAFETY: this client NEVER logs or reprs a key value. Phase 1 surface is READ-ONLY
-(query / pending / available). The only write method, create_seed (POST
-/api/seeds), is DEFERRED to Phase 3 per runbook D2/D9 and is intentionally not
-built here; app_key is still resolved so the Phase-3 write path drops in cleanly.
+SAFETY: this client NEVER logs or reprs a key value. Reads (query / pending /
+available) plus the owner-initiated capture write create_seed (POST /api/seeds,
+form-encoded, authorized by the adminKey via the x-mcd-admin header) are
+supported. The write was added under the 2026-06-21 DEC-3 amendment
+(owner-initiated capture in-scope; the human publish gate stays never-automated).
 """
 from __future__ import annotations
 

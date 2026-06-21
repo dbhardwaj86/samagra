@@ -1,10 +1,11 @@
-"""Unit tests for the read-only subsystem HTTP clients.
+"""Unit tests for the subsystem HTTP clients.
 
 The HTTP layer is fully MOCKED — no live-prod calls. We monkeypatch the module
 `requests` attribute with a fake transport that records the last request and
 returns canned JSON. We also assert that secret values are never echoed.
 
-create_seed is DEFERRED to Phase 3 (D2/D9), so there is no write-path test here.
+create_seed (mcd) and create_item (munshi) are the owner-initiated capture writes
+(2026-06-21 DEC-3 amendment); both write paths are covered here with mocked transports.
 """
 from __future__ import annotations
 
