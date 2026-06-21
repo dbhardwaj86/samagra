@@ -36,9 +36,9 @@ class FakeRequests:
                      "json": None, "timeout": timeout}
         return FakeResponse(self.payload)
 
-    def post(self, url, headers=None, json=None, timeout=None):
+    def post(self, url, headers=None, json=None, data=None, timeout=None):
         self.last = {"method": "POST", "url": url, "headers": headers or {},
-                     "json": json, "timeout": timeout}
+                     "json": json, "data": data, "timeout": timeout}
         return FakeResponse(self.payload)
 
 
@@ -88,6 +88,20 @@ def test_mcd_pending_gets_with_admin_header(monkeypatch):
     assert fake.last["method"] == "GET"
     assert fake.last["url"] == "https://mcd.example.dev/api/admin/pending"
     assert fake.last["headers"]["x-mcd-admin"] == "ADMIN-SECRET"
+
+
+def test_mcd_create_seed_posts_form_with_admin(monkeypatch):
+    from samagra.clients import mcd_client
+    fake = FakeRequests({"id": "seed_X", "status": "captured"})
+    monkeypatch.setattr(mcd_client, "requests", fake)
+    c = mcd_client.McdClient(api_url="https://mcd.example.dev", admin_key="ADM")
+    out = c.create_seed({"type": "rough_idea", "raw_text": "tidal locking demo"})
+    assert out == {"id": "seed_X", "status": "captured"}
+    assert fake.last["method"] == "POST"
+    assert fake.last["url"] == "https://mcd.example.dev/api/seeds"
+    assert fake.last["headers"]["x-mcd-admin"] == "ADM"
+    assert fake.last["data"] == {"type": "rough_idea", "raw_text": "tidal locking demo"}  # form, not json
+    assert "json" not in fake.last or fake.last["json"] is None
 
 
 def test_mcd_repr_never_leaks_secret(monkeypatch):

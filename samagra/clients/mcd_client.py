@@ -54,6 +54,19 @@ class McdClient:
         r.raise_for_status()
         return r.json()
 
+    def create_seed(self, fields: dict) -> dict:
+        # Owner-initiated capture. The deployed worker parses multipart/form-data
+        # (request.formData()), so send form-encoded — NOT json. The existing
+        # adminKey authorizes /api/seeds (middleware accepts adminOk). Never logs keys.
+        r = requests.post(
+            f"{self.api_url}/api/seeds",
+            headers={"x-mcd-admin": self._admin_key},
+            data=fields,
+            timeout=_TIMEOUT,
+        )
+        r.raise_for_status()
+        return r.json()
+
     def pending(self) -> list[dict]:
         r = requests.get(
             f"{self.api_url}/api/admin/pending",
