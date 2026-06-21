@@ -1,19 +1,53 @@
+import { useState } from "react";
 import { useApi } from "../../hooks/useApi";
+import { useApiPost } from "../../hooks/useApiPost";
 import Icon from "../../components/Icon";
 import { buildQuery } from "../../lib/api/query";
 import { catalogRows } from "../../lib/catalog/rows";
-import type { SearchResponse } from "../../types/contracts";
+import { buildSeed, SEED_TYPES } from "../../lib/capture/seed";
+import type { SearchResponse, SeedType, SeedForm } from "../../types/contracts";
 
 const V = {
   text: "var(--samagra-text)", muted: "var(--samagra-muted)", line: "var(--samagra-line)",
-  cardBg: "var(--samagra-card-bg)", accent: "var(--samagra-accent)", font: "var(--samagra-font)",
+  cardBg: "var(--samagra-card-bg)", subBg: "var(--samagra-sub-bg)",
+  accent: "var(--samagra-accent)", font: "var(--samagra-font)",
 } as const;
 
-const PATH = "/api/search" + buildQuery({ source: "mycontentdev", limit: 200 });
+const inputStyle = {
+  background: V.subBg, color: V.text, border: `1px solid ${V.line}`,
+  borderRadius: 8, padding: "6px 8px", fontFamily: V.font, fontSize: 13,
+} as const;
 
 export default function Mycontentdev() {
-  const { data, loading, error } = useApi<SearchResponse>(PATH);
+  // reloadKey bumps the GET path so useApi refetches the list after a seed capture.
+  const [reloadKey, setReloadKey] = useState(0);
+  const path = "/api/search" + buildQuery({ source: "mycontentdev", limit: 200 })
+    + (reloadKey ? `&_r=${reloadKey}` : "");
+  const { data, loading, error } = useApi<SearchResponse>(path);
   const rows = catalogRows(data);
+
+  const [type, setType] = useState<SeedType>("rough_idea");
+  const [title, setTitle] = useState("");
+  const [rawText, setRawText] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+  const { post, loading: posting, error: postError } = useApiPost<{ ok: boolean }>();
+
+  async function onSubmit() {
+    setFormError(null);
+    const form = { type, title, raw_text: rawText } as SeedForm;
+    const built = buildSeed(form);
+    if (!built.ok) {
+      setFormError(built.error);
+      return;
+    }
+    const out = await post("/api/mcd/seeds", built.body);
+    if (out) {
+      setTitle("");
+      setRawText("");
+      setReloadKey((k) => k + 1);
+    }
+  }
+
   return (
     <div data-testid="mycontentdev" style={{ padding: 20, fontFamily: V.font }}>
       <header style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -22,6 +56,34 @@ export default function Mycontentdev() {
         </span>
         <h1 style={{ color: V.text, fontSize: 18, margin: 0 }}>mycontentdev</h1>
       </header>
+
+      <section data-testid="seed" style={{ marginTop: 14, background: V.cardBg,
+               border: `1px solid ${V.line}`, borderRadius: 10, padding: 12,
+               display: "grid", gap: 8 }}>
+        <div style={{ color: V.muted, fontSize: 12, fontWeight: 600 }}>New seed</div>
+        <select data-testid="seed-type" aria-label="type" value={type}
+                onChange={(e) => { setType(e.target.value as SeedType); setFormError(null); }}
+                style={inputStyle}>
+          {SEED_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+        </select>
+        <input aria-label="title" placeholder="title (optional)" value={title}
+               onChange={(e) => setTitle(e.target.value)} style={inputStyle} />
+        <textarea aria-label="raw_text" placeholder="raw_text" value={rawText} rows={3}
+                  onChange={(e) => setRawText(e.target.value)}
+                  style={{ ...inputStyle, resize: "vertical" }} />
+        {(formError || postError) ? (
+          <div data-testid="seed-error" role="alert" style={{ color: V.text, fontSize: 12 }}>
+            {formError || postError}
+          </div>
+        ) : null}
+        <button type="button" data-testid="seed-submit" disabled={posting} onClick={onSubmit}
+                style={{ background: V.accent, color: "#fff", border: "none", borderRadius: 8,
+                         padding: "7px 12px", fontFamily: V.font, fontSize: 13, cursor: "pointer",
+                         justifySelf: "start" }}>
+          {posting ? "Capturing…" : "Capture seed"}
+        </button>
+      </section>
+
       {error ? <div role="alert" style={{ color: V.text, marginTop: 8 }}>{error}</div> : null}
       <section data-testid="catalog-list" aria-busy={loading} style={{ marginTop: 16, display: "grid", gap: 8 }}>
         {rows.length === 0 ? (

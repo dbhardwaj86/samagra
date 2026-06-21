@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 const useApiMock = vi.fn();
 vi.mock("../../hooks/useApi", () => ({ useApi: (p: string) => useApiMock(p) }));
@@ -28,5 +28,17 @@ describe("mycontentdev app", () => {
     render(<Mcd />);
     expect(screen.getByRole("alert")).toBeInTheDocument();
     expect(screen.getByTestId("mycontentdev")).toBeInTheDocument();
+  });
+  it("captures a seed", async () => {
+    useApiMock.mockReturnValue({ data: { results: [] }, loading: false, error: null });
+    const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ ok: true, seed: { id: "s1", status: "captured" } }),
+        { status: 200, headers: { "content-type": "application/json" } }));
+    render(<Mcd />);
+    fireEvent.change(screen.getByTestId("seed-type"), { target: { value: "rough_idea" } });
+    fireEvent.change(screen.getByLabelText("raw_text"), { target: { value: "tidal locking demo" } });
+    fireEvent.click(screen.getByTestId("seed-submit"));
+    await waitFor(() => expect(spy).toHaveBeenCalledWith("/api/mcd/seeds", expect.objectContaining({ method: "POST" })));
+    spy.mockRestore();
   });
 });
