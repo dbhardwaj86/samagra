@@ -37,10 +37,17 @@ should be one focused, committable unit.
   `|`-segment non-empty, starts with `M`) and that `keys(ICONS) === keys(APPS)` — gaps the existing
   `Icon.test.tsx` (`Object.keys(ICONS)` loop) could not catch. Gate: frontend **543 vitest / 62 files**
   (+2) green; lint+tsc+`vite build` green. No backend change.
-- [ ] **A-3 · Data paths per app.** **AUDIT (A-1): live-data path VERIFIED** for all 17 against the real
-  FastAPI backend (data apps show real catalog data; munshi/mcd show **live** data with `.env` creds;
-  Activity/Assignments show correct graceful empties). **Remaining:** verify the **creds-absent** graceful
-  states for munshi/mcd (temporarily unset creds, confirm no 500 / friendly empty), then check off.
+- [x] **A-3 · Data paths per app. DONE 2026-06-22.** Live-data path VERIFIED in A-1 (all 17 render real
+  `/api/*` data; munshi/mcd live with `.env` creds; Activity/Assignments graceful empties). Creds-absent
+  graceful path now VERIFIED with durable tests: the live-read passthroughs (`GET /api/munshi/library`,
+  `GET /api/mcd/seeds`) return **200 + `{results:[], error}`** (never a 500) when the adapter is
+  unconfigured or the upstream read fails, and **never leak secret detail**. Completed the asymmetric
+  test matrix in `tests/test_api_live_reads.py` (added munshi read-failure-no-leak + mcd-unconfigured;
+  each endpoint now covers live/unconfigured/read-failure-no-leak). TDD: proved the new munshi no-leak
+  test bites (temporarily leaked `e` in the except branch → RED on `tok_abc`/`MUNSHI_SECRET`, restored).
+  Write paths already had `*_unconfigured → 503` coverage. Frontend renders it gracefully
+  (`Munshi/index.tsx` shows `data.error ?? "Munshi not available — set MUNSHI_API_URL/MUNSHI_SECRET."`).
+  Gate: backend **154 pytest / 0 failures** (live_reads 4→6). No production code change.
 - [ ] **A-4 · Questions ⇄ QX.** Start the QX sidecar `:8783`; verify Questions exact + semantic + KaTeX
   + figures through the tunnel-bound backend. Add a health-check banner when QX is down (don't 500).
 - [ ] **A-5 · Mobile pass.** In the phone frame, open every app via the grid + favorites dock; fix

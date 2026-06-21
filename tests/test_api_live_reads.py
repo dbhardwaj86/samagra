@@ -64,3 +64,25 @@ def test_mcd_seeds_read_failure_does_not_leak(monkeypatch):
     r = _c().get("/api/mcd/seeds")
     assert r.status_code == 200 and r.json()["results"] == []
     assert "adminKEY123" not in r.text and "https://x.dev" not in r.text
+
+
+# A-3 (ship loop): complete the creds-absent / failure matrix — each endpoint must
+# fail GRACEFULLY (200 + empty results, never a 500) and NEVER leak secret detail.
+# These fill the two branches the existing tests left asymmetric: munshi's
+# read-failure path and mcd's unconfigured path.
+def test_munshi_library_read_failure_does_not_leak(monkeypatch):
+    monkeypatch.setattr(api_app, "get_adapter",
+                        lambda n: _fake_adapter(boom="boom https://munshi.internal MUNSHI_SECRET=tok_abc")
+                        if n == "munshi" else None)
+    r = _c().get("/api/munshi/library")
+    assert r.status_code == 200 and r.json()["results"] == []
+    body = r.text
+    assert "tok_abc" not in body and "munshi.internal" not in body and "MUNSHI_SECRET" not in body
+
+
+def test_mcd_seeds_unconfigured(monkeypatch):
+    monkeypatch.setattr(api_app, "get_adapter",
+                        lambda n: _fake_adapter(available=False))
+    r = _c().get("/api/mcd/seeds")
+    assert r.status_code == 200 and r.json()["results"] == []
+    assert "not configured" in r.json().get("error", "")
