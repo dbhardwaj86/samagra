@@ -362,3 +362,31 @@ def test_submit_refuses_double_submit(temp_gov, monkeypatch):
     with pytest.raises(ValueError):                   # second: refused (now 'captured')
         run.submit("a1")
     assert n["create"] == 1                            # never a double prod write
+
+
+def test_submit_unknown_assignment_raises(temp_gov, monkeypatch):
+    class _Boom:
+        def create_seed(self, p):  # pragma: no cover
+            raise AssertionError("must not create seed for unknown assignment")
+    monkeypatch.setattr(run, "McdClient", _Boom)
+    with pytest.raises(ValueError, match="unknown"):
+        run.submit("nope")
+
+
+def test_submit_refuses_when_no_proposed_payload(temp_gov, monkeypatch):
+    # approved, but NO seed_proposed event was ever recorded -> no payload to send
+    conn = store.connect()
+    try:
+        store.add_assignment(conn, id="a1", agent="khanak",
+                             outbox_path="o", pipeline="mycontentdev", seed_ref="munshi:1")
+        store.set_assignment_status(conn, "a1", "in-review")
+        store.set_assignment_status(conn, "a1", "approved")
+    finally:
+        conn.close()
+
+    class _Boom:
+        def create_seed(self, p):  # pragma: no cover
+            raise AssertionError("must not create seed without a recorded payload")
+    monkeypatch.setattr(run, "McdClient", _Boom)
+    with pytest.raises(ValueError, match="no proposed payload"):
+        run.submit("a1")

@@ -141,7 +141,14 @@ def approve(assignment_id: str) -> dict:
 
 
 def _load_proposed_payload(conn, assignment_id: str) -> dict | None:
-    """Recover the flat create_seed body from the 'seed_proposed' event note."""
+    """Recover the flat create_seed body from the 'seed_proposed' event note.
+
+    Scans the 10000 most-recent events (list_events is ORDER BY id DESC). For a
+    single-operator governance DB that is effectively unbounded; if the ledger
+    ever grows past it, a very old seed_proposed becomes invisible and this
+    returns None (surfaced as a clear 'no proposed payload' refusal, never a
+    silent wrong write).
+    """
     for ev in store.list_events(conn, limit=10000):
         if ev.get("assignment_id") == assignment_id and ev.get("verb") == "seed_proposed":
             try:
@@ -152,6 +159,11 @@ def _load_proposed_payload(conn, assignment_id: str) -> dict | None:
 
 
 def _already_captured(conn, assignment_id: str) -> bool:
+    """True iff THIS assignment already has a seed_created event (per-assignment
+    dedup). A *different* assignment for the same munshi item is a legitimate
+    re-capture (scan dedup only excludes non-terminal statuses), and is gated by
+    a fresh human board approval — so this guard is scoped to the assignment, not
+    the munshi item, by design."""
     return any(ev.get("assignment_id") == assignment_id and ev.get("verb") == "seed_created"
                for ev in store.list_events(conn, limit=10000))
 
@@ -180,6 +192,14 @@ def submit(assignment_id: str) -> dict:
             raise ValueError(
                 f"no proposed payload recorded for assignment {assignment_id}")
 
+        # Crash window: if the process dies AFTER create_seed() returns but
+        # BEFORE the two governance writes below land, the seed exists in prod
+        # yet governance has no seed_created event and the status stays
+        # 'approved' — a re-submit would then pass both guards and create a
+        # SECOND seed. For a manually-invoked, board-gated, single-operator tool
+        # this millisecond window is acceptable (the human approve gate is the
+        # real guard); to harden, look up an existing seed by source_ref on the
+        # mcd side before retrying. Mirrors scan()'s outbox-before-DB note.
         seed = McdClient().create_seed(payload)
 
         store.append_event(
