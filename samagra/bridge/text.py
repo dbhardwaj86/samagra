@@ -8,7 +8,9 @@ yield text. Pure; no I/O.
 """
 from __future__ import annotations
 
-# Mirrors samagra/adapters/munshi.py _TITLE_KEYS_BY_KIND (most descriptive first).
+# Extends samagra/adapters/munshi.py _TITLE_KEYS_BY_KIND (most descriptive first):
+# adds note->action and issue->source so the bridge captures richer item text
+# than the title-only adapter does.
 _KIND_KEYS = {
     "note": ("issue", "topic", "action"),
     "todo": ("task",),
