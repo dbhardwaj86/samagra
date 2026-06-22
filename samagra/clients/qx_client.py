@@ -14,13 +14,17 @@ from __future__ import annotations
 import requests
 
 from .. import config
+from ..api import qx_guard
 
 _TIMEOUT = 30
 
 
 class QxClient:
     def __init__(self, base_url: str | None = None):
-        self.base_url = (base_url or config.QX_SERVER_URL).rstrip("/")
+        url = (base_url or config.QX_SERVER_URL).rstrip("/")
+        # W1.3: refuse an off-host QX URL (SSRF / open asset-host guard).
+        qx_guard.validate_qx_url(url)
+        self.base_url = url
 
     def search(self, *, q: str = "", mode: str = "exact", subject: str | None = None,
                chapter: str | None = None, qtype: str | None = None, page: int = 1) -> dict:

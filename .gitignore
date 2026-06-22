@@ -28,6 +28,7 @@ __pycache__/
 .pytest_cache/
 .pytmp/
 .pytest_tmp/
+.pytest_tmp_audit/
 .mypy_cache/
 *.egg-info/
 .coverage
@@ -47,6 +48,9 @@ frontend/coverage/
 Web OS GUI design.zip
 
 # --- cloudflare tunnel (Phase B): commit only the non-secret config.yml ---
+# W1.5: ** so a tunnel-cred JSON copied beside the committed config at ANY depth
+# (e.g. deploy/cloudflared/<UUID>.json) is ignored, not just root-level cloudflared/.
 *.pem
 cloudflared/*.json
+**/cloudflared/*.json
 mcd-cloud.json

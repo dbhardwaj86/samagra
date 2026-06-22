@@ -17,7 +17,11 @@ class QuestionDBAdapter(Adapter):
     label = "QuestionDB (online)"
 
     def available(self) -> bool:
-        return True
+        # W3.4: this is an offline stub yielding 0 artifacts. Reporting available
+        # would surface a permanently-empty source as "OK" in the operator
+        # console — dishonest. A later slice that actually deploys QX here flips
+        # this to a live reachability probe.
+        return False
 
     def summary(self) -> dict:
         return {"status": "offline (HF Space private)", "url": config.QUESTIONDB_URL}

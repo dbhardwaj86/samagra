@@ -229,7 +229,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   <strong>separate browser-vision pass</strong> (owner-run, never a loop gate) — <strong>not yet run; pixel
   parity is not claimed</strong>.</p>
 
-  <h2 id="coherence">Direction coherence <span class="badge ok">reconciled · ratified 2026-06-21</span></h2>
+  <h2 id="coherence">Direction coherence <span class="badge ok">reconciled 2026-06-21 · DEC-4 retired 2026-06-22</span></h2>
   <p class="lede">A dedicated coherence audit this session — an independent <strong>Codex vision review</strong>
   plus a <strong>multi-agent implementation audit</strong> (4 mappers + 4 verifiers, live test runs) — found
   <strong>execution coherence strong, but strategic direction drifting</strong>. The drift has now been
@@ -249,12 +249,13 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   <p><strong>Decision (ratified 2026-06-21 by Deepak — now binding):</strong></p>
   <ol>
     <li><strong>DEC-1 · Scope.</strong> SAMAGRA OS is a <strong>bounded operator console — a UI metaphor only</strong>; SAMAGRA remains a control plane and does not acquire app-platform scope.</li>
-    <li><strong>DEC-2 · North-star binding.</strong> The attention-ROI north-star + the kill-criterion remain <strong>binding</strong> and are not voided by the OS track (data source = the governance <code>events</code>/<code>review_overlay</code> ledger; the ~3 hrs/wk figure stays the seed proposal pending the DEC-4 gauge).</li>
+    <li><strong>DEC-2 · North-star — now ADVISORY (relaxed by DEC-6).</strong> The attention-ROI north-star + kill-criterion were originally <strong>binding</strong>; DEC-6 (2026-06-22) relaxes them to <strong>advisory</strong> — an informal standard the Chairman may invoke (data source = the governance <code>events</code>/<code>review_overlay</code> ledger), no longer a hard freeze condition.</li>
     <li><strong>DEC-3 · Scope firewall</strong> (hard non-goal, mirrored into OS spec §3): no entertainment apps beyond E1's Snake, no third-party apps / marketplace, no process-scheduler model, no user-facing product identity.</li>
-    <li><strong>DEC-4 · Attention-ROI acceptance gate before E3:</strong> 2–3 representative operator tasks (triage munshi captures · read pipeline/gate status · find + open a catalog artifact) measured for owner time-saved vs the old portal; fail → freeze GUI expansion + reprioritize Phase 3. <strong>⚠ Consciously DEFERRED 2026-06-22</strong> — the Chairman chose to build E3 first this session. The gate is <strong>not satisfied and not voided</strong>; it remains the binding gate for the Phase-3-vs-GUI reprioritization and should run before further GUI investment.</li>
-    <li><strong>DEC-5 · Phase 3 is the primary value engine</strong> — the active loop restarts after the E2 visual-QA pass and the DEC-4 gate, ahead of further theme/mobile polish.</li>
+    <li><strong>DEC-4 · <s>Attention-ROI acceptance gate before E3</s> — RETIRED (DEC-6, 2026-06-22).</strong> The pre-E3 stopwatch gate (time 2–3 operator tasks vs the old portal) is <strong>formally retired, not deferred</strong> — see DEC-6.</li>
+    <li><strong>DEC-5 · Phase 3 is the primary value engine</strong> — the active loop restarts after the E2 visual-QA pass (the DEC-4 gate that also blocked it is retired by DEC-6), ahead of further theme/mobile polish.</li>
+    <li><strong>DEC-6 · DEC-4 RETIRED (2026-06-22, Chairman Deepak — post-audit-hardening W4, option C).</strong> The pre-E3 attention-ROI acceptance gate is formally retired: E3 + the public deploy shipped ahead of it and the bounded operator-console is judged already proven, so a gate the project keeps shipping past is governance theatre. No doc may now describe DEC-4 (or any attention-ROI gauge) as a "binding gate" before further GUI/deploy work; DEC-2 relaxes to advisory. <strong>Still binding:</strong> DEC-1, DEC-3, the never-automated publish gate, and DEC-5 (Phase 3 next — now ungated).</li>
   </ol>
-  <p class="lede">Full write-up: <code>HANDOFF.md</code> → <em>✅ Direction-coherence DECISION (ratified 2026-06-21)</em>.</p>
+  <p class="lede">Full write-up: <code>HANDOFF.md</code> → <em>✅ Direction-coherence DECISION</em> (DEC-1…DEC-6).</p>
 
   <h2 id="arch">Architecture</h2>
   <div class="diagram">
@@ -413,8 +414,14 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   </svg>
 
   <h2 id="tests">Tests</h2>
-  <p><span class="badge ok">frontend 541 / 541 · 61 files</span> <span class="badge ok">backend 152 / 152</span>
-  (last run 2026-06-22, branch <code>e3/samagra-os</code>). <strong>E3 + the test-only LOW cleanup</strong> added
+  <p><span class="badge ok">backend 229 / 229</span> <span class="badge ok">frontend 559 / 559 · 63 files</span>
+  (last run 2026-06-22, post-audit hardening — not yet committed). <strong>Hardening (W1–W3)</strong> added the
+  origin-auth gate (<code>test_origin_auth.py</code>, 20), the QX-URL guard (<code>test_qx_guard.py</code>), the
+  read-only-reads tests, <code>/open</code> hardening, questiondb/serve-guard, notification + lecture-exporter +
+  gdocs coverage, mcd non-string symmetry (backend +75 → 229), and the QX-HTML sanitizer +
+  component XSS + scheme-allowlist tests (frontend +13 → 559); all TDD, <code>tsc</code> + <code>eslint</code> + <code>vite build</code>
+  clean. <em>Prior baseline (E3 build):</em> <span class="badge ok">frontend 541 · 61 files</span>
+  <span class="badge ok">backend 152</span> on <code>e3/samagra-os</code>. <strong>E3 + the test-only LOW cleanup</strong> added
   backend sims-parser-robustness + QX-facets degradation tests (+10 → 152) and frontend mobile-shell
   (<code>Mobile.test.tsx</code>), theme-aware WM geometry, theme-store <code>mobileApp</code>, App device-branch,
   responsive-Dashboard + device-aware-Terminal tests (+17 → 541), all TDD; <code>tsc</code> + <code>eslint</code> +
@@ -487,6 +494,39 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   the decided-block path; <code>dispatch_codex</code> + git mocked).</p>
 
   <h2 id="decisions">Recent decisions</h2>
+  <div class="log"><div class="d">2026-06-22 · ✅ Post-audit hardening SHIPPED (W1 security · W2 docs · W3 test-debt · W4 DEC-4 RETIRED)</div>
+    The hardening plan is implemented TDD (red→green); <strong>not yet committed/merged — owner-gated</strong>.
+    All additive / defence-in-depth — the live deploy + the read-only-except-owner-capture invariant are unchanged.
+    <strong>W1.1 (the HIGH): the origin now fails closed</strong> — new <code>samagra/api/origin_auth.py</code>
+    middleware gates the five mutating POSTs + the two admin-keyed live reads; loopback (local dev + the
+    <code>cloudflared</code> origin) always passes, so a remote request needs a verified Access identity (full
+    RS256/JWKS validation of <code>Cf-Access-Jwt-Assertion</code> when <code>SAMAGRA_ACCESS_AUD</code> +
+    <code>SAMAGRA_ACCESS_TEAM_DOMAIN</code> are set, else the interim owner-email header). Because cloudflared is
+    loopback this blocks <em>non-loopback</em> direct exposure — Access stays the primary gate. <strong>W1.2</strong>
+    QX HTML sanitized before injection (<code>lib/questions/sanitize.ts</code>); <strong>W1.3</strong>
+    <code>SAMAGRA_QX_SERVER_URL</code> validated loopback/allowlist (<code>api/qx_guard.py</code>, SSRF guard);
+    <strong>W1.4</strong> schema DDL moved off the GET hot-path (read-only reads + startup lifespan);
+    <strong>W1.5</strong> <code>/open</code> extension-allowlist + hidden/secret deny, <code>.gitignore</code>
+    <code>**/cloudflared/*.json</code>, deploy threat-model enumerates all 5 POSTs. <strong>W2</strong> doc-precision
+    ("two <em>subsystem</em> write paths", <code>/api/questions/facets</code> provenance, counts, <code>mycontentdev</code>
+    key, seed <code>detail?</code>, MathJax/KaTeX, mcd non-string symmetry). <strong>W3</strong> test-debt (lecture
+    exporter + notifications covered; <code>serve --reload</code> guarded; <code>questiondb</code> reports
+    unavailable). <strong>W4 — DEC-4 RETIRED</strong> (Chairman, option C → DEC-6): the pre-E3 attention-ROI gate is
+    formally retired, DEC-2 relaxes to advisory, DEC-1/DEC-3/DEC-5 stay binding. <strong>Ground truth now: backend
+    229 pytest + frontend 559 vitest, green.</strong></div>
+  <div class="log"><div class="d">2026-06-22 · ✅ Owed broad critical review DONE → next-session hardening plan</div>
+    The 529-blocked broad passes are complete: an 11-dimension adversarial Workflow (51 read-only agents,
+    refute-by-default verification of every finding) <strong>plus</strong> an independent Codex
+    <code>gpt-5.5</code> pass — both <strong>GO-WITH-CAVEATS: the docs are honest, the code does what it
+    claims</strong>. Reports <code>docs/codex-reviews/19–21</code>. Ground truth at HEAD <code>95a6270</code>:
+    backend <strong>154 pytest</strong> + frontend <strong>546 vitest</strong> green (the lead-banner "152/541"
+    is stale — fix queued). One <strong>HIGH</strong>: the FastAPI origin does not fail closed — Access is the
+    sole gate over <strong>five</strong> unauthenticated mutating POSTs (incl. <code>/api/gate/*</code>, the
+    publish-gate approve). MEDIUMs: QX HTML <code>dangerouslySetInnerHTML</code> XSS, config-driven QX-URL SSRF,
+    schema DDL on GET paths, broad <code>/open</code>. The <strong>DEC-4 ROI gate was shipped past</strong>
+    (E3 + the public deploy landed ahead of the "binding" gate; Phase 3 parked). <strong>Next-session plan
+    committed:</strong> <code>docs/superpowers/plans/2026-06-22-post-audit-hardening.md</code> (W1 security ·
+    W2 doc-precision · W3 test debt · W4 DEC-4 rescope, options A/B/C, owner-gated). No code changed (read-only audit).</div>
   <div class="log"><div class="d">2026-06-22 · ✅ DEPLOYED LIVE — cloudflared tunnel behind Cloudflare Access</div>
     The ralph ship-&-tunnel loop completed Phase A (functional) + Phase B (deploy). SAMAGRA OS is live at
     <strong><a href="https://samagra.bhautikiplusprashnavali.com">samagra.bhautikiplusprashnavali.com</a></strong>
@@ -545,7 +585,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     (<code>results[].html</code> + <code>mode/degraded/facets</code>; params <code>q/mode/subject/chapter/qtype/page</code>).</div>
   <div class="log"><div class="d">2026-06-21 · Capture control plane LIVE + DEC-3 amended (Chairman)</div>
     The read-only firewall was <strong>amended by the Chairman</strong> to allow <strong>owner-initiated
-    capture</strong>: exactly two write paths — <code>POST /api/munshi/capture</code> (a munshi item) and
+    capture</strong>: exactly two <strong>subsystem</strong> write paths — <code>POST /api/munshi/capture</code> (a munshi item) and
     <code>POST /api/mcd/seeds</code> (an mcd seed). The human <strong>publish gate stays never-automated</strong>,
     there is <strong>no munshi→mcd bridge</strong>, and the invariant becomes <em>"read-only except
     owner-initiated capture."</em> Built TDD on <code>feature/control-plane-capture</code> with an independent
@@ -790,9 +830,15 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     <li><strong>Branch finished — ✅ done.</strong> <code>ship/samagra-os</code> fast-forward-merged into <code>main</code> (20 commits: E3 + Phase A + deploy + durability) and pushed to <code>origin/main</code> (<code>5db7886</code>); gates green (backend pytest + frontend verify).</li>
     <li><strong>Delete the junk DNS record</strong> <code>samagra.pratyakshsims.com.bhautikiplusprashnavali.com</code> (D-8) in the Cloudflare DNS dashboard — a harmless stray CNAME from the first mis-route (does not affect <code>hermes.*</code> or the live samagra host). <em>Owner action.</em></li>
     <li><strong>Browser OTP smoke</strong> — log in via Cloudflare Access and walk the apps × both devices × the 3 themes over TLS (same-origin <code>/api</code>, no CORS); the gate-blocks-unauth check is already verified, this confirms the post-auth app path. <em>Owner action.</em></li>
-    <li><strong>Owed critical-review passes</strong> — the broad multi-agent + independent Codex reviews were <strong>529-blocked</strong> (Anthropic capacity event); re-run when healthy. The inline crown-jewel security review found <strong>no CRITICAL/HIGH</strong>.</li>
+    <li><strong>Post-audit hardening — ✅ done (2026-06-22); commit + merge it (owner-gated).</strong> The fix plan
+    <code>docs/superpowers/plans/2026-06-22-post-audit-hardening.md</code> is implemented TDD: <strong>W1</strong>
+    origin fail-closed (<code>origin_auth.py</code>) · QX-HTML sanitize · QX-URL SSRF guard · DDL off GET paths ·
+    <code>/open</code> + gitignore + deploy threat-model; <strong>W2</strong> doc-precision; <strong>W3</strong>
+    test-debt. Backend 229 + frontend 559 green. <strong>Remaining owner step:</strong> suggest <code>/snap-pre</code>,
+    then commit + merge. Optionally set <code>SAMAGRA_ACCESS_AUD</code> + <code>SAMAGRA_ACCESS_TEAM_DOMAIN</code> in
+    prod <code>.env</code> to upgrade the origin gate from the interim email check to full JWT validation.</li>
     <li><strong>Owner browser-vision pixel-QA pass</strong> over the shell + apps + the mobile frame (the one thing no headless test can judge; never a loop gate, RUBRIC §6) — pixel parity <strong>not yet claimed</strong>.</li>
-    <li><strong>DEC-4 attention-ROI acceptance gate</strong> — deferred (not voided); still the <em>binding</em> gate for the Phase-3-vs-GUI reprioritization before deeper GUI investment.</li>
+    <li><strong>DEC-4 attention-ROI gate — ✅ RESOLVED (2026-06-22, Chairman, option C → DEC-6): RETIRED.</strong> The pre-E3 attention-ROI acceptance gate is formally retired (not deferred); the DEC-2 north-star relaxes from binding to advisory; DEC-1/DEC-3/DEC-5 + the never-automated publish gate stay binding. Mirrored into HANDOFF / STATUS / SUMMARY / both specs / CLAUDE.md. <strong>Phase 3 (DEC-5) is now ungated</strong> — restart it after the E2 visual-QA pass.</li>
   </ol>
   <p><strong>Done since the last STATUS:</strong> the carried test-only S3/S4 LOW cleanup (HANDOFF item 4) is closed
   (`0dceb0d`) — QX-facets degradation tests, sims parser-robustness tests, the <code>sim_url()</code> validation

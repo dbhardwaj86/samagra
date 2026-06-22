@@ -7,6 +7,7 @@ import {
   MODES, buildQuestionsPath, questionRows, questionError,
   isDegraded, totalCount, facetNames,
 } from "../../lib/questions/facets";
+import { sanitizeQxHtml } from "../../lib/questions/sanitize";
 import type { QuestionsResponse, QuestionMode } from "../../types/contracts";
 
 const V = {
@@ -173,7 +174,8 @@ export default function Questions() {
           <article key={row.q_uid} data-testid="question-row"
                    style={{ background: V.cardBg, border: `1px solid ${V.line}`,
                             borderRadius: 10, padding: "10px 12px" }}>
-            <div className="qx-html" dangerouslySetInnerHTML={{ __html: row.html }} />
+            {/* W1.2: sanitize QX HTML (strip script, event handlers, js URLs) first. */}
+            <div className="qx-html" dangerouslySetInnerHTML={{ __html: sanitizeQxHtml(row.html) }} />
             <div style={{ color: V.muted, fontSize: 12, marginTop: 6 }}>
               {[row.q_type, row.subject, row.chapter, row.difficulty].filter(Boolean).join(" · ")}
             </div>

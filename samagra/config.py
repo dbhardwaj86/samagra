@@ -54,7 +54,36 @@ QUESTIONDB_URL = os.environ.get(
 # --- QX live server (the question engine, run locally as a sidecar) ---
 # `python gui/qx_browser.py` -> :8783 exposes GET /api/qsearch (exact + semantic
 # search with rendered maths + figures). SAMAGRA's /api/questions proxies it.
+# W1.3: the QX base URL is the target of BOTH the backend fetch and the figure
+# asset URLs the browser loads, so it must point only at a trusted local host —
+# validated by api.qx_guard when QxClient is constructed (an off-host URL is
+# rejected unless SAMAGRA_QX_SERVER_ALLOWED_HOSTS opts it in).
 QX_SERVER_URL = os.environ.get("SAMAGRA_QX_SERVER_URL", "http://127.0.0.1:8783")
+# Comma-separated extra hostnames allowed for QX_SERVER_URL beyond loopback
+# (e.g. a trusted LAN sidecar). Loopback is always allowed.
+QX_SERVER_ALLOWED_HOSTS = os.environ.get("SAMAGRA_QX_SERVER_ALLOWED_HOSTS", "")
+
+
+def _env_bool(name: str, default: bool = False) -> bool:
+    val = os.environ.get(name)
+    if val is None:
+        return default
+    return val.strip().lower() in {"1", "true", "yes", "on"}
+
+
+# --- origin fail-closed gate (W1.1) ---
+# Defence-in-depth behind Cloudflare Access. The gate covers the 5 mutating POSTs
+# + the 2 admin-keyed live reads; loopback (local dev + the cloudflared origin)
+# always passes. For remote requests it requires a verified Access identity:
+#   * full path  — SAMAGRA_ACCESS_AUD + SAMAGRA_ACCESS_TEAM_DOMAIN configured ->
+#     cryptographically validate the Cf-Access-Jwt-Assertion against the team JWKS.
+#   * interim    — only when JWT validation is NOT configured: require
+#     Cf-Access-Authenticated-User-Email == SAMAGRA_OWNER_EMAIL (spoofable; weaker).
+# SAMAGRA_DISABLE_ORIGIN_AUTH is a dev escape hatch.
+DISABLE_ORIGIN_AUTH = _env_bool("SAMAGRA_DISABLE_ORIGIN_AUTH", False)
+ACCESS_AUD = os.environ.get("SAMAGRA_ACCESS_AUD") or None
+ACCESS_TEAM_DOMAIN = os.environ.get("SAMAGRA_ACCESS_TEAM_DOMAIN") or None
+OWNER_EMAIL = os.environ.get("SAMAGRA_OWNER_EMAIL") or None
 
 # --- SAMAGRA-owned data (all gitignored) ---
 # DATA_DB is the REBUILDABLE catalog (FTS5 index over the subsystems); it may be

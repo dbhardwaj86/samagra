@@ -1,4 +1,4 @@
-"""Notifications — Telegram (via Hermes bot) + email, both creds-gated.
+"""Notifications — Telegram (direct Bot API) + email, both creds-gated.
 
 Every notification is always appended to state/notifications.log, so there is a
 record even when no channel is configured. Telegram/email are attempted only when

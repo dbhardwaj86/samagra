@@ -23,3 +23,7 @@ def isolate_data_db(monkeypatch, tmp_path):
     """
     monkeypatch.setattr(config, "DATA_DB", tmp_path / "samagra.db")
     monkeypatch.setattr(config, "GOVERNANCE_DB", tmp_path / "governance.db")
+    # W1.1: the suite runs as 'local dev' — disable the origin fail-closed gate by
+    # default so existing API tests reach their handlers. tests/test_origin_auth.py
+    # flips this back OFF to exercise the real gate.
+    monkeypatch.setattr(config, "DISABLE_ORIGIN_AUTH", True, raising=False)

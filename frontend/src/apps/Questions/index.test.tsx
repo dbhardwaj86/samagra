@@ -97,6 +97,19 @@ describe("Questions app (QX-backed)", () => {
     expect(screen.getByTestId("questions")).toBeInTheDocument();
   });
 
+  it("sanitizes a hostile QX payload before injecting it (W1.2 XSS)", () => {
+    wire({ data: { ...payload, results: [{
+      ...payload.results[0],
+      html: '<div class="stem">pwned</div><img src="x" onerror="window.__xss=1">'
+          + '<script>window.__xss=1</script>',
+    }] } });
+    render(<Questions />);
+    const row = screen.getByTestId("question-row");
+    expect(row.innerHTML).toContain("pwned");          // safe content survives
+    expect(row.innerHTML.toLowerCase()).not.toContain("onerror");
+    expect(row.innerHTML.toLowerCase()).not.toContain("<script");
+  });
+
   it("empty results render the empty state", () => {
     wire({ data: {
       results: [], total: 0, page: 1, page_size: 25, mode: "exact", degraded: false, facets: {},

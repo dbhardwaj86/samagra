@@ -16,13 +16,19 @@ sidecar on `:8783` stays internal and is reached via the same-origin
 - **Auth gate:** Cloudflare Access (one-time-PIN to owner email) — **required before any public run**
 
 > ⚠️ **Access before exposure (hard rule).** Never `cloudflared tunnel run` this
-> hostname before its Cloudflare Access application exists and is verified — the
-> owner-initiated capture write-paths (`POST /api/munshi/capture`,
-> `POST /api/mcd/seeds`) and admin keys must not be reachable unauthenticated.
-> The SAMAGRA origin does **not** itself fail closed, so **Access is the only
-> gate** — the §7 smoke-test (unauth request must 302 to the Access login) is
-> load-bearing, not optional. This mirrors the existing
-> `hermes.bhautikiplusprashnavali.com` tunnel's gate.
+> hostname before its Cloudflare Access application exists and is verified. The
+> origin exposes **five mutating POSTs** that must never be reachable
+> unauthenticated:
+> `POST /api/refresh`, `POST /api/tick`, **`POST /api/gate/{pipeline}/{decision}`
+> (advances the human publish gate — `…/textbook/approve`)**,
+> `POST /api/munshi/capture`, `POST /api/mcd/seeds` — plus the two admin-keyed
+> live reads (`GET /api/munshi/library`, `GET /api/mcd/seeds`).
+> As of **W1.1** the origin **also fails closed** (defence-in-depth, §5): remote
+> requests to those routes require a verified Access identity. But because
+> `cloudflared` connects from loopback, that origin gate only blocks *non-loopback*
+> direct exposure — so **Access remains the primary gate** and the §7 smoke-test
+> (unauth request must 302 to the Access login) is load-bearing, not optional.
+> This mirrors the existing `hermes.bhautikiplusprashnavali.com` tunnel's gate.
 
 > 🔑 **Why `bhautikiplusprashnavali.com` and not `pratyakshsims.com`?** The local
 > `cloudflared` `cert.pem` (from a prior `cloudflared tunnel login`) is **scoped to
@@ -112,10 +118,23 @@ In the **Zero Trust dashboard** (mirrors the existing `hermes.*` gate):
 4. Save. Verify (step 7): a logged-out request **302-redirects to the Access
    one-time-PIN login** (not straight to the app).
 
-> Defence-in-depth (optional, later): make the FastAPI origin fail closed on a
-> missing `Cf-Access-Jwt-Assertion` / `Cf-Access-Authenticated-User-Email` header
-> for remote requests, like the hermes origin does. Recommended for the capture
-> write-paths since Access is currently the sole gate.
+> **Defence-in-depth — DONE (W1.1).** The FastAPI origin now fails closed: an
+> `http` middleware (`samagra/api/origin_auth.py`) gates the five mutating POSTs +
+> the two admin-keyed live reads. **Loopback always passes** (local dev + the
+> `cloudflared`-origin path, which connects from `127.0.0.1`), so legitimate
+> Access traffic is unaffected; the gate blocks **non-loopback** direct hits
+> (a `0.0.0.0` bind / LAN / internet exposure). A remote request must carry a
+> verified Access identity. Configure it via env (`.env`):
+>
+> | env var | effect |
+> |---|---|
+> | `SAMAGRA_ACCESS_AUD` + `SAMAGRA_ACCESS_TEAM_DOMAIN` | **full** path: cryptographically validate `Cf-Access-Jwt-Assertion` (RS256) against the team JWKS (`https://<team>.cloudflareaccess.com/cdn-cgi/access/certs`) — set the Access app's AUD tag + team domain |
+> | `SAMAGRA_OWNER_EMAIL` | **interim** (only when JWT vars unset): require `Cf-Access-Authenticated-User-Email == <owner>`. Spoofable by a direct caller, so it is a weaker stopgap — prefer the JWT vars |
+> | `SAMAGRA_DISABLE_ORIGIN_AUTH=1` | dev escape hatch (disables the gate) |
+>
+> Because the legitimate tunnel terminates at loopback, this is **defence-in-depth
+> behind Access, not a replacement** — Access stays the primary gate (§7 smoke
+> test still load-bearing). Recommended to set the JWT vars in production.
 
 ## 6. Run the tunnel (the public step — owner-gated) — RUNNING
 
@@ -186,6 +205,12 @@ Also remove the Access application in the Zero Trust dashboard if retiring the h
   Keep `:8783` internal — only `:8799` is tunnelled.
 - **Same-origin in prod:** FastAPI serves `frontend/dist` + `/api` on `:8799`, so
   there is no CORS over the tunnel (the Vite dev proxy is dev-only).
+- **Two math stacks (note):** the Questions app typesets with **KaTeX** (bundled),
+  but the public `GET /lecture/{slug}` HTML hard-codes a **MathJax 3 CDN**
+  (`samagra/lectures/render.py`). Over the tunnel that page loads MathJax from
+  `cdn.jsdelivr.net`, so it loses equations **offline** or behind a strict
+  `Content-Security-Policy` that disallows the CDN. Bundle MathJax (or render to
+  KaTeX) if the lecture preview must work offline/under a tight CSP.
 - **Never commit secrets:** `cert.pem`, `~/.cloudflared/<id>.json`, `.env`,
   `mcd-cloud.json` are all gitignored. Only the non-secret `config.samagra.yml`
   (tunnel UUID + ingress) is committed; a tunnel UUID is not a secret.

@@ -26,11 +26,37 @@ def _now() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
-def connect() -> sqlite3.Connection:
+# W1.4: schema creation is a write side-effect. Memoize it so it runs once per
+# process+DB-path (re-runs if the file was deleted) instead of on every connect.
+# The lifespan does it eagerly at startup; read paths open the DB read-only so a
+# GET can never mutate.
+_INITIALIZED: set[str] = set()
+
+
+def ensure_schema() -> None:
+    key = str(config.DATA_DB)
+    if key in _INITIALIZED and config.DATA_DB.exists():
+        return
     config.DATA_DB.parent.mkdir(parents=True, exist_ok=True)
     con = sqlite3.connect(config.DATA_DB)
-    con.executescript(SCHEMA)
-    return con
+    try:
+        con.executescript(SCHEMA)
+        con.commit()
+    finally:
+        con.close()
+    _INITIALIZED.add(key)
+
+
+def connect() -> sqlite3.Connection:
+    """Read-write connection (refresh / write paths). Ensures the schema once."""
+    ensure_schema()
+    return sqlite3.connect(config.DATA_DB)
+
+
+def connect_ro() -> sqlite3.Connection:
+    """Read-only connection for GET paths — writes raise, so reads are pure."""
+    ensure_schema()
+    return sqlite3.connect(config.DATA_DB.as_uri() + "?mode=ro", uri=True)
 
 
 def _fts_query(query: str) -> str:
@@ -143,7 +169,7 @@ def refresh(verbose: bool = True) -> dict:
 
 
 def overview() -> dict:
-    con = connect()
+    con = connect_ro()
     con.row_factory = sqlite3.Row
     rows = [dict(r) for r in con.execute("select * from source_summary order by source")]
     refreshed = con.execute(
@@ -160,7 +186,7 @@ def overview() -> dict:
 
 def search(query: str = "", source: str | None = None,
            kind: str | None = None, limit: int = 100) -> list[dict]:
-    con = connect()
+    con = connect_ro()
     con.row_factory = sqlite3.Row
     args: list = []
     match = _fts_query(query) if query else ""
@@ -190,7 +216,7 @@ def search(query: str = "", source: str | None = None,
 
 def facets() -> dict:
     """Distinct sources / kinds / subjects for portal filters."""
-    con = connect()
+    con = connect_ro()
     out = {
         "sources": [r[0] for r in con.execute(
             "select distinct source from catalog order by 1")],

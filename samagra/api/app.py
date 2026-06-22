@@ -7,6 +7,7 @@ and a safe local-file opener constrained to configured source roots.
 from __future__ import annotations
 
 import mimetypes
+from contextlib import asynccontextmanager
 from dataclasses import asdict
 from pathlib import Path
 
@@ -15,6 +16,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 import samagra
+from . import origin_auth
 from .. import catalog, config, questions_proxy, scheduler, sims_manifest, state
 from ..adapters import get_adapter
 from ..clients import McdClient, MunshiClient, QxClient
@@ -27,7 +29,22 @@ from ..org import ORG  # E2.1 static org chart
 # after monkeypatching REPO_ROOT to a built/unbuilt tmp tree).
 FRONTEND_DIST = config.REPO_ROOT / "frontend" / "dist"
 
-app = FastAPI(title="SAMAGRA", version=samagra.__version__)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # W1.4: create the catalog + governance schemas ONCE at startup so the GET
+    # read paths never have to run DDL. Both are also memoized, so this is a
+    # belt-and-braces eager init (a fresh CLI process initializes lazily).
+    catalog.ensure_schema()
+    gstore.ensure_tables()
+    yield
+
+
+app = FastAPI(title="SAMAGRA", version=samagra.__version__, lifespan=lifespan)
+# W1.1: origin fail-closed gate (defence-in-depth behind Cloudflare Access). Only
+# the mutating POSTs + admin-keyed live reads are gated; loopback + the dev flag
+# always pass. Registered first so it wraps every route below.
+app.middleware("http")(origin_auth.enforce)
 # Serve hashed Vite assets only when a build is present; absent before the first
 # `npm run build`, so guard the mount to avoid a StaticFiles directory error.
 if (FRONTEND_DIST / "assets").exists():
@@ -40,15 +57,48 @@ ALLOWED_ROOTS = [
 ]
 
 
-def _allowed(p: Path) -> bool:
+def _under_root(p: Path) -> Path | None:
+    """Return p's path RELATIVE to the matched allowed root, else None.
+
+    Resolving first keeps traversal blocked; returning the relative path lets the
+    servability check inspect only the artifact path (not the trusted, possibly
+    dotted, operator-configured root prefix)."""
     rp = p.resolve()
     for root in ALLOWED_ROOTS:
         try:
-            rp.relative_to(root.resolve())
-            return True
+            return rp.relative_to(root.resolve())
         except ValueError:
             continue
-    return False
+    return None
+
+
+def _allowed(p: Path) -> bool:
+    return _under_root(p) is not None
+
+
+# W1.5: even under an allowed root, only serve catalog-shaped artifact files —
+# an extension allowlist plus a deny on hidden (dotfile/dir) and secret-looking
+# names, so a stray .env / *.pem / token file can't be exfiltrated by path. Only
+# the path RELATIVE to the root is inspected (the root itself is trusted).
+_OPEN_ALLOWED_EXT = frozenset({
+    ".html", ".htm", ".pdf", ".docx", ".png", ".jpg", ".jpeg",
+    ".gif", ".svg", ".webp", ".md", ".txt", ".json", ".csv",
+})
+_OPEN_DENY_SUBSTR = ("secret", "credential", "password", "token",
+                     ".env", ".pem", ".key", ".pfx", ".p12")
+
+
+def _open_servable(rel: Path) -> bool:
+    if rel.suffix.lower() not in _OPEN_ALLOWED_EXT:
+        return False
+    for part in rel.parts:
+        low = part.lower()
+        if part.startswith("."):  # hidden file or dir
+            return False
+        # secret-looking name in ANY component (a secret-named dir, not just the file)
+        if any(bad in low for bad in _OPEN_DENY_SUBSTR):
+            return False
+    return True
 
 
 # -- pages ---------------------------------------------------------------
@@ -86,11 +136,13 @@ def api_questions(q: str = "", subject: str | None = None,
     # exact + semantic search, KaTeX maths and figure rendering. QX renders the
     # question HTML with relative /asset URLs -> absolutize them to the QX server
     # so figures load. QX unreachable -> graceful empty + error (never a 500).
-    client = QxClient()
+    # W1.3: QxClient() validates QX_SERVER_URL — a poisoned (off-host) URL raises
+    # and is caught below, so the proxy never fetches an attacker host (SSRF).
     try:
+        client = QxClient()
         payload = client.search(q=q, mode=mode, subject=subject,
                                 chapter=chapter, qtype=qtype, page=page)
-    except Exception:  # noqa: BLE001 — connection refused / timeout / bad JSON
+    except Exception:  # noqa: BLE001 — bad URL / connection refused / timeout / bad JSON
         return {"results": [], "total": 0, "page": page, "page_size": 0,
                 "mode": mode, "degraded": False, "facets": {},
                 "error": "questions backend unavailable — is the QX server running on :8783?"}
@@ -105,10 +157,11 @@ def api_pipelines():
 @app.get("/api/assignments")
 def api_assignments():
     # Reads the DURABLE governance DB (governance.db, D6) — separate from the
-    # rebuildable catalog. init_tables is idempotent + safe to call per request.
-    conn = gstore.connect()
+    # rebuildable catalog. W1.4: the schema is ensured once (memoized + at
+    # startup), and the read opens read-only so this GET can't mutate.
+    gstore.ensure_tables()
+    conn = gstore.connect_ro()
     try:
-        gstore.init_tables(conn)  # inside try: a failed init must still close the conn
         return {"assignments": gstore.list_assignments(conn),
                 "events": gstore.list_events(conn)}
     finally:
@@ -141,8 +194,11 @@ def api_gate(pipeline: str, decision: str):
 @app.get("/open")
 def open_file(path: str, download: bool = False):
     p = Path(path)
-    if not _allowed(p):
+    rel = _under_root(p)
+    if rel is None:
         raise HTTPException(403, "path outside allowed source roots")
+    if not _open_servable(rel):
+        raise HTTPException(403, "file type not servable")
     if not p.exists() or not p.is_file():
         raise HTTPException(404, "file not found")
     media, _ = mimetypes.guess_type(str(p))
@@ -209,10 +265,16 @@ _SEED_TYPES = {"concept", "question", "snippet", "simulation_idea",
 
 @app.post("/api/mcd/seeds")
 def api_mcd_create_seed(payload: dict):
-    typ = (payload or {}).get("type")
-    raw_text = str((payload or {}).get("raw_text") or "").strip()
+    payload = payload or {}
+    typ = payload.get("type")
     if typ not in _SEED_TYPES:
         raise HTTPException(400, "type must be one of: " + ", ".join(sorted(_SEED_TYPES)))
+    # Symmetric with munshi capture: reject non-string field values rather than
+    # silently str()-coercing them into a production write.
+    raw_text = payload.get("raw_text")
+    if not isinstance(raw_text, str):
+        raise HTTPException(400, "raw_text must be a string")
+    raw_text = raw_text.strip()
     if not raw_text:
         raise HTTPException(400, "raw_text is required")
     client = McdClient()
@@ -220,7 +282,12 @@ def api_mcd_create_seed(payload: dict):
         raise HTTPException(503, "mycontentdev not configured — set mcd-cloud.json adminKey")
     fields = {"type": typ, "raw_text": raw_text}
     for opt in ("title", "source_ref"):
-        v = str((payload or {}).get(opt) or "").strip()
+        if opt not in payload:
+            continue
+        v = payload[opt]
+        if not isinstance(v, str):
+            raise HTTPException(400, f"field {opt!r} must be a string")
+        v = v.strip()
         if v:
             fields[opt] = v
     try:
@@ -241,13 +308,20 @@ def api_sims():
 
 @app.get("/api/questions/facets")
 def api_questions_facets():
+    # NOTE (provenance, W2): the live Questions UI does NOT consume this endpoint.
+    # Its subject/chapter/qtype chips come from the filter-scoped facets in the
+    # /api/questions payload (QX search.facet_counts → frontend lib/questions/facets).
+    # This route is a separate, question-scoped subject list (qx.summary().subjects)
+    # with a non-alpha guard; it is retained as an alternate read but is not what
+    # structurally killed the old SIM0xxx leak (that was the UI no longer touching
+    # the catalog-wide /api/facets).
     qx = get_adapter("qx")
     if not qx or not qx.available():
         return {"subjects": []}
     subjects = (qx.summary() or {}).get("subjects") or {}
     # Only human-meaningful subject names (must contain a letter). Some QX corpora
-    # store numeric subject codes (e.g. {1: 32285}); a bare "1" chip is useless and
-    # was the eyesore replacing the old SIM0xxx leak — drop non-alphabetic keys.
+    # store numeric subject codes (e.g. {1: 32285}); a bare "1" chip is useless —
+    # drop non-alphabetic keys.
     names = [str(s) for s in subjects.keys() if any(ch.isalpha() for ch in str(s))]
     return {"subjects": names}
 

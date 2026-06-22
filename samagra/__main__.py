@@ -51,8 +51,15 @@ def cmd_serve(args) -> None:
     except ImportError:
         print("Portal needs deps. Run: pip install -r requirements.txt")
         sys.exit(1)
+    reload = args.reload
+    # D-1 gotcha: an orphaned --reload worker once held the port. Guard the flag —
+    # ignore it (loud warning) unless the operator explicitly opts in.
+    if reload and not config._env_bool("SAMAGRA_ALLOW_RELOAD", False):
+        print("WARNING: --reload is disabled (D-1 orphaned-worker gotcha — a reload "
+              "worker once held the port). Set SAMAGRA_ALLOW_RELOAD=1 to override.")
+        reload = False
     uvicorn.run("samagra.api.app:app", host=args.host, port=args.port,
-                reload=args.reload)
+                reload=reload)
 
 
 def cmd_tick(args) -> None:

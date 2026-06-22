@@ -29,9 +29,10 @@ as a Chairman amendment, not a silent reversal:
   the only two new subsystem write paths.
 - **Unchanged & still binding:** the **human publish gate stays never-automated** (the sole sacred
   mutation); **no automated munshi→mcd bridge** (promotion happens only on an explicit later
-  Chairman request); **no app-platform scope** (DEC-1); the **attention-ROI north-star +
-  kill-criterion** (DEC-2) and the **pre-E3 attention-ROI gate** (DEC-4) remain binding; Phase 3's
-  full active loop (auto-proposal, scheduling) stays parked (DEC-5).
+  Chairman request); **no app-platform scope** (DEC-1); the scope firewall (DEC-3); Phase 3's
+  full active loop (auto-proposal, scheduling) stays parked (DEC-5). *(Update 2026-06-22: the
+  **pre-E3 attention-ROI gate (DEC-4) was RETIRED** by DEC-6 and the **DEC-2 north-star + kill-criterion
+  relaxed to advisory** — see `HANDOFF.md` → Direction-coherence DECISION.)*
 - **New invariant wording:** *"read-only **except owner-initiated capture**."* Every other backend
   touch in this track is read-only.
 
@@ -183,9 +184,11 @@ caching. Components call `buildX(form)` (pure) → `post(...)` → on success re
   headers={"x-mcd-admin": adminKey}, data=fields)` (form-encoded; let `requests` set the content
   type — **do not** send JSON). Reuses the already-resolved `adminKey`; never logs it. *(The
   evolution-plan draft that POSTed JSON with `x-mcd-key` is superseded by this verified contract.)*
-- **FastAPI:** `POST /api/mcd/seeds` — body `{type, title?, raw_text, detail?, source_ref?}`; 503
-  when `McdClient.available()` is false (admin creds absent), 400 on bad/empty `type` or `raw_text`,
-  returns the created seed.
+- **FastAPI:** `POST /api/mcd/seeds` — body `{type, title?, raw_text, source_ref?}`; 503
+  when `McdClient.available()` is false (admin creds absent), 400 on bad/empty `type` or `raw_text`
+  (and on any non-string field — symmetric with munshi capture), returns the created seed. *(The
+  worker's optional `detail?` JSON-string field, line 180, is intentionally NOT exposed by SAMAGRA's
+  capture — only the four fields above are forwarded.)*
 
 ### Slice 3 — Sims (deployed-only)
 

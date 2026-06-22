@@ -1,5 +1,68 @@
 # SAMAGRA — Handoff
 
+> **▶▶▶▶ ✅ POST-AUDIT HARDENING SHIPPED (2026-06-22) — W1 security · W2 docs · W3 test-debt · W4 DEC-4 RETIRED.**
+> The plan [`docs/superpowers/plans/2026-06-22-post-audit-hardening.md`](docs/superpowers/plans/2026-06-22-post-audit-hardening.md)
+> is implemented, TDD throughout (red→green). **Not yet committed/merged — owner-gated.** All additive /
+> defence-in-depth; the live deploy and the read-only-except-owner-capture invariant are unchanged.
+> **Ground truth now: backend 229 pytest + frontend 559 vitest, both green** (up from the audit's 154/546 — the
+> hardening added the new tests below).
+> - **W1.1 (the HIGH) — the origin now fails closed.** New `samagra/api/origin_auth.py` `http` middleware gates
+>   the five mutating POSTs (`/api/refresh`, `/api/tick`, `/api/gate/*`, `/api/munshi/capture`, `/api/mcd/seeds`)
+>   + the two admin-keyed live reads (`GET /api/munshi/library`, `GET /api/mcd/seeds`). **Loopback always passes**
+>   (local dev + the `cloudflared`-origin path), so a remote request needs a verified Access identity: full
+>   **RS256/JWKS** validation of `Cf-Access-Jwt-Assertion` when `SAMAGRA_ACCESS_AUD` + `SAMAGRA_ACCESS_TEAM_DOMAIN`
+>   are set, else the documented **interim** `Cf-Access-Authenticated-User-Email == SAMAGRA_OWNER_EMAIL`;
+>   `SAMAGRA_DISABLE_ORIGIN_AUTH` dev flag. Because cloudflared connects from loopback, this blocks *non-loopback*
+>   direct exposure (a `0.0.0.0` bind / LAN / internet) — **Access stays the primary gate.** (20 new tests.)
+> - **W1.2** QX HTML is sanitized before `dangerouslySetInnerHTML` (`frontend/src/lib/questions/sanitize.ts` —
+>   strips `<script>`/iframe/`on*`/`javascript:`). **W1.3** `SAMAGRA_QX_SERVER_URL` is validated as
+>   loopback/allowlist (`samagra/api/qx_guard.py`) — SSRF / asset-host guard; a poisoned URL degrades gracefully,
+>   never an SSRF fetch. **W1.4** schema DDL moved off the GET hot-path (memoized `catalog.ensure_schema` /
+>   `gstore.ensure_tables` + a startup lifespan; reads open SQLite **read-only**). **W1.5** `/open` now enforces an
+>   extension allowlist + denies hidden/secret-named files; `.gitignore` adds `**/cloudflared/*.json`; the deploy
+>   threat model enumerates all five POSTs + documents the origin gate.
+> - **W2 doc-precision:** "two **subsystem** write paths" (STATUS/CLAUDE); the `/api/questions/facets` provenance
+>   is corrected (the live chips come from the **`/api/questions` payload facets**, not that endpoint — which the
+>   UI does not consume); counts refreshed; `mycontentdev` (not `mcd`) as the adapter key; seed-spec `detail?`
+>   dropped (server never forwarded it); the MathJax(lectures) / KaTeX(questions) split noted; mcd capture now
+>   **rejects non-string fields** (symmetric with munshi).
+> - **W3 test-debt:** the lecture exporter (Pandoc `_html_to_docx` + `gdocs.upload`) and the notification channels
+>   (`_telegram` / `_email`) are now covered; `samagra serve --reload` is **guarded** (D-1 orphaned-worker gotcha —
+>   needs `SAMAGRA_ALLOW_RELOAD=1`); the `questiondb` stub now reports `available()=False` (0 artifacts —
+>   operator-console honesty); the stale "via Hermes bot" docstring fixed.
+> - **W4 — DEC-4 RETIRED (Chairman Deepak, option C; recorded as DEC-6 below).** The pre-E3 attention-ROI
+>   acceptance gate is **formally retired, not deferred**; the DEC-2 north-star relaxes from *binding* to
+>   *advisory*; **DEC-1 / DEC-3 / DEC-5 + the never-automated publish gate stay binding.** No doc now describes a
+>   "binding gate" the project ships past.
+> - **▶ NEXT:** commit + merge this hardening (owner-gated — suggest `/snap-pre` first); optionally set
+>   `SAMAGRA_ACCESS_AUD` + `SAMAGRA_ACCESS_TEAM_DOMAIN` in prod `.env` to upgrade the origin gate from the interim
+>   email check to full JWT validation; then **Phase 3** (DEC-5) — now ungated by DEC-4.
+>
+> ---
+>
+> **▶▶▶ ✅ OWED BROAD REVIEW DONE → NEXT SESSION: post-audit hardening + DEC-4 rescope (2026-06-22).**
+> The broad multi-agent + Codex critical passes that were 529-blocked at deploy time are now **complete**: an
+> 11-dimension adversarial Workflow (51 read-only agents, refute-by-default verification) **plus** an independent
+> Codex `gpt-5.5` pass, both verdict **GO-WITH-CAVEATS — the docs are honest; the code does what it claims.**
+> Reports: `docs/codex-reviews/{19-overall-critical-analysis,20-multiagent-doc-claim-audit,21-consolidated-critical-review}.md`.
+> Ground truth at the audit HEAD `95a6270`: backend **154 pytest** + frontend **546 vitest**, green. *(The
+> post-audit hardening session has since added tests — **current ground truth is 229 pytest / 559 vitest**, per
+> the top banner. Older per-build counts like "152/541" below are historical build-moment snapshots, not current.)*
+> - **The one HIGH (both reviewers):** the FastAPI origin does **not** fail closed — Cloudflare Access is the
+>   *sole* gate over **five** unauthenticated mutating POSTs (`/api/refresh,tick,gate,munshi/capture,mcd/seeds`),
+>   incl. `/api/gate/textbook/approve`. Contained today (loopback bind + Access) but zero defence-in-depth.
+> - **MEDIUMs:** QX HTML via `dangerouslySetInnerHTML` (XSS); config-driven `SAMAGRA_QX_SERVER_URL` SSRF; GET
+>   routes run schema DDL; `/open` serves any file under the broad source roots; deploy threat-model under-counts
+>   the POSTs. **LOWs:** lecture-exporter + notifications untested; stale tracker counts; `mcd` vs `mycontentdev`
+>   doc key; the SIM0xxx non-alpha filter sits on a dead endpoint (leak is still structurally gone).
+> - **Governance:** DEC-4 attention-ROI gate was ratified "binding before E3" but E3 + the public deploy shipped
+>   ahead of it (Phase 3 parked) — honestly documented as "deferred, not voided," but it's the GUI-first drift the
+>   coherence audit flagged. **To decide next session: run it / rescope it / retire it (Chairman's call).**
+> - **▶ NEXT SESSION PLAN (committed):** [`docs/superpowers/plans/2026-06-22-post-audit-hardening.md`](docs/superpowers/plans/2026-06-22-post-audit-hardening.md)
+>   — W1 security hardening (origin fail-closed first), W2 doc-precision fixes, W3 test debt, W4 DEC-4 rescope
+>   (options A/B/C, owner-gated). All additive/defence-in-depth; the live deploy + the read-only-except-capture
+>   invariant stay as-is. No code changed this session (read-only audit).
+>
 > **▶▶▶ ✅ SAMAGRA OS DEPLOYED LIVE (2026-06-22).** The ralph ship-&-tunnel loop drove the app to fully working
 > (Phase A: 17 apps × mobile × 3 themes, real data, 0 console errors, gates green) and **deployed it behind
 > Cloudflare Access** at **https://samagra.bhautikiplusprashnavali.com** via a `cloudflared` named tunnel
@@ -284,23 +347,29 @@ and live suites are **backend 106 pytest + frontend 501 vitest** green. **The dr
 1. **DEC-1 · Scope.** SAMAGRA OS is a **bounded operator console — a UI metaphor only.** SAMAGRA remains a
    control plane; it does **not** acquire app-platform scope. The windowing GUI is inward-facing operator
    infrastructure, never a product.
-2. **DEC-2 · North-star binding.** The **attention-ROI north-star** (minutes-of-owner-attention per published
-   artifact) and the **kill-criterion** from the 2026-06-19 vision remain **BINDING** and are not voided by the
-   OS track. Data source = the governance `events`/`review_overlay` ledger. (The ~3 hrs/wk figure stays the seed
-   proposal; the owner ratifies the exact threshold when the DEC-4 gauge first runs.)
+2. **DEC-2 · North-star — now ADVISORY (relaxed by DEC-6).** The **attention-ROI north-star**
+   (minutes-of-owner-attention per published artifact) and the **kill-criterion** were originally **BINDING**;
+   DEC-6 (2026-06-22) **relaxes them from binding to advisory** — they remain the informal standard the Chairman
+   may invoke when judging GUI investment, but are no longer a hard freeze condition. Data source (if invoked) =
+   the governance `events`/`review_overlay` ledger.
 3. **DEC-3 · Scope firewall** (now a hard non-goal, mirrored into OS spec §3): **no** entertainment apps beyond
    E1's Snake; **no** third-party apps / app marketplace; **no** process- or scheduler-as-platform model; **no**
    user-facing product identity. Adding any of these is a Chairman decision, not routine engineering.
-4. **DEC-4 · Attention-ROI acceptance gate before E3.** Before any E3 work (mobile device mode / further theme
-   polish) begins, a gate must pass: pick **2–3 representative operator tasks** (e.g. (a) triage the day's munshi
-   captures into seed-candidates vs ops; (b) read pipeline + gate status across all 5 pipelines; (c) locate and
-   open a specific catalog artifact — owner-confirmable), **measure owner wall-clock time** doing each via
-   SAMAGRA OS vs the prior tabbed portal / point tools. **Pass** = the GUI demonstrably *reduces* total owner
-   time (net-positive attention-ROI). **Fail** = freeze GUI expansion (per DEC-2's kill-criterion) and
-   reprioritize Phase 3.
+4. **DEC-4 · ~~Attention-ROI acceptance gate before E3~~ — RETIRED (DEC-6, 2026-06-22).** *(Original text kept
+   for history.)* ~~Before any E3 work a gate must pass: pick 2–3 representative operator tasks, measure owner
+   wall-clock time via SAMAGRA OS vs the prior tools; Pass = GUI reduces total owner time; Fail = freeze GUI
+   expansion and reprioritize Phase 3.~~ **This gate is formally retired — see DEC-6.**
 5. **DEC-5 · Phase 3 is the primary value engine.** The active loop (munshi → seed → board-approve → publish)
-   restarts **after the E2 visual-QA pass and the DEC-4 gate**, ahead of further theme/mobile polish — it is not
-   optional. (No calendar date is set; it is gated on those two conditions.)
+   restarts **after the E2 visual-QA pass** (the DEC-4 gate that previously also blocked it is retired by DEC-6),
+   ahead of further theme/mobile polish — it is not optional.
+6. **DEC-6 · DEC-4 RETIRED (2026-06-22, Chairman Deepak — option C of the post-audit-hardening plan W4).** The
+   pre-E3 attention-ROI **acceptance gate is formally retired, not deferred.** Rationale: E3 *and* the public
+   deploy shipped ahead of it and the bounded operator-console is judged already proven in practice — keeping a
+   gate the project repeatedly ships past is governance theatre (the very GUI-first drift the coherence audit
+   flagged). **Binding effect:** no SAMAGRA doc may describe DEC-4 (or any attention-ROI gauge) as a "binding
+   gate" that must run before further GUI/deploy work; DEC-2 is relaxed to *advisory* (above). **Unchanged &
+   still binding:** DEC-1 (bounded scope), DEC-3 (scope firewall), the never-automated publish gate, and DEC-5
+   (Phase 3 next — now ungated by DEC-4).
 
 This decision is recorded across STATUS.html (*Direction coherence*), SUMMARY.html, both specs and CLAUDE.md, so
 it travels with the project. Reviews that informed it: `docs/superpowers/_research/samagra-os/_vision-review-output.md`.
@@ -310,10 +379,11 @@ it travels with the project. Reviews that informed it: `docs/superpowers/_resear
 2. ~~Test-only S3/S4 LOW cleanup (HANDOFF item 4).~~ **✅ DONE (`0dceb0d`).**
 3. ~~**E3** — mobile device mode + theme-correct WM geometry + responsive Dashboard.~~ **✅ BUILT
    (`73a97b7`+`82edd06`) on `e3/samagra-os` — DEC-4 consciously deferred by the Chairman this session.**
-4. **Merge `e3/samagra-os`** (present `superpowers:finishing-a-development-branch`).
-5. Owner **browser-vision pixel-QA** pass over the E1 shell + the 11 E2 apps + the new mobile frame.
-6. **Run the DEC-4 attention-ROI acceptance gate** — still the binding gate for the Phase-3-vs-GUI
-   reprioritization (deferred, not voided); run it before further GUI investment, ahead of Phase 3.
+4. **Commit + merge the post-audit hardening** (this session's W1–W4) — owner-gated; suggest `/snap-pre` first.
+5. **Merge `e3/samagra-os`** (present `superpowers:finishing-a-development-branch`).
+6. Owner **browser-vision pixel-QA** pass over the E1 shell + the 11 E2 apps + the new mobile frame.
+7. ~~Run the DEC-4 attention-ROI acceptance gate.~~ **DEC-4 RETIRED (DEC-6, 2026-06-22)** — Phase 3 (DEC-5) is
+   now ungated; restart it after the E2 visual-QA pass. The attention-ROI north-star is advisory, not a gate.
 
 (Backend pytest exits 1 on Windows from a tmpdir symlink-cleanup teardown *after* all 106 pass — cosmetic, not
 a failure; run with `--basetemp` to silence.)
@@ -377,8 +447,14 @@ QX `C:\SandBox\gpt_box\gpt-extract-ques` · textbook `C:\SandBox\gpt_box\physics
 ## Gotchas
 
 - Python 3.11 venv (`.venv`) for the portal; system Python is 3.14 (stdlib-only CLI works there too).
-- Do **not** use `uvicorn --reload` here — an orphaned reload worker held the port once. Use the preview harness or plain uvicorn.
-- QX `subject` column is unpopulated (physics-only); facet on chapter/q_type instead. **(Directly relevant to the ⚠ KNOWN BUG — `/api/facets.subjects` is catalog-wide, so the Questions chips surface sims `SIM0xxx` ids, not question subjects.)**
+- Do **not** use `--reload` here — an orphaned reload worker held the port once (D-1). `samagra serve --reload` is
+  now **guarded**: it's ignored with a warning unless `SAMAGRA_ALLOW_RELOAD=1`. Use the preview harness or plain uvicorn.
+- **Adapter registry key is `mycontentdev`** — the `mcd` in `McdClient` / docs is shorthand; `get_adapter("mcd")`
+  returns `None`. Use `get_adapter("mycontentdev")` (as `app.py` does).
+- QX `subject` column is unpopulated (physics-only); facet on chapter/q_type instead. **(The old SIM0xxx chip leak
+  is RESOLVED — the live Questions chips now come from the `/api/questions` payload facets (QX `search.facet_counts`,
+  filter-scoped), NOT the catalog-wide `/api/facets.subjects`. The separate `/api/questions/facets` endpoint exists
+  but the UI does not consume it — see its docstring in `app.py`.)**
 - DOCX math: Pandoc `html+tex_math_dollars` converts `$...$` → OMML (verified: 130 eqns in vectors-thick).
 - Don't write to `physics-textbook/queue.json` — SAMAGRA tracks approvals in its own `state/`.
 

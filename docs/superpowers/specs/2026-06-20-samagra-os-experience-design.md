@@ -20,13 +20,14 @@
 > COHERENT-WITH-CAVEATS)** found this track *half-reconciles* the reversal (it argues §1's "honest shape of the
 > work" and firewalls write paths) but **never restates the attention-ROI metric or the kill-criterion**, and
 > parks the value-producing active loop while OS chrome (3 themes, a Snake game, mobile mode) grows; the "frugal"
-> value sits unaddressed. **Decided (now BINDING — see HANDOFF DEC-1…DEC-5; firewall in §3, gate in §2):** (1) frame SAMAGRA OS as a *bounded operator
-> console / UI-metaphor only* — no app-platform scope; (2) restate the attention-ROI north-star + ~3 hrs/wk
-> kill-criterion as still binding (data source = the governance `events`/`review_overlay` ledger); (3) add a
-> scope firewall to §3 non-goals (no entertainment apps beyond E1's Snake, no third-party apps/marketplace, no
-> process-scheduler model, no user-facing identity); (4) add an attention-ROI acceptance gate before E3; (5) give
-> Phase 3 a dated restart commitment after the E2 visual-QA pass. Full write-up: `HANDOFF.md` → *Direction-coherence
-> DECISION (ratified 2026-06-21)*; reviews in `docs/superpowers/_research/samagra-os/_vision-review-output.md`.
+> value sits unaddressed. **Decided (see HANDOFF DEC-1…DEC-6; firewall in §3):** (1) frame SAMAGRA OS as a *bounded operator
+> console / UI-metaphor only* — no app-platform scope; (2) the attention-ROI north-star + ~3 hrs/wk
+> kill-criterion — **relaxed to *advisory* by DEC-6 (2026-06-22)** (data source = the governance
+> `events`/`review_overlay` ledger); (3) add a scope firewall to §3 non-goals (no entertainment apps beyond E1's
+> Snake, no third-party apps/marketplace, no process-scheduler model, no user-facing identity); (4) ~~add an
+> attention-ROI acceptance gate before E3~~ — **the gate was RETIRED by DEC-6 (2026-06-22)**; (5) give
+> Phase 3 a restart commitment after the E2 visual-QA pass (now ungated by DEC-4). Full write-up: `HANDOFF.md` → *Direction-coherence
+> DECISION* (DEC-1…DEC-6); reviews in `docs/superpowers/_research/samagra-os/_vision-review-output.md`.
 
 ## 1. Overview & goal
 
@@ -81,11 +82,13 @@ full green gate before the next begins.
 Min window size **360×280**. Aqua chrome: top bar **30px**, Dock bottom-center radius 20,
 window radius 13, traffic-light controls on the **left**.
 
-> **E3 is gated (DEC-4, ratified 2026-06-21).** Before any E3 work (mobile device mode / further theme polish)
-> begins, an **attention-ROI acceptance gate** must pass: 2–3 representative operator tasks measured for owner
-> time-saved via SAMAGRA OS vs the old portal; **fail → freeze GUI expansion and reprioritize Phase 3** (the
-> active loop). The attention-ROI north-star + kill-criterion (the 2026-06-19 vision §1) remain **binding**
-> (DEC-2). See `HANDOFF.md` → *Direction-coherence DECISION*.
+> **~~E3 is gated (DEC-4, ratified 2026-06-21)~~ — DEC-4 RETIRED (DEC-6, 2026-06-22, Chairman).** The pre-E3
+> attention-ROI acceptance gate (time 2–3 operator tasks via SAMAGRA OS vs the old portal) is **formally retired,
+> not deferred** — E3 + the public deploy shipped ahead of it and the bounded console is judged already proven, so
+> a gate the project keeps shipping past is governance theatre. The attention-ROI north-star + kill-criterion
+> (DEC-2) are **relaxed from binding to advisory** — an informal standard the Chairman may invoke, no longer a hard
+> freeze condition. DEC-1 (bounded scope), DEC-3 (firewall), the never-automated publish gate, and DEC-5 (Phase 3
+> next — now ungated) stay binding. See `HANDOFF.md` → *Direction-coherence DECISION* (DEC-6).
 
 ---
 

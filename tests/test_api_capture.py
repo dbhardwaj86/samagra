@@ -98,6 +98,19 @@ def test_mcd_seed_unconfigured(monkeypatch):
     r = _client().post("/api/mcd/seeds", json={"type": "rough_idea", "raw_text": "x"})
     assert r.status_code == 503
 
+def test_mcd_seed_nonstring_raw_text_400(monkeypatch):
+    # Symmetry with munshi (which rejects non-string fields): mcd must not
+    # silently str()-coerce a non-string raw_text into a write.
+    monkeypatch.setattr(api_app, "McdClient", lambda: type("F", (), {"available": lambda s: True})())
+    r = _client().post("/api/mcd/seeds", json={"type": "rough_idea", "raw_text": 123})
+    assert r.status_code == 400
+
+def test_mcd_seed_nonstring_optional_400(monkeypatch):
+    monkeypatch.setattr(api_app, "McdClient", lambda: type("F", (), {"available": lambda s: True})())
+    r = _client().post("/api/mcd/seeds",
+                       json={"type": "rough_idea", "raw_text": "ok", "title": ["x"]})
+    assert r.status_code == 400
+
 def test_mcd_seed_upstream_failure_502(monkeypatch):
     class FakeMcd:
         def available(self): return True

@@ -55,6 +55,33 @@ def connect() -> sqlite3.Connection:
     return con
 
 
+# W1.4: GET /api/assignments called init_tables (DDL) on every read. Memoize the
+# schema/migration so it runs once per process+DB-path (re-runs if the file was
+# deleted), and expose a read-only connection so the read endpoint can't mutate.
+_INITIALIZED: set[str] = set()
+
+
+def ensure_tables() -> None:
+    """Idempotent + memoized: create tables + apply migrations once per DB path."""
+    key = str(config.GOVERNANCE_DB)
+    if key in _INITIALIZED and config.GOVERNANCE_DB.exists():
+        return
+    conn = connect()
+    try:
+        init_tables(conn)
+    finally:
+        conn.close()
+    _INITIALIZED.add(key)
+
+
+def connect_ro() -> sqlite3.Connection:
+    """Read-only connection for the assignments GET path — writes raise."""
+    ensure_tables()
+    con = sqlite3.connect(config.GOVERNANCE_DB.as_uri() + "?mode=ro", uri=True)
+    con.row_factory = sqlite3.Row
+    return con
+
+
 def init_tables(conn: sqlite3.Connection) -> None:
     """Create baseline tables, apply pending migrations, stamp schema_version.
 
