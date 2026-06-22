@@ -1,7 +1,8 @@
 # SAMAGRA — Handoff
 
-> **▶▶▶▶▶ ✅ PHASE 3 — ACTIVE LOOP (the bridge) BUILT TDD + GOLDEN THREAD PROVEN LIVE (2026-06-23).**
-> On branch **`phase3/active-loop`** (NOT merged). DEC-5's primary value engine is real: `samagra/bridge/`
+> **▶▶▶▶▶ ✅ PHASE 3 — ACTIVE LOOP (the bridge) BUILT TDD + GOLDEN THREAD PROVEN LIVE + MERGED to `main` (2026-06-23).**
+> **MERGED to `main` (ff `88d31e0`) after the Codex pre-merge review; NOT yet pushed to `origin/main` (owner-gated).**
+> DEC-5's primary value engine is real: `samagra/bridge/`
 > (`text` · `classify` · `pointers` · `seed_payload` · `outbox` · `run`) + CLI **`samagra bridge scan|approve|submit`**.
 > The loop: munshi item → classify content/ops → propose a flat seed payload + corpus pointers → record an
 > `in-review` board assignment (`governance.db`) + a pasteable outbox → **`approve`** (board gate) → **`submit`**
@@ -12,10 +13,18 @@
 >   kind-specific text keys via `item_text` (not `payload["text"]`); **R3** idempotent terminal `submit` (+ additive
 >   `captured` status); + the post-D6 **`store.connect()`** governance-DB fix (the original plan wrongly used
 >   `catalog.connect()`).
-> - **Gate: 263 pytest green** (229 baseline + 34 new bridge/outbox/governance). Subagent-driven build; every task
->   two-stage reviewed; final whole-impl review (opus) = **MERGE-READY, 0 Critical/High/Medium**; all 5 safety
->   invariants confirmed (only write path = `submit`; NO new web endpoint; read-only-except-capture intact; no
->   secret leak; double-write blocked by two guards).
+> - **Gate: 272 pytest green** (263 build + 9 review-hardening). Subagent-driven build; every task two-stage reviewed;
+>   final whole-impl review (opus) = **MERGE-READY, 0 Critical/High/Medium**; all 5 safety invariants confirmed (only
+>   write path = `submit`; NO new web endpoint; read-only-except-capture intact; no secret leak; double-write blocked).
+> - **Codex pre-merge review (the gate the prod write path requires) — DONE, reports `docs/codex-reviews/22,23`:**
+>   review 22 returned **NO-GO** on prod double-write robustness (3 High, 2 Medium); all remediated TDD (+9 tests) —
+>   **H3** scan now dedups against ANY prior assignment status-blind incl. terminal `captured` (an item is bridged
+>   once); **H1** `submit` records a `seed_submitting` intent BEFORE the write so a crashed/in-flight retry **refuses**
+>   (safe-fail, reconcile by `source_ref`) instead of double-writing; **M1** `validate_seed_payload` re-asserts the
+>   `/api/mcd/seeds` type+non-empty-raw_text contract at the bridge write boundary; **M2** `scan` degrades on a munshi
+>   read crash; **Low** left word-boundary classify (`work`↛`paperwork`) + full-`assignment_id` outbox guard. **H2**
+>   (concurrent submit) accepted **Low** under the single-operator manual-CLI threat model (no bridge endpoint, no
+>   scheduled scan), narrowed by the H1 guard. Re-review 23 = **GO-WITH-CAVEATS, all 6 resolved.**
 > - **GOLDEN THREAD PROVEN LIVE:** a dry scan read live munshi (11 real content proposals); a synthesized **Testbot**
 >   proposal went approve→submit→**real seed `seed_01KVRFPPT98HJVQ5NRBJ63MKR3` (rough_idea, captured)** in prod
 >   mycontentdev, verified by read-back; a second submit was **refused** (idempotent — exactly one seed). *(A clean
@@ -30,9 +39,10 @@
 > - **Known limitation (graceful, by spec):** pointers are usually empty for real verbose questions —
 >   `catalog.search` uses FTS5 **AND** semantics, so a long stem rarely matches all tokens against one catalog title.
 >   Best-effort provenance; the proposal + seed write are unaffected. Future: OR-union / salient-term pointer search.
-> - **▶ NEXT:** `superpowers:finishing-a-development-branch` → a **Codex pre-merge review** (the advisory hook timed
->   out on several commits, so run a full pass), then merge `phase3/active-loop`. Owner then: dismiss munshi note 55
->   + archive the test seed.
+> - **▶ NEXT (owner-gated):** (1) **push `main` → `origin/main`** to make the merge durable (20 commits ahead; not
+>   done without owner consent — outward-facing); (2) **prod test-entity cleanup** — dismiss munshi note **55** +
+>   person "Testbot" (id 16), archive mcd seed **`seed_01KVRFPPT98HJVQ5NRBJ63MKR3`**. Branch `phase3/active-loop`
+>   merged (ff `88d31e0`) and deleted; merged-result gate re-run green (272 pytest).
 >
 > ---
 >

@@ -3198,13 +3198,17 @@ Expected: a clean tree, full suite green — Phase 2 governance layer complete (
 
 ## Phase 3 — Active loop (munshi item → classify → proposed seed payload with exact pointers → board-review assignment → on approval, create seed via capture API)
 
-> **✅ BUILT 2026-06-23 (un-parked).** Phase 3 (the active loop / bridge) is implemented TDD on branch
-> **`phase3/active-loop`** (NOT yet merged) per the **reconciled** spec/plan
+> **✅ BUILT + MERGED to `main` 2026-06-23 (un-parked).** Phase 3 (the active loop / bridge) was implemented TDD on
+> branch **`phase3/active-loop`** and **fast-forward-merged to `main` (`88d31e0`; not yet pushed to `origin/main`)**
+> per the **reconciled** spec/plan
 > [`specs/2026-06-22-phase3-active-loop-design.md`](../specs/2026-06-22-phase3-active-loop-design.md) +
 > [`plans/2026-06-22-phase3-active-loop.md`](2026-06-22-phase3-active-loop.md), which **supersede the task
 > breakdown below** (the 2026-06-19 tasks predate the ralph/capture merges; 4 reconciliations applied — R1 flat
-> payload, R2 real munshi keys, R3 idempotent `captured`, post-D6 `store.connect()`). Gate **263 pytest**; golden
-> thread proven live (seed `seed_01KVRFPPT98HJVQ5NRBJ63MKR3`). The design intent below (single board-approved
+> payload, R2 real munshi keys, R3 idempotent `captured`, post-D6 `store.connect()`). A **Codex pre-merge review**
+> (reports `docs/codex-reviews/22,23`) returned **NO-GO** on prod double-write robustness → all findings remediated
+> TDD (H3 status-blind scan dedup · H1 fail-safe in-flight guard · M1 write-boundary validation · M2 graceful
+> munshi-down · Low word-boundary classify) → re-review **GO-WITH-CAVEATS, all resolved**. Gate **272 pytest**;
+> golden thread proven live (seed `seed_01KVRFPPT98HJVQ5NRBJ63MKR3`). The design intent below (single board-approved
 > write path) is unchanged and was honoured. *(Historical context kept below.)* ⏸ Originally PARKED 2026-06-20
 > behind the SAMAGRA OS Experience track.
 
