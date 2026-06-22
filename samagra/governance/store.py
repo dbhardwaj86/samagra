@@ -35,7 +35,10 @@ CREATE TABLE IF NOT EXISTS review_overlay (id INTEGER PRIMARY KEY AUTOINCREMENT,
 # user_version, then stamps SCHEMA_VERSION.
 _MIGRATIONS: dict[int, str] = {}
 
-ASSIGNMENT_STATUS = {"queued", "running", "in-review", "approved", "changes"}
+# 'captured' is the terminal state of a bridged assignment AFTER its seed was
+# created (Phase 3 / R3): set_assignment_status accepts it; submit() flips to it
+# so a captured assignment can never be re-submitted (idempotent prod write).
+ASSIGNMENT_STATUS = {"queued", "running", "in-review", "approved", "changes", "captured"}
 REVIEW_VERDICT = {"approved", "changes"}
 
 

@@ -11,6 +11,7 @@ from samagra.bridge.classify import classify_item
 from samagra import catalog, config
 from samagra.bridge.pointers import resolve_pointers
 from samagra.bridge.seed_payload import build_seed_payload
+from samagra.governance import store
 
 
 def _item(kind, payload, **kw):
@@ -129,3 +130,28 @@ def test_build_seed_payload_source_ref_from_id_when_no_uid():
     item = {"id": "9", "kind": "todo", "payload": {"task": "rotational kinetic energy demo"}}
     body = build_seed_payload(item, [])
     assert body["source_ref"] == "munshi:9"
+
+
+@pytest.fixture
+def temp_gov(tmp_path, monkeypatch):
+    """Point config.GOVERNANCE_DB at a temp DB (fresh governance store)."""
+    gdb = tmp_path / "governance.db"
+    monkeypatch.setattr(config, "GOVERNANCE_DB", gdb)
+    store._INITIALIZED.discard(str(gdb))
+    store.ensure_tables()
+    return gdb
+
+
+def test_governance_accepts_captured_status(temp_gov):
+    conn = store.connect()
+    try:
+        store.add_assignment(conn, id="a1", agent="khanak",
+                             outbox_path="board/khanak/outbox/a1.md",
+                             pipeline="mycontentdev", seed_ref="munshi:1")
+        store.set_assignment_status(conn, "a1", "in-review")
+        store.set_assignment_status(conn, "a1", "approved")
+        store.set_assignment_status(conn, "a1", "captured")   # must not raise
+        a = next(a for a in store.list_assignments(conn) if a["id"] == "a1")
+        assert a["status"] == "captured"
+    finally:
+        conn.close()
