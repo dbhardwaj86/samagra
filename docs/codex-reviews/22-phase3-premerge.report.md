@@ -36,5 +36,3 @@ None found.
 - No automated publish: this branch does not add publish calls or munshi→MCD auto-promotion. Existing scheduler state reflection can mark the SAMAGRA `publish` phase done at `samagra/scheduler.py:93`, but I found no MCD publish API call in the bridge.
 
 - No secret leak: no bridge code writes env secrets, cookies, admin keys, `.env`, or client reprs to outbox/logs. The diff search only found variable-name references, not secret values. Error paths are not sanitized in the CLI, but the current clients do not put secrets in URLs or reprs.
-
-

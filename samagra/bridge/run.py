@@ -4,7 +4,8 @@ scan(dry=True)  -> classify munshi items, build proposed seed payloads + pointer
                    dry=True writes NOTHING. dry=False records an 'in-review' board
                    assignment per content item (agent 'khanak') + an outbox file +
                    a 'seed_proposed' event; it NEVER creates a seed. Re-scanning
-                   skips items that already have a non-terminal assignment.
+                   skips items that already have ANY prior assignment (status-
+                   blind, incl. terminal 'captured') so an item is bridged once.
 approve(id)     -> board gate: flips an 'in-review' assignment to 'approved'.
 submit(id)      -> the ONE subsystem write: requires status 'approved', refuses a
                    double-write, creates the seed, flips to terminal 'captured'.
