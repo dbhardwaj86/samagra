@@ -114,3 +114,27 @@ def scan(dry: bool = True) -> list[dict]:
         if conn is not None:
             conn.close()
     return proposals
+
+
+def _load_assignment(conn, assignment_id: str) -> dict | None:
+    for a in store.list_assignments(conn):
+        if a["id"] == assignment_id:
+            return a
+    return None
+
+
+def approve(assignment_id: str) -> dict:
+    """Board gate: flip an 'in-review' assignment to 'approved'. Refuses others."""
+    conn = store.connect()
+    try:
+        a = _load_assignment(conn, assignment_id)
+        if a is None:
+            raise ValueError(f"unknown assignment: {assignment_id}")
+        if a["status"] != "in-review":
+            raise ValueError(
+                f"assignment {assignment_id} is '{a['status']}', not 'in-review' "
+                f"— only an in-review proposal can be approved.")
+        store.set_assignment_status(conn, assignment_id, "approved")
+        return {"assignment_id": assignment_id, "status": "approved"}
+    finally:
+        conn.close()

@@ -242,3 +242,39 @@ def test_scan_live_records_in_review_and_dedups(temp_catalog, temp_gov, monkeypa
     finally:
         conn.close()
     assert again[0].get("reused") is True
+
+
+def test_approve_flips_in_review_to_approved(temp_gov):
+    conn = store.connect()
+    try:
+        store.add_assignment(conn, id="a1", agent="khanak",
+                             outbox_path="board/khanak/outbox/a1.md",
+                             pipeline="mycontentdev", seed_ref="munshi:1")
+        store.set_assignment_status(conn, "a1", "in-review")
+    finally:
+        conn.close()
+    res = run.approve("a1")
+    assert res["status"] == "approved"
+    conn = store.connect()
+    try:
+        a = next(a for a in store.list_assignments(conn) if a["id"] == "a1")
+        assert a["status"] == "approved"
+    finally:
+        conn.close()
+
+
+def test_approve_refuses_non_in_review(temp_gov):
+    conn = store.connect()
+    try:
+        store.add_assignment(conn, id="a2", agent="khanak",
+                             outbox_path="board/khanak/outbox/a2.md",
+                             pipeline="mycontentdev", seed_ref="munshi:2")
+    finally:
+        conn.close()
+    with pytest.raises(ValueError, match="in-review"):
+        run.approve("a2")   # still 'queued'
+
+
+def test_approve_unknown_assignment_raises(temp_gov):
+    with pytest.raises(ValueError, match="unknown"):
+        run.approve("nope")
