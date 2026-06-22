@@ -10,6 +10,7 @@ from samagra.bridge.text import item_text
 from samagra.bridge.classify import classify_item
 from samagra import catalog, config
 from samagra.bridge.pointers import resolve_pointers
+from samagra.bridge.seed_payload import build_seed_payload
 
 
 def _item(kind, payload, **kw):
@@ -94,3 +95,37 @@ def test_resolve_pointers_respects_limit(temp_catalog):
 
 def test_resolve_pointers_empty_text_returns_empty(temp_catalog):
     assert resolve_pointers("", limit=5) == []
+
+
+def test_build_seed_payload_rough_idea_flat_body():
+    item = {"id": "42", "uid": "munshi:42", "kind": "note",
+            "payload": {"issue": "Idea: show work done by friction with a slider"},
+            "status": "open"}
+    pointers = [
+        {"uid": "tb:ch:work-energy", "source": "physics-textbook",
+         "kind": "chapter", "title": "Work, Energy and Power"},
+    ]
+    body = build_seed_payload(item, pointers)
+    assert body == {
+        "type": "rough_idea",
+        "raw_text": "Idea: show work done by friction with a slider",
+        "source_ref": "munshi:42",
+    }
+    # R1: no nested detail{} (the worker would drop it)
+    assert "detail" not in body
+
+
+def test_build_seed_payload_question_maps_type():
+    item = {"id": "7", "uid": "munshi:7", "kind": "question",
+            "payload": {"stem": "A 2 kg block slides down a 30 deg incline; find a."},
+            "status": "open"}
+    body = build_seed_payload(item, [])
+    assert body["type"] == "question"
+    assert body["raw_text"] == "A 2 kg block slides down a 30 deg incline; find a."
+    assert body["source_ref"] == "munshi:7"
+
+
+def test_build_seed_payload_source_ref_from_id_when_no_uid():
+    item = {"id": "9", "kind": "todo", "payload": {"task": "rotational kinetic energy demo"}}
+    body = build_seed_payload(item, [])
+    assert body["source_ref"] == "munshi:9"
