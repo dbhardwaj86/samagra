@@ -4,14 +4,16 @@
 > (Phase A: 17 apps × mobile × 3 themes, real data, 0 console errors, gates green) and **deployed it behind
 > Cloudflare Access** at **https://samagra.bhautikiplusprashnavali.com** via a `cloudflared` named tunnel
 > (`samagra-os`, `9b7a3df8…`) → local `:8799`. **Gate verified** (unauth `/api/overview` → HTTP 302 to the
-> Access OTP login; the origin does not fail-closed, so Access is the sole gate). Branch **`ship/samagra-os`**
-> (`cce285d`). Evidence: [`…/ralph-deploy/BACKLOG.md`](docs/superpowers/loops/ralph-deploy/BACKLOG.md)
-> (Phase A A1–A8 ✓; Phase B B1–B4 ✓); as-shipped runbook [`docs/deploy-tunnel.md`](docs/deploy-tunnel.md).
+> Access OTP login; the origin does not fail-closed, so Access is the sole gate). **Merged to `main`**
+> (`5db7886`, fast-forward, pushed to `origin/main`; 20 commits) and **durable** via the `SAMAGRA-OS` logon
+> Scheduled Task (`scripts/serve-durable.ps1` → stack + detached tunnel; survives session-close + reboot at
+> logon). Evidence: [`…/ralph-deploy/BACKLOG.md`](docs/superpowers/loops/ralph-deploy/BACKLOG.md)
+> (Phase A A1–A8 ✓; Phase B B1–B5 ✓; Phase C C1–C2 ✓); as-shipped runbook
+> [`docs/deploy-tunnel.md`](docs/deploy-tunnel.md).
 > - **Owner follow-ups (open):** (1) **delete junk DNS record**
->   `samagra.pratyakshsims.com.bhautikiplusprashnavali.com` (D-8 — harmless, in the CF dashboard); (2) **durable
->   persistence** — install a Windows service for `config.samagra.yml` so the URL survives a reboot (B-5;
->   currently the tunnel + stack run **in-session only**); (3) **browser smoke** — OTP-login then walk apps ×
->   devices × themes over TLS; (4) **finish the branch** `ship/samagra-os` (C-2).
+>   `samagra.pratyakshsims.com.bhautikiplusprashnavali.com` (D-8 — harmless, in the CF dashboard); (2) **browser
+>   smoke** — OTP-login then walk apps × devices × themes over TLS; (3) **owed reviews** — the broad
+>   multi-agent + Codex critical passes were 529-blocked (Anthropic capacity) and remain owed.
 > - **Hostname is `bhautiki`, not `pratyakshsims`** — the `cloudflared` `cert.pem` is zone-scoped to
 >   `bhautikiplusprashnavali.com` (D-7); using pratyakshsims would need a browser `cloudflared tunnel login`.
 > - **Owed reviews:** a pre-deploy crown-jewel **security** review (inline) found **no CRITICAL/HIGH**, but the

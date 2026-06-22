@@ -173,10 +173,20 @@ should be one focused, committable unit.
   Tradeoff for 24/7 pre-login uptime: a Windows service (separate from hermes) — noted in the runbook §8.
 
 ## Phase C — finish
-- [ ] **C-1 · Trackers + memory.** Update STATUS.html / HANDOFF.md / SUMMARY.html + the project memory
-  with the working+deployed state and the public URL (note Access-gated).
-- [ ] **C-2 · Finish the branch.** Merge or PR `ship/samagra-os` (use
-  `superpowers:finishing-a-development-branch`).
+- [x] **C-1 · Trackers + memory. DONE 2026-06-22.** Updated STATUS.html (header + decisions log + next
+  actions), SUMMARY.html (plain-language "where we are" + "what's next"), HANDOFF.md (lead), this BACKLOG,
+  and the project memory (`ralph-deploy-plan.md` + the index line) with the deployed+durable state and the
+  public URL (https://samagra.bhautikiplusprashnavali.com, Access-gated).
+- [x] **C-2 · Finish the branch. DONE 2026-06-22.** Gates green (backend pytest exit 0 / frontend
+  `npm run verify` exit 0, `vite build ✓`), then `ship/samagra-os` **fast-forward-merged into `main`**
+  (20 commits: E3 + Phase A A1–A8 + Phase B B1–B5 + durability) and **pushed to `origin/main`**
+  (`8379ae1..5db7886`). Clean ff (main was an ancestor); `main` == `origin/main` == `ship/samagra-os` ==
+  `5db7886`. (Used a no-checkout `git push . HEAD:main` to avoid disturbing the pre-existing uncommitted
+  `CLAUDE.md`/`AGENTS.md`, which stay unstaged.)
+
+**✅ Ralph ship-&-tunnel loop COMPLETE — Phase A + Phase B + Phase C all done; deployed, durable, on `main`.**
+Remaining are owner-only actions: delete the D-8 junk DNS record (dashboard), a browser OTP smoke walk, and
+the owed broad multi-agent + Codex review passes (529-blocked at deploy time).
 
 ---
 ### Discovered / blocked (append below)
