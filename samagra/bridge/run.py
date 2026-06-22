@@ -17,9 +17,9 @@ from __future__ import annotations
 import json
 import uuid
 
-from .. import catalog  # noqa: F401  (kept for symmetry / future read use)
+from .. import catalog  # noqa: F401  (kept for future direct catalog reads)
 from ..adapters.munshi import MunshiAdapter
-from ..clients.mcd_client import McdClient
+from ..clients.mcd_client import McdClient  # noqa: F401  (used by submit() — Task 8)
 from ..governance import store
 from . import outbox
 from .classify import classify_item
@@ -83,6 +83,10 @@ def scan(dry: bool = True) -> list[dict]:
                     proposals.append(proposal)
                     continue
                 assignment_id = uuid.uuid4().hex
+                # Outbox file first, then the governance row. The file is not
+                # authoritative (the governance row is); if add_assignment fails
+                # after the file is written, the orphan file is harmless and a
+                # re-scan (dedup keys on governance rows) re-proposes cleanly.
                 outbox_path = outbox.write_outbox_file(
                     agent="khanak", assignment_id=assignment_id,
                     pipeline="mycontentdev", seed_ref=art.uid,
