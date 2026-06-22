@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from samagra.bridge import outbox
 
 
@@ -22,3 +24,13 @@ def test_write_outbox_file_creates_frontmatter_prompt(tmp_path, monkeypatch):
     assert "samagra bridge submit abcd1234ef" in text
     assert "Kinematics" in text
     assert f.parent.as_posix().endswith("board/khanak/outbox")
+
+
+def test_write_outbox_file_rejects_unsafe_agent(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(ValueError, match="slug-safe"):
+        outbox.write_outbox_file(
+            agent="../../evil", assignment_id="abcd1234ef", pipeline="mycontentdev",
+            seed_ref="munshi:9", expected_output="x", review_by="khanak",
+            payload={"type": "rough_idea", "raw_text": "x"}, pointers=[],
+        )

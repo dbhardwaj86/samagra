@@ -7,7 +7,13 @@ where the pointers live for a human reviewer (they are not shipped to mcd).
 from __future__ import annotations
 
 import datetime
+import re
 from pathlib import Path
+
+# `agent` + the assignment-id slice are interpolated into the output PATH, so
+# they must be slug-safe — a self-defending guard against path traversal even
+# though the only caller passes a hardcoded agent (defence in depth).
+_SLUG_RE = re.compile(r"^[A-Za-z0-9_-]+$")
 
 
 def write_outbox_file(*, agent: str, assignment_id: str, pipeline: str,
@@ -15,6 +21,10 @@ def write_outbox_file(*, agent: str, assignment_id: str, pipeline: str,
                       payload: dict, pointers: list[dict]) -> str:
     """Write a dated front-matter prompt under board/<agent>/outbox/.
     Returns the repo-relative POSIX path (stored as the assignment's outbox_path)."""
+    if not _SLUG_RE.match(agent or "") or not _SLUG_RE.match((assignment_id or "")[:8]):
+        raise ValueError(
+            f"agent/assignment_id must be slug-safe ([A-Za-z0-9_-]); "
+            f"got agent={agent!r}, assignment_id={assignment_id!r}")
     today = datetime.date.today().isoformat()
     rel = Path("board") / agent / "outbox" / f"{today}-{assignment_id[:8]}.md"
     rel.parent.mkdir(parents=True, exist_ok=True)
