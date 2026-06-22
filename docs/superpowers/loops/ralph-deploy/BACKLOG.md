@@ -122,13 +122,15 @@ should be one focused, committable unit.
   1.91s`. No `.only`/`.skip` (0 matches in `frontend/src`). **✅ Functional DoD A (A1–A8) is COMPLETE.**
 
 ## Phase B — deploy via Cloudflare tunnel (DoD B1–B5) — public step is OWNER-GATED
-- [ ] **B-0 · Owner confirm (STOP point). ⏸ ACTIVE OWNER GATE (2026-06-22).** Get from the owner: the exact
-  **custom hostname** (proposed `os.pratyakshsims.com`), which **Cloudflare zone** owns it, and
-  authorization to run `cloudflared tunnel login`. Do not expose anything publicly before this.
-  **→ The loop has completed ALL autonomous work (Phase A A1–A8 + B-1).** Everything below (B-2 Access, B-3
-  tunnel config, B-4 expose, B-5 persistence) needs the owner's Cloudflare account + these answers, so the
-  loop is **PAUSED here pending the owner**. Resume by answering: (1) hostname, (2) zone, (3) go-ahead to
-  authorize `cloudflared tunnel login` (a browser auth to your Cloudflare account that only you can do).
+- [x] **B-0 · Owner confirm. DONE 2026-06-22.** Owner authorized **proceed** with hostname
+  **`samagra.pratyakshsims.com`** (zone `pratyakshsims.com`). Discovery via the `cloudflare` skill +
+  read-only checks: `cloudflared` 2025.8.1 installed and authenticated (`~/.cloudflared/cert.pem` present);
+  the account already has **3 legacy, not-live tunnels** (`bhautiki-prashnavali`/hermes → `:8765`,
+  `mycontentdev-api`, `quizrag-demo`) + a default `~/.cloudflared/config.yml` for hermes — so `samagra-os`
+  will be a **separate dedicated tunnel run with its own `--config`** (NEVER touching the hermes default).
+  **Still to verify at route-dns time:** that `pratyakshsims.com` is a zone IN this CF account (else the
+  owner re-runs `cloudflared tunnel login` for it). hermes is the template: dedicated tunnel + Access-OTP
+  before exposure.
 - [x] **B-1 · Local bring-up script. DONE 2026-06-22.** `scripts/serve-local.ps1` (Windows is the deploy
   host the tunnel points at): builds `frontend/dist` (unless `-SkipBuild`), starts the same-origin FastAPI
   on `:8799` + the QX sidecar on `:8783`, **idempotent** (reuses a server already passing its health check;
@@ -139,18 +141,33 @@ should be one focused, committable unit.
   BOTH paths in a real shell: **reuse** (`-SkipBuild` → api+qx already HEALTHY, reused, exit 0) and **fresh
   start** (`-ApiPort 8899 -NoQx` → started uvicorn + health-checked HEALTHY, exit 0; test proc cleaned up,
   preview `:8799` preserved). No app-source change → backend 154 / frontend 546 gates unaffected.
-- [ ] **B-2 · Access/auth in front (HARD).** Stand up Cloudflare Access (owner email / one-time-PIN
-  policy) for the custom hostname, OR an app-gateway auth, so `/api/*` writes + admin keys are not
-  open. Verify an unauthenticated request to a write path is blocked. *Must precede B-4.*
-- [ ] **B-3 · Tunnel config.** `cloudflared tunnel create samagra-os`; write committed `config.yml`
-  (ingress `<host>` → `http://localhost:8799`, 404 fallback; `credentials-file` path OUTSIDE the repo).
-  Gitignore the creds JSON + `cert.pem`. Use the `cloudflare`/`wrangler` skills.
-- [ ] **B-4 · Bring up + DNS (OWNER-GATED public step).** With owner go-ahead: route DNS
-  (`cloudflared tunnel route dns …`) and `cloudflared tunnel run`. Then load the custom URL in a real
-  browser and smoke ALL apps × both devices × themes over TLS (same-origin `/api`, so no CORS).
-- [ ] **B-5 · Persistence + runbook.** Make the tunnel restartable (service or documented run cmd);
-  write a `docs/deploy-tunnel.md` runbook (bring-up order, the QX `:8783` dependency, restart, teardown).
-  Confirm the public URL recovers after a restart.
+- [x] **B-2 · Access/auth in front (HARD). DONE 2026-06-22.** Owner created a **Cloudflare Access**
+  application (Zero Trust, one-time-PIN to owner email) on the live hostname. **Verified the gate bites:**
+  an unauthenticated `GET https://samagra.bhautikiplusprashnavali.com/api/overview` returns **HTTP 302** →
+  `Location: https://jolly-sound-164b.cloudflareaccess.com/cdn-cgi/access/login/...` + `Www-Authenticate:
+  Cloudflare-Access` (NOT a 200 with API data). So `/api/*` writes + admin keys are not open. (The origin
+  does not itself fail-closed — Access is the sole gate — so this smoke-test is load-bearing, not optional.)
+- [x] **B-3 · Tunnel config. DONE 2026-06-22.** `cloudflared tunnel create samagra-os` → id
+  `9b7a3df8-6fda-4500-b97c-4592c2dd101e` (creds JSON written to `~/.cloudflared/<id>.json`, OUTSIDE the
+  repo, gitignored — never committed). Filled the committed `deploy/cloudflared/config.samagra.yml` with the
+  real id + creds path (a tunnel UUID is not a secret; matches the hermes config convention) and the final
+  ingress hostname. `cloudflared tunnel --config deploy/cloudflared/config.samagra.yml ingress validate`
+  → **OK**.
+- [x] **B-4 · Bring up + DNS (OWNER-GATED public step). DONE 2026-06-22.** Final hostname is
+  **`samagra.bhautikiplusprashnavali.com`** (NOT pratyakshsims — see D-7). Local stack up via
+  `serve-local.ps1` (FastAPI `:8799` HEALTHY + QX `:8783` HEALTHY, fresh `dist`). DNS routed
+  (`cloudflared tunnel --config … route dns samagra-os samagra.bhautikiplusprashnavali.com`) → proxied
+  CNAME → our tunnel `9b7a3df8…`. Tunnel running in background (`cloudflared tunnel --config … run
+  samagra-os`) — **4 QUIC edge connections registered** (maa05/bom08/bom09). Gate smoke-test passed (B-2).
+  **LIVE at https://samagra.bhautikiplusprashnavali.com behind Access.** Remaining human check: browser OTP
+  login → walk apps × devices × themes over TLS (owner does this; can't OTP via curl).
+- [ ] **B-5 · Persistence + runbook. RUNBOOK UPDATED + LIVE 2026-06-22; durable-service pending.**
+  `docs/deploy-tunnel.md` updated to the as-shipped reality (bhautiki hostname, real tunnel id, cert-zone
+  gotcha D-7, Access verified, junk-record cleanup D-8). The tunnel + stack currently run in THIS session
+  (background `cloudflared … run` + `serve-local.ps1`). **Pending (owner choice):** install a durable
+  Windows service so the public URL survives a reboot — the default service uses the hermes
+  `~/.cloudflared/config.yml`, so point a separate service at `config.samagra.yml` — then confirm recovery
+  after reboot. Until then, exposure ends when this session's `cloudflared`/uvicorn processes stop.
 
 ## Phase C — finish
 - [ ] **C-1 · Trackers + memory.** Update STATUS.html / HANDOFF.md / SUMMARY.html + the project memory
@@ -194,3 +211,17 @@ _(loop appends new tasks and `BLOCKED:` notes here)_
   committed HEAD was never at risk. **For future review/audit Workflows: pass `isolation: 'worktree'` OR
   instruct agents to be strictly read-only (no Edit/Write/git checkout); never run a gate while a
   tree-mutating Workflow is active.**
+- **D-7 · cloudflared cert.pem is zone-scoped (2026-06-22).** `~/.cloudflared/cert.pem` (from a prior
+  `cloudflared tunnel login`) is scoped to the **`bhautikiplusprashnavali.com`** zone. Even though
+  `pratyakshsims.com` is on the SAME Cloudflare account (identical NS `elly`/`kenneth.ns.cloudflare.com`),
+  `cloudflared tunnel route dns … samagra.pratyakshsims.com` could not write that zone — it **mangled** the
+  name to `samagra.pratyakshsims.com.bhautikiplusprashnavali.com` (treated it as a relative label under the
+  cert's zone). Using pratyakshsims.com would require re-running `cloudflared tunnel login` and selecting it
+  (browser, owner-only). **Owner decision: use `samagra.bhautikiplusprashnavali.com`** (cert already covers
+  it) — DNS routed first try. Also: always pass `--config <the tunnel's own config>` to `route dns` — without
+  it cloudflared loaded the default hermes config and targeted the wrong tunnel (`40f0e7b2`).
+- **D-8 · Junk DNS record to delete (2026-06-22).** The first mis-routed attempt left a stray CNAME
+  **`samagra.pratyakshsims.com.bhautikiplusprashnavali.com`** → hermes tunnel `40f0e7b2`. Harmless (a weird
+  FQDN nobody hits; does NOT affect `hermes.bhautikiplusprashnavali.com` or the real samagra host), but it
+  should be deleted in the Cloudflare DNS dashboard (`cloudflared` has no `route dns delete`, and no CF API
+  token is available locally). **Owner: delete it.**

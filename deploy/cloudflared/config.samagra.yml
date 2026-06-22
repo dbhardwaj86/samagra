@@ -1,0 +1,28 @@
+# SAMAGRA OS - cloudflared named tunnel config (COMMITTED, no secrets).
+#
+# Run:  cloudflared tunnel --config deploy/cloudflared/config.samagra.yml run samagra-os
+# Full procedure + the REQUIRED Cloudflare Access gate: docs/deploy-tunnel.md
+#
+# Before first run, fill the two placeholders:
+#   <TUNNEL_ID>   from `cloudflared tunnel create samagra-os` (or `cloudflared tunnel list`).
+#                 A tunnel UUID is NOT a secret.
+#   <USERPROFILE> your home dir, e.g. C:\Users\<you>  (Windows) so the creds path resolves.
+#
+# The credentials JSON it points at IS secret - it lives in ~/.cloudflared/ (gitignored),
+# is written by `cloudflared tunnel create`, and is NEVER committed. Same for cert.pem.
+#
+# This config is INDEPENDENT of the default ~/.cloudflared/config.yml (which runs the
+# unrelated `bhautiki-prashnavali` / hermes tunnel) - always run samagra with --config.
+
+tunnel: 9b7a3df8-6fda-4500-b97c-4592c2dd101e
+credentials-file: C:\Users\abc\.cloudflared\9b7a3df8-6fda-4500-b97c-4592c2dd101e.json
+
+ingress:
+  # SAMAGRA OS - same-origin FastAPI serving frontend/dist + /api on :8799.
+  # ACCESS NOTE: a Cloudflare Access app (one-time-PIN to owner email) MUST gate this
+  # hostname BEFORE running the tunnel - the capture write-paths + admin keys must not
+  # be open to the world. See docs/deploy-tunnel.md sec 5.
+  - hostname: samagra.bhautikiplusprashnavali.com
+    service: http://localhost:8799
+  # Catch-all: anything else gets a 404 (nothing else is exposed).
+  - service: http_status:404

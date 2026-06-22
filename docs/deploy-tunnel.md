@@ -1,0 +1,187 @@
+# SAMAGRA OS — Cloudflare tunnel deploy runbook
+
+Expose the **local** SAMAGRA OS stack at a custom HTTPS URL via a `cloudflared`
+**named tunnel** (NOT a Workers/Pages edge deploy — the Python + QX + BGE stack
+runs locally; the tunnel just fronts it). Only `:8799` is tunnelled; the QX
+sidecar on `:8783` stays internal and is reached via the same-origin
+`/api/questions` proxy.
+
+> **✅ LIVE as of 2026-06-22** at **https://samagra.bhautikiplusprashnavali.com**
+> behind Cloudflare Access. The values below are the as-shipped reality.
+
+- **Custom hostname:** `samagra.bhautikiplusprashnavali.com` (zone `bhautikiplusprashnavali.com`)
+- **Tunnel name / id:** `samagra-os` / `9b7a3df8-6fda-4500-b97c-4592c2dd101e`
+- **Origin:** `http://localhost:8799` (FastAPI serving `frontend/dist` + `/api`, same-origin)
+- **Committed config:** [`deploy/cloudflared/config.samagra.yml`](../deploy/cloudflared/config.samagra.yml)
+- **Auth gate:** Cloudflare Access (one-time-PIN to owner email) — **required before any public run**
+
+> ⚠️ **Access before exposure (hard rule).** Never `cloudflared tunnel run` this
+> hostname before its Cloudflare Access application exists and is verified — the
+> owner-initiated capture write-paths (`POST /api/munshi/capture`,
+> `POST /api/mcd/seeds`) and admin keys must not be reachable unauthenticated.
+> The SAMAGRA origin does **not** itself fail closed, so **Access is the only
+> gate** — the §7 smoke-test (unauth request must 302 to the Access login) is
+> load-bearing, not optional. This mirrors the existing
+> `hermes.bhautikiplusprashnavali.com` tunnel's gate.
+
+> 🔑 **Why `bhautikiplusprashnavali.com` and not `pratyakshsims.com`?** The local
+> `cloudflared` `cert.pem` (from a prior `cloudflared tunnel login`) is **scoped to
+> the `bhautikiplusprashnavali.com` zone**. Both domains are on the *same* Cloudflare
+> account (identical nameservers), but the cert can only write DNS in the zone it was
+> issued for — `route dns samagra.pratyakshsims.com` mangled the name to
+> `samagra.pratyakshsims.com.bhautikiplusprashnavali.com`. To use `pratyakshsims.com`
+> instead, re-run `cloudflared tunnel login` and select that zone (a browser action,
+> owner-only), then repeat steps 3–6 with the new hostname + a new Access app.
+
+---
+
+## 0. Prerequisites (one-time)
+
+- `cloudflared` installed (`cloudflared --version`; shipped on 2025.8.1).
+- Authenticated to the Cloudflare account that owns the zone:
+  `~/.cloudflared/cert.pem` present **and scoped to the zone you route into**
+  (here `bhautikiplusprashnavali.com`). If `route dns` mangles the hostname (appends
+  another zone), the cert is scoped to the wrong zone — re-run `cloudflared tunnel
+  login` and pick the right one (owner-only browser auth).
+- The QX sidecar repo present at `C:\SandBox\gpt_box\gpt-extract-ques` (Questions).
+
+## 1. Bring up the local stack
+
+```powershell
+# from the repo root (C:\SandBox\claude_box\TeachingOS)
+& .\scripts\serve-local.ps1
+```
+
+This builds `frontend/dist`, starts FastAPI on `:8799` and the QX sidecar on
+`:8783`, is idempotent (reuses healthy servers; `-Restart` forces a clean
+relaunch clearing stale listeners), and prints a health summary. Confirm the
+summary shows `FastAPI :8799 HEALTHY` before tunnelling. (Run it directly — do
+**not** add `-ExecutionPolicy Bypass`; a local script runs fine under the normal
+policy and the bypass flag is an unnecessary security-weakening.)
+
+## 2. Create the tunnel (once) — DONE
+
+```bash
+cloudflared tunnel create samagra-os
+# -> Created tunnel samagra-os with id 9b7a3df8-6fda-4500-b97c-4592c2dd101e
+# -> writes credentials to ~/.cloudflared/<id>.json  (KEEP LOCAL, never commit)
+cloudflared tunnel list   # confirm samagra-os + its id
+```
+
+## 3. Tunnel config (committed, no secrets) — DONE
+
+The committed config at `deploy/cloudflared/config.samagra.yml` carries the real
+tunnel id + the `credentials-file` path under `~/.cloudflared/` (OUTSIDE the repo —
+the creds JSON and `cert.pem` are gitignored and never committed; a tunnel UUID is
+not a secret). Validate it:
+
+```bash
+cloudflared tunnel --config deploy/cloudflared/config.samagra.yml ingress validate   # -> OK
+```
+
+`ingress` maps `samagra.bhautikiplusprashnavali.com -> http://localhost:8799`, with
+a `http_status:404` catch-all so nothing else is served.
+
+## 4. Route DNS (creates the proxied CNAME) — DONE
+
+Always pass `--config` so cloudflared uses the **samagra-os** tunnel (without it, it
+loads the default `~/.cloudflared/config.yml` = the hermes tunnel, and routes wrong):
+
+```bash
+cloudflared tunnel --config deploy/cloudflared/config.samagra.yml route dns samagra-os samagra.bhautikiplusprashnavali.com
+```
+
+Until the tunnel is running this hostname returns Cloudflare Error 1016 (origin
+down) — harmless. (To undo: delete the `samagra` CNAME in the zone's DNS.)
+
+> 🧹 **Cleanup owed (D-8):** an initial mis-route (run without `--config`, against the
+> pratyakshsims hostname) left a stray CNAME
+> `samagra.pratyakshsims.com.bhautikiplusprashnavali.com` → the hermes tunnel. It is
+> harmless (nobody resolves that FQDN; it does not affect `hermes.*` or the real
+> samagra host) but should be **deleted in the Cloudflare DNS dashboard**
+> (`cloudflared` has no `route dns delete`).
+
+## 5. Cloudflare Access — REQUIRED before any public run (owner, dashboard) — DONE
+
+In the **Zero Trust dashboard** (mirrors the existing `hermes.*` gate):
+
+1. **Access → Applications → Add an application → Self-hosted.**
+2. Application domain: `samagra.bhautikiplusprashnavali.com`.
+3. Add a **policy**: Action **Allow**, Include → **Emails** → the owner's email
+   (`dbhardwaj86@gmail.com`); login method **One-time PIN**.
+4. Save. Verify (step 7): a logged-out request **302-redirects to the Access
+   one-time-PIN login** (not straight to the app).
+
+> Defence-in-depth (optional, later): make the FastAPI origin fail closed on a
+> missing `Cf-Access-Jwt-Assertion` / `Cf-Access-Authenticated-User-Email` header
+> for remote requests, like the hermes origin does. Recommended for the capture
+> write-paths since Access is currently the sole gate.
+
+## 6. Run the tunnel (the public step — owner-gated) — RUNNING
+
+Only after step 5 is verified:
+
+```bash
+cloudflared tunnel --config deploy/cloudflared/config.samagra.yml run samagra-os
+```
+
+Leave it running (foreground / background process), or install as a persistent
+service (step 8). A healthy run registers ~4 QUIC edge connections.
+
+## 7. Smoke test (over TLS) — gate VERIFIED
+
+- **Confirm the gate (load-bearing):** an unauthenticated request is blocked by
+  Access — verified:
+
+  ```bash
+  curl -sS -D - -o /dev/null https://samagra.bhautikiplusprashnavali.com/api/overview
+  # -> HTTP/1.1 302 Found
+  # -> Location: https://jolly-sound-164b.cloudflareaccess.com/cdn-cgi/access/login/...
+  # -> Www-Authenticate: Cloudflare-Access
+  ```
+
+  A `200` with API JSON here means the gate is OFF — **stop the tunnel immediately.**
+- **Browser (owner):** load `https://samagra.bhautikiplusprashnavali.com` → Access
+  OTP login → after auth the SAMAGRA OS desktop loads. Verify a few apps render
+  (Dashboard, Questions, Munshi), both devices + a theme switch, and that `/api/*`
+  is same-origin (no CORS).
+
+## 8. Persistence + restart
+
+- **Quick (current):** keep the `cloudflared ... run` process alive (a dedicated
+  terminal, or `Start-Process`), alongside `serve-local.ps1`. Exposure ends when
+  these processes stop.
+- **Service (durable, pending owner choice):** `cloudflared service install` then
+  start the Windows service — but the default service uses
+  `~/.cloudflared/config.yml` (the hermes config). To run the samagra config as a
+  service, point a **separate** service at `deploy/cloudflared/config.samagra.yml`.
+  Verify the public URL recovers after a host reboot.
+- After restart, re-run `scripts\serve-local.ps1` to bring `:8799` + `:8783` back,
+  then ensure the tunnel is running.
+
+## 9. Teardown
+
+```bash
+# stop the tunnel process (Ctrl-C, or stop the service)
+# delete the samagra CNAME in the dashboard (and the D-8 junk record)
+cloudflared tunnel delete samagra-os   # removes the tunnel (delete creds JSON after)
+```
+
+Also remove the Access application in the Zero Trust dashboard if retiring the host.
+
+---
+
+## Dependencies & notes
+
+- **QX sidecar is a hard dependency for Questions.** It must run on `:8783`
+  (`python -X utf8 gui/qx_browser.py` in `C:\SandBox\gpt_box\gpt-extract-ques`).
+  If it's down, Questions degrades gracefully (banner) rather than erroring.
+  Keep `:8783` internal — only `:8799` is tunnelled.
+- **Same-origin in prod:** FastAPI serves `frontend/dist` + `/api` on `:8799`, so
+  there is no CORS over the tunnel (the Vite dev proxy is dev-only).
+- **Never commit secrets:** `cert.pem`, `~/.cloudflared/<id>.json`, `.env`,
+  `mcd-cloud.json` are all gitignored. Only the non-secret `config.samagra.yml`
+  (tunnel UUID + ingress) is committed; a tunnel UUID is not a secret.
+- **Legacy tunnels:** the account also has `bhautiki-prashnavali` (hermes, live),
+  `mycontentdev-api`, `quizrag-demo`. `samagra-os` is independent and uses its own
+  `--config`, so it never touches the default `~/.cloudflared/config.yml`.
