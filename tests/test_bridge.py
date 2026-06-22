@@ -12,6 +12,7 @@ from samagra import catalog, config
 from samagra.bridge.pointers import resolve_pointers
 from samagra.bridge.seed_payload import build_seed_payload
 from samagra.governance import store
+from samagra.bridge import run
 
 
 def _item(kind, payload, **kw):
@@ -155,3 +156,89 @@ def test_governance_accepts_captured_status(temp_gov):
         assert a["status"] == "captured"
     finally:
         conn.close()
+
+
+class _FakeMunshiAdapter:
+    def __init__(self, items):
+        self._items = items
+
+    def available(self):
+        return True
+
+    def artifacts(self):
+        from samagra.adapters.base import Artifact
+        for it in self._items:
+            yield Artifact(
+                uid=f"munshi:{it['id']}", source="munshi", kind=it["kind"],
+                title=item_text(it)[:60], subject="physics",
+                status=it["status"], updated_at=it.get("ts"),
+                meta={"payload": it["payload"], "tags": it.get("tags"),
+                      "person": it.get("person"), "due": it.get("due")},
+            )
+
+
+def _munshi_items():
+    return [
+        {"id": "1", "kind": "question", "status": "open", "ts": "2026-06-19T00:00:00Z",
+         "payload": {"stem": "Find acceleration of a block on a frictionless incline?"}},
+        {"id": "2", "kind": "issue", "status": "open", "ts": "2026-06-19T00:01:00Z",
+         "payload": {"summary": "Projector broken in room 4"}},
+    ]
+
+
+def test_scan_dry_proposes_content_only_and_writes_nothing(temp_catalog, monkeypatch):
+    monkeypatch.setattr(run, "MunshiAdapter", lambda: _FakeMunshiAdapter(_munshi_items()))
+
+    class _Boom:
+        def create_seed(self, payload):  # pragma: no cover - must not run
+            raise AssertionError("scan must not create seeds")
+    monkeypatch.setattr(run, "McdClient", _Boom)
+    monkeypatch.setattr(run.store, "add_assignment",
+                        lambda *a, **k: (_ for _ in ()).throw(
+                            AssertionError("dry scan must not write")))
+
+    proposals = run.scan(dry=True)
+    assert len(proposals) == 1                       # only the question item
+    p = proposals[0]
+    assert p["item"]["uid"] == "munshi:1"
+    assert p["classification"] == "content"
+    assert p["payload"]["type"] == "question"
+    assert isinstance(p["pointers"], list)
+    assert "assignment_id" not in p                  # dry: no assignment recorded
+
+
+def test_scan_live_records_in_review_and_dedups(temp_catalog, temp_gov, monkeypatch):
+    monkeypatch.setattr(run, "MunshiAdapter", lambda: _FakeMunshiAdapter(_munshi_items()))
+
+    class _Boom:
+        def create_seed(self, payload):  # pragma: no cover
+            raise AssertionError("scan must not create seeds")
+    monkeypatch.setattr(run, "McdClient", _Boom)
+
+    proposals = run.scan(dry=False)
+    assert len(proposals) == 1
+    aid = proposals[0]["assignment_id"]
+    conn = store.connect()
+    try:
+        rows = [a for a in store.list_assignments(conn) if a["seed_ref"] == "munshi:1"]
+        assert len(rows) == 1
+        assert rows[0]["status"] == "in-review"
+        assert rows[0]["agent"] == "khanak"
+        assert rows[0]["pipeline"] == "mycontentdev"
+        evs = [e for e in store.list_events(conn, limit=1000)
+               if e["assignment_id"] == aid and e["verb"] == "seed_proposed"]
+        assert len(evs) == 1
+        note = json.loads(evs[0]["note"])
+        assert note["payload"]["type"] == "question"
+        assert isinstance(note["pointers"], list)
+    finally:
+        conn.close()
+
+    again = run.scan(dry=False)
+    conn = store.connect()
+    try:
+        rows = [a for a in store.list_assignments(conn) if a["seed_ref"] == "munshi:1"]
+        assert len(rows) == 1                         # still exactly one
+    finally:
+        conn.close()
+    assert again[0].get("reused") is True
