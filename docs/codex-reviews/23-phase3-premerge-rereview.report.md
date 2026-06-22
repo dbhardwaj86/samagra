@@ -22,5 +22,3 @@ VERDICT: **GO-WITH-CAVEATS**
 **Safety Invariants**
 
 Confirmed for merge: no new web endpoint; bridge uses the existing `McdClient.create_seed` MCD write (`samagra/clients/mcd_client.py:58-69`); bridge submit is approval-gated (`samagra/bridge/run.py:203-216`); same-assignment retry is idempotent or safe-fail; no automated publish path was added; bridge outbox/events contain payload/pointers, not credentials (`samagra/bridge/outbox.py:37-57`, `samagra/bridge/run.py:115-120`). I did not run pytest because this was a read-only review; verification here is from direct code tracing and read-only git/search commands. Mergeable after the whitespace/doc nits if your gate cares about them.
-
-
