@@ -122,11 +122,23 @@ should be one focused, committable unit.
   1.91s`. No `.only`/`.skip` (0 matches in `frontend/src`). **✅ Functional DoD A (A1–A8) is COMPLETE.**
 
 ## Phase B — deploy via Cloudflare tunnel (DoD B1–B5) — public step is OWNER-GATED
-- [ ] **B-0 · Owner confirm (STOP point).** Get from the owner: the exact **custom hostname** (proposed
-  `os.pratyakshsims.com`), which **Cloudflare zone** owns it, and authorization to run
-  `cloudflared tunnel login`. Do not expose anything publicly before this.
-- [ ] **B-1 · Local bring-up script.** `scripts/serve-local.(ps1|sh)`: build frontend → start uvicorn
-  `:8799` → start QX sidecar `:8783`; idempotent; prints health. Commit (no secrets).
+- [ ] **B-0 · Owner confirm (STOP point). ⏸ ACTIVE OWNER GATE (2026-06-22).** Get from the owner: the exact
+  **custom hostname** (proposed `os.pratyakshsims.com`), which **Cloudflare zone** owns it, and
+  authorization to run `cloudflared tunnel login`. Do not expose anything publicly before this.
+  **→ The loop has completed ALL autonomous work (Phase A A1–A8 + B-1).** Everything below (B-2 Access, B-3
+  tunnel config, B-4 expose, B-5 persistence) needs the owner's Cloudflare account + these answers, so the
+  loop is **PAUSED here pending the owner**. Resume by answering: (1) hostname, (2) zone, (3) go-ahead to
+  authorize `cloudflared tunnel login` (a browser auth to your Cloudflare account that only you can do).
+- [x] **B-1 · Local bring-up script. DONE 2026-06-22.** `scripts/serve-local.ps1` (Windows is the deploy
+  host the tunnel points at): builds `frontend/dist` (unless `-SkipBuild`), starts the same-origin FastAPI
+  on `:8799` + the QX sidecar on `:8783`, **idempotent** (reuses a server already passing its health check;
+  `-Restart` forces a clean relaunch, clearing stale listeners per D-1), **health-checked** with cold-start
+  tolerance (`/api/overview` ≤45s; QX `/api/qsearch?q=ping` ≤60s), and prints a status summary. **No
+  secrets** — reports only whether `.env` / `mcd-cloud.json` EXIST (never contents); logs → gitignored
+  `.serve-logs/`. ASCII-only (Win PS 5.1 reads BOM-less `.ps1` as ANSI — first write tripped this). Verified
+  BOTH paths in a real shell: **reuse** (`-SkipBuild` → api+qx already HEALTHY, reused, exit 0) and **fresh
+  start** (`-ApiPort 8899 -NoQx` → started uvicorn + health-checked HEALTHY, exit 0; test proc cleaned up,
+  preview `:8799` preserved). No app-source change → backend 154 / frontend 546 gates unaffected.
 - [ ] **B-2 · Access/auth in front (HARD).** Stand up Cloudflare Access (owner email / one-time-PIN
   policy) for the custom hostname, OR an app-gateway auth, so `/api/*` writes + admin keys are not
   open. Verify an unauthenticated request to a write path is blocked. *Must precede B-4.*

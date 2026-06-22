@@ -15,6 +15,7 @@ build/
 dist/
 exports/
 lectures_out/
+.serve-logs/
 
 # --- claude local settings ---
 .claude/settings.local.json
