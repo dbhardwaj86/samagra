@@ -6,6 +6,8 @@ import sys
 
 import pytest
 
+import samagra.__main__ as cli
+
 from samagra.bridge.text import item_text
 from samagra.bridge.classify import classify_item
 from samagra import catalog, config
@@ -390,3 +392,30 @@ def test_submit_refuses_when_no_proposed_payload(temp_gov, monkeypatch):
     monkeypatch.setattr(run, "McdClient", _Boom)
     with pytest.raises(ValueError, match="no proposed payload"):
         run.submit("a1")
+
+
+def test_cli_bridge_scan_dispatch(monkeypatch, capsys):
+    seen = {}
+    monkeypatch.setattr("samagra.bridge.run.scan",
+                        lambda dry=True: seen.update(dry=dry) or [])
+    monkeypatch.setattr(sys, "argv", ["samagra", "bridge", "scan", "--dry-run"])
+    cli.main()
+    assert seen["dry"] is True
+
+
+def test_cli_bridge_approve_dispatch(monkeypatch):
+    seen = {}
+    monkeypatch.setattr("samagra.bridge.run.approve",
+                        lambda aid: seen.update(aid=aid) or {"status": "approved"})
+    monkeypatch.setattr(sys, "argv", ["samagra", "bridge", "approve", "a1"])
+    cli.main()
+    assert seen["aid"] == "a1"
+
+
+def test_cli_bridge_submit_dispatch(monkeypatch):
+    seen = {}
+    monkeypatch.setattr("samagra.bridge.run.submit",
+                        lambda aid: seen.update(aid=aid) or {"seed": {"id": "s1"}})
+    monkeypatch.setattr(sys, "argv", ["samagra", "bridge", "submit", "a1"])
+    cli.main()
+    assert seen["aid"] == "a1"

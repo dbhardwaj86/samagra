@@ -127,6 +127,28 @@ def cmd_unlock(args) -> None:
         print("no SAMAGRA locks present")
 
 
+def cmd_bridge(args) -> None:
+    from .bridge import run
+
+    if args.action == "scan":
+        proposals = run.scan(dry=args.dry_run)
+        mode = "dry-run" if args.dry_run else "live"
+        print(f"bridge scan ({mode}): {len(proposals)} content proposal(s)")
+        for p in proposals:
+            aid = p.get("assignment_id", "-")
+            tag = " (reused)" if p.get("reused") else ""
+            print(f"  [{aid}] {p['item']['uid']} -> {p['payload']['type']}  "
+                  f"({len(p['pointers'])} pointer(s)){tag}")
+    elif args.action == "approve":
+        res = run.approve(args.assignment_id)
+        print(f"approved {args.assignment_id} -> {res['status']}")
+    elif args.action == "submit":
+        res = run.submit(args.assignment_id)
+        seed = res.get("seed") or {}
+        print(f"submitted {args.assignment_id} -> seed {seed.get('id')} "
+              f"({seed.get('status')})")
+
+
 def main() -> None:
     p = argparse.ArgumentParser(prog="samagra",
                                 description="SAMAGRA control plane")
@@ -179,6 +201,18 @@ def main() -> None:
         "review-staged",
         help="advisory Codex review over the staged diff (0=allow, 1=confirmed-CRITICAL)",
     ).set_defaults(func=cmd_review_staged)
+
+    br = sub.add_parser("bridge", help="active loop: scan munshi / approve / submit")
+    br_sub = br.add_subparsers(dest="action", required=True)
+    br_scan = br_sub.add_parser("scan", help="propose seeds from munshi items")
+    br_scan.add_argument("--dry-run", action="store_true",
+                         help="propose only; record no assignments")
+    br_approve = br_sub.add_parser("approve", help="approve an in-review proposal")
+    br_approve.add_argument("assignment_id")
+    br_submit = br_sub.add_parser("submit",
+                                  help="create a seed for an APPROVED assignment")
+    br_submit.add_argument("assignment_id")
+    br.set_defaults(func=cmd_bridge)
 
     args = p.parse_args()
     args.func(args)
