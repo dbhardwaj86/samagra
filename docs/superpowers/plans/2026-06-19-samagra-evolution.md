@@ -3198,11 +3198,15 @@ Expected: a clean tree, full suite green — Phase 2 governance layer complete (
 
 ## Phase 3 — Active loop (munshi item → classify → proposed seed payload with exact pointers → board-review assignment → on approval, create seed via capture API)
 
-> **⏸ PARKED (2026-06-20) — deprioritised, not cancelled.** On 2026-06-20 the owner re-prioritised the
-> roadmap: the immediate next build is the **SAMAGRA OS Experience track** (windowing GUI) under
-> [`docs/superpowers/plans/2026-06-20-samagra-os.md`](2026-06-20-samagra-os.md). This Phase-3 plan is
-> **complete and unchanged** and resumes once the Experience track (E1→) lands. Nothing below is obsolete —
-> it remains the authoritative spec for the single write path when work returns to the backend track.
+> **✅ BUILT 2026-06-23 (un-parked).** Phase 3 (the active loop / bridge) is implemented TDD on branch
+> **`phase3/active-loop`** (NOT yet merged) per the **reconciled** spec/plan
+> [`specs/2026-06-22-phase3-active-loop-design.md`](../specs/2026-06-22-phase3-active-loop-design.md) +
+> [`plans/2026-06-22-phase3-active-loop.md`](2026-06-22-phase3-active-loop.md), which **supersede the task
+> breakdown below** (the 2026-06-19 tasks predate the ralph/capture merges; 4 reconciliations applied — R1 flat
+> payload, R2 real munshi keys, R3 idempotent `captured`, post-D6 `store.connect()`). Gate **263 pytest**; golden
+> thread proven live (seed `seed_01KVRFPPT98HJVQ5NRBJ63MKR3`). The design intent below (single board-approved
+> write path) is unchanged and was honoured. *(Historical context kept below.)* ⏸ Originally PARKED 2026-06-20
+> behind the SAMAGRA OS Experience track.
 
 This phase wires the only write path in SAMAGRA. It reads munshi items (via the Phase-1 `MunshiAdapter`), classifies each as `content` vs `ops`, builds an exact `POST /api/seeds` payload (with corpus pointers resolved from the FTS5 catalog) for content items, queues each as a board-review assignment (`status='in-review'`, never writing to mycontentdev), and — only after a board agent flips the assignment to `approved` — creates the seed via `McdClient.create_seed`. `scan` is strictly read-only; `submit` refuses any non-approved assignment. All HTTP clients are mocked in tests; no live-prod calls in CI.
 

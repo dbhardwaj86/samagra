@@ -209,7 +209,9 @@ def test_scan_dry_proposes_content_only_and_writes_nothing(temp_catalog, monkeyp
     assert "assignment_id" not in p                  # dry: no assignment recorded
 
 
-def test_scan_live_records_in_review_and_dedups(temp_catalog, temp_gov, monkeypatch):
+def test_scan_live_records_in_review_and_dedups(temp_catalog, temp_gov, tmp_path, monkeypatch):
+    # chdir to a tmp cwd so scan's outbox files land in the tmp tree, not the repo.
+    monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(run, "MunshiAdapter", lambda: _FakeMunshiAdapter(_munshi_items()))
 
     class _Boom:

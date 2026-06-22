@@ -1,5 +1,41 @@
 # SAMAGRA — Handoff
 
+> **▶▶▶▶▶ ✅ PHASE 3 — ACTIVE LOOP (the bridge) BUILT TDD + GOLDEN THREAD PROVEN LIVE (2026-06-23).**
+> On branch **`phase3/active-loop`** (NOT merged). DEC-5's primary value engine is real: `samagra/bridge/`
+> (`text` · `classify` · `pointers` · `seed_payload` · `outbox` · `run`) + CLI **`samagra bridge scan|approve|submit`**.
+> The loop: munshi item → classify content/ops → propose a flat seed payload + corpus pointers → record an
+> `in-review` board assignment (`governance.db`) + a pasteable outbox → **`approve`** (board gate) → **`submit`**
+> (the ONE subsystem write — approval-gated, idempotent, terminal `captured`). Built per the reconciled
+> spec/plan `docs/superpowers/{specs/2026-06-22-phase3-active-loop-design.md,plans/2026-06-22-phase3-active-loop.md}`.
+> - **4 reconciliations vs the stale 2026-06-19 plan:** **R1** flat `{type,raw_text,source_ref}` (the worker drops a
+>   nested `detail`; pointers live in the `seed_proposed` event note + the outbox file); **R2** real munshi
+>   kind-specific text keys via `item_text` (not `payload["text"]`); **R3** idempotent terminal `submit` (+ additive
+>   `captured` status); + the post-D6 **`store.connect()`** governance-DB fix (the original plan wrongly used
+>   `catalog.connect()`).
+> - **Gate: 263 pytest green** (229 baseline + 34 new bridge/outbox/governance). Subagent-driven build; every task
+>   two-stage reviewed; final whole-impl review (opus) = **MERGE-READY, 0 Critical/High/Medium**; all 5 safety
+>   invariants confirmed (only write path = `submit`; NO new web endpoint; read-only-except-capture intact; no
+>   secret leak; double-write blocked by two guards).
+> - **GOLDEN THREAD PROVEN LIVE:** a dry scan read live munshi (11 real content proposals); a synthesized **Testbot**
+>   proposal went approve→submit→**real seed `seed_01KVRFPPT98HJVQ5NRBJ63MKR3` (rough_idea, captured)** in prod
+>   mycontentdev, verified by read-back; a second submit was **refused** (idempotent — exactly one seed). *(A clean
+>   Testbot **content** item can't be made via the capture API: `classify` routes all person-attached items to ops,
+>   and todo needs an assignee / note needs a student / followup is ops — so the write half used a synthesized
+>   Testbot proposal; scan/classify is proven on the 11 real items.)*
+> - **⚠ Owner cleanup (prod test entities):** munshi note **55** + person "Testbot" (id 16); mcd seed
+>   **`seed_01KVRFPPT98HJVQ5NRBJ63MKR3`**. The smoke's local audit trail is the `captured` governance row for
+>   `munshi:55`; the 11 smoke in-review proposals were cleaned. (Outbox `.md` prompts are runtime artifacts — now
+>   gitignored via `board/*/outbox/*.md`; a test-hygiene fix makes `scan` tests `chdir` to tmp so they never write
+>   into the repo tree.)
+> - **Known limitation (graceful, by spec):** pointers are usually empty for real verbose questions —
+>   `catalog.search` uses FTS5 **AND** semantics, so a long stem rarely matches all tokens against one catalog title.
+>   Best-effort provenance; the proposal + seed write are unaffected. Future: OR-union / salient-term pointer search.
+> - **▶ NEXT:** `superpowers:finishing-a-development-branch` → a **Codex pre-merge review** (the advisory hook timed
+>   out on several commits, so run a full pass), then merge `phase3/active-loop`. Owner then: dismiss munshi note 55
+>   + archive the test seed.
+>
+> ---
+>
 > **▶▶▶▶ ✅ POST-AUDIT HARDENING SHIPPED (2026-06-22) — W1 security · W2 docs · W3 test-debt · W4 DEC-4 RETIRED.**
 > The plan [`docs/superpowers/plans/2026-06-22-post-audit-hardening.md`](docs/superpowers/plans/2026-06-22-post-audit-hardening.md)
 > is implemented, TDD throughout (red→green). **✅ Committed (`1cb345a`), fast-forward-merged to `main`, and

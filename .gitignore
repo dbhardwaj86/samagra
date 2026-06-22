@@ -16,6 +16,9 @@ dist/
 exports/
 lectures_out/
 .serve-logs/
+# Phase 3 bridge: outbox prompt files are runtime artifacts (per-assignment,
+# carry proposal content) — keep the tracked .gitkeep, ignore generated prompts.
+board/*/outbox/*.md
 
 # --- claude local settings ---
 .claude/settings.local.json
@@ -29,6 +32,7 @@ __pycache__/
 .pytmp/
 .pytest_tmp/
 .pytest_tmp_audit/
+.pytest-tmp*/
 .mypy_cache/
 *.egg-info/
 .coverage
