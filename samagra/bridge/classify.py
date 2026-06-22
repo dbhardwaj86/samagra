@@ -6,6 +6,8 @@ proposing a junk seed). The board reviews every content proposal anyway.
 """
 from __future__ import annotations
 
+import re
+
 from .text import item_text
 
 # Physics-ish vocabulary — coarse on purpose.
@@ -20,10 +22,14 @@ _PHYSICS_TERMS = (
     "physics", "newton", "joule", "kepler", "doppler",
 )
 
+# Match on a LEFT word boundary (\bterm) rather than a raw substring: this keeps
+# morphological recall ("work" → "working", "electric" → "electrical") while no
+# longer firing on embedded substrings ("work" inside "paperwork"/"network").
+_PHYSICS_RE = re.compile(r"\b(" + "|".join(_PHYSICS_TERMS) + r")", re.IGNORECASE)
+
 
 def _looks_physics(text: str) -> bool:
-    low = text.lower()
-    return any(term in low for term in _PHYSICS_TERMS)
+    return _PHYSICS_RE.search(text) is not None
 
 
 def classify_item(item: dict) -> str:

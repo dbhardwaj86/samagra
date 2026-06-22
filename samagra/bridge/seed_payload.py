@@ -9,6 +9,29 @@ from __future__ import annotations
 
 from .text import item_text
 
+# The seed types the mycontentdev capture endpoint accepts (mirrors the
+# /api/mcd/seeds route's _SEED_TYPES). build_seed_payload only ever emits
+# "question" or "rough_idea", but the set is the contract validate_seed_payload
+# enforces at the bridge write boundary.
+SEED_TYPES = {"concept", "question", "snippet", "simulation_idea",
+              "experiment", "notebooklm_link", "rough_idea"}
+
+
+def validate_seed_payload(body: dict) -> None:
+    """Enforce the same shape the /api/mcd/seeds route enforces.
+
+    `submit` calls McdClient.create_seed directly (the proven flat form-POST),
+    bypassing that FastAPI route — so the route's type/raw_text validation must
+    be re-asserted here or an empty-stem item would write a blank seed to prod.
+    Raises ValueError on a bad payload.
+    """
+    if body.get("type") not in SEED_TYPES:
+        raise ValueError(
+            "seed type must be one of: " + ", ".join(sorted(SEED_TYPES)))
+    raw_text = body.get("raw_text")
+    if not isinstance(raw_text, str) or not raw_text.strip():
+        raise ValueError("seed raw_text is required (non-empty string)")
+
 
 def _source_ref(item: dict) -> str | None:
     uid = item.get("uid")

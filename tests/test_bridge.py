@@ -433,3 +433,104 @@ def test_scan_returns_empty_when_munshi_unavailable(monkeypatch):
     monkeypatch.setattr(run, "MunshiAdapter", lambda: _Unavail())
     assert run.scan(dry=True) == []
     assert run.scan(dry=False) == []
+
+
+# --- Codex pre-merge hardening (review 22) ------------------------------------
+
+@pytest.mark.parametrize(
+    "task,expected",
+    [
+        # left word-boundary: 'work' must NOT fire on 'paperwork'/'network'
+        ("finish the office paperwork", "ops"),
+        ("set up the lab network", "ops"),
+        # but a real physics word (with suffixes) still classifies as content
+        ("make a question on work and energy", "content"),
+        ("rotational dynamics worksheet", "content"),
+    ],
+)
+def test_classify_uses_word_boundary_not_substring(task, expected):
+    assert classify_item(_item("todo", {"task": task})) == expected
+
+
+def test_scan_skips_already_captured_item(temp_catalog, temp_gov, tmp_path, monkeypatch):
+    """H3: a munshi item already CAPTURED must not be re-proposed on re-scan."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(run, "MunshiAdapter", lambda: _FakeMunshiAdapter(_munshi_items()))
+
+    class _Boom:
+        def create_seed(self, p):  # pragma: no cover
+            raise AssertionError("scan must not create seeds")
+    monkeypatch.setattr(run, "McdClient", _Boom)
+
+    conn = store.connect()
+    try:
+        store.add_assignment(conn, id="old1", agent="khanak", outbox_path="o",
+                             pipeline="mycontentdev", seed_ref="munshi:1")
+        store.set_assignment_status(conn, "old1", "in-review")
+        store.set_assignment_status(conn, "old1", "approved")
+        store.set_assignment_status(conn, "old1", "captured")
+    finally:
+        conn.close()
+
+    proposals = run.scan(dry=False)
+    conn = store.connect()
+    try:
+        rows = [a for a in store.list_assignments(conn) if a["seed_ref"] == "munshi:1"]
+        assert len(rows) == 1            # no SECOND assignment for the same item
+        assert rows[0]["id"] == "old1"
+    finally:
+        conn.close()
+    assert proposals and proposals[0].get("reused") is True
+
+
+def test_scan_degrades_when_munshi_read_raises(monkeypatch):
+    """M2: a munshi read that throws mid-stream must degrade, not crash."""
+    class _Flaky:
+        def available(self):
+            return True
+
+        def artifacts(self):
+            raise RuntimeError("munshi 503")
+    monkeypatch.setattr(run, "MunshiAdapter", lambda: _Flaky())
+    assert run.scan(dry=True) == []
+
+
+def test_submit_refuses_in_flight_after_crash(temp_gov, monkeypatch):
+    """H1: if a prior submit recorded intent but never completed (crash after
+    create_seed, before the ledger writes), a retry must REFUSE — never blindly
+    create a second seed."""
+    payload = {"type": "question", "raw_text": "x", "source_ref": "munshi:1"}
+    conn = store.connect()
+    try:
+        _approved_assignment_with_payload(conn, "a1", payload)
+        # simulate a crash mid-submit: intent recorded, no seed_created, status still approved
+        store.append_event(conn, actor="khanak", verb="seed_submitting",
+                           assignment_id="a1", subsystem="mycontentdev",
+                           subsystem_ref="munshi:1", note="intent")
+    finally:
+        conn.close()
+
+    class _Boom:
+        def create_seed(self, p):  # pragma: no cover
+            raise AssertionError("must not create a second seed for an in-flight submit")
+    monkeypatch.setattr(run, "McdClient", _Boom)
+    with pytest.raises(ValueError, match="in-flight"):
+        run.submit("a1")
+
+
+def test_submit_refuses_empty_raw_text(temp_gov, monkeypatch):
+    """M1: submit calls create_seed directly, bypassing the /api/mcd/seeds route
+    validation — so it must reject an empty raw_text itself."""
+    payload = {"type": "question", "raw_text": "", "source_ref": "munshi:1"}
+    conn = store.connect()
+    try:
+        _approved_assignment_with_payload(conn, "a1", payload)
+    finally:
+        conn.close()
+
+    class _Boom:
+        def create_seed(self, p):  # pragma: no cover
+            raise AssertionError("must not create a seed with empty raw_text")
+    monkeypatch.setattr(run, "McdClient", _Boom)
+    with pytest.raises(ValueError, match="raw_text"):
+        run.submit("a1")

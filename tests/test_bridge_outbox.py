@@ -34,3 +34,15 @@ def test_write_outbox_file_rejects_unsafe_agent(tmp_path, monkeypatch):
             seed_ref="munshi:9", expected_output="x", review_by="khanak",
             payload={"type": "rough_idea", "raw_text": "x"}, pointers=[],
         )
+
+
+def test_write_outbox_file_rejects_unsafe_assignment_id(tmp_path, monkeypatch):
+    # The FULL assignment id (not just the [:8] path slice) must be slug-safe —
+    # it is also interpolated verbatim into the approve/submit command text.
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(ValueError, match="slug-safe"):
+        outbox.write_outbox_file(
+            agent="khanak", assignment_id="abcd1234`rm -rf /`", pipeline="mycontentdev",
+            seed_ref="munshi:9", expected_output="x", review_by="khanak",
+            payload={"type": "rough_idea", "raw_text": "x"}, pointers=[],
+        )

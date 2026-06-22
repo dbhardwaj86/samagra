@@ -23,11 +23,8 @@ from ..governance import store
 from . import outbox
 from .classify import classify_item
 from .pointers import resolve_pointers
-from .seed_payload import build_seed_payload
+from .seed_payload import build_seed_payload, validate_seed_payload
 from .text import item_text
-
-# Statuses that mean "this munshi item already has a live proposal in flight".
-_OPEN_STATUSES = {"queued", "running", "in-review", "approved"}
 
 
 def _item_from_artifact(art) -> dict:
@@ -46,9 +43,18 @@ def _item_from_artifact(art) -> dict:
     }
 
 
-def _open_assignment_for(conn, seed_ref: str) -> dict | None:
+def _existing_assignment_for(conn, seed_ref: str) -> dict | None:
+    """Return ANY prior assignment for this munshi item, regardless of status.
+
+    Dedup is intentionally status-blind: an item that is in-flight (queued..
+    approved) OR already terminal ('captured') must NOT be re-proposed. Keying
+    only on the open statuses let a re-scan after capture mint a fresh proposal
+    for the same item — and a second human approve+submit would then write a
+    DUPLICATE seed (Codex review 22, H3). One munshi item → at most one bridge
+    assignment, ever.
+    """
     for a in store.list_assignments(conn):
-        if a.get("seed_ref") == seed_ref and a.get("status") in _OPEN_STATUSES:
+        if a.get("seed_ref") == seed_ref:
             return a
     return None
 
@@ -62,7 +68,13 @@ def scan(dry: bool = True) -> list[dict]:
     proposals: list[dict] = []
     conn = None if dry else store.connect()
     try:
-        for art in adapter.artifacts():
+        try:
+            arts = list(adapter.artifacts())
+        except Exception:  # noqa: BLE001
+            # munshi read failed (service down mid-stream though creds exist):
+            # degrade to best-effort rather than crashing the loop (M2, review 22).
+            arts = []
+        for art in arts:
             item = _item_from_artifact(art)
             if classify_item(item) != "content":
                 continue
@@ -75,7 +87,7 @@ def scan(dry: bool = True) -> list[dict]:
                 "payload": payload,
             }
             if not dry:
-                existing = _open_assignment_for(conn, art.uid)
+                existing = _existing_assignment_for(conn, art.uid)
                 if existing is not None:
                     proposal["assignment_id"] = existing["id"]
                     proposal["reused"] = True
@@ -158,13 +170,23 @@ def _load_proposed_payload(conn, assignment_id: str) -> dict | None:
 
 
 def _already_captured(conn, assignment_id: str) -> bool:
-    """True iff THIS assignment already has a seed_created event (per-assignment
-    dedup). A *different* assignment for the same munshi item is a legitimate
-    re-capture (scan dedup only excludes non-terminal statuses), and is gated by
-    a fresh human board approval — so this guard is scoped to the assignment, not
-    the munshi item, by design."""
+    """True iff THIS assignment already has a seed_created event. Re-proposing the
+    same munshi item is prevented upstream by scan's status-blind dedup
+    (_existing_assignment_for), so per-assignment dedup here is sufficient: one
+    item → one assignment → one seed."""
     return any(ev.get("assignment_id") == assignment_id and ev.get("verb") == "seed_created"
                for ev in store.list_events(conn, limit=10000))
+
+
+def _submit_in_flight(conn, assignment_id: str) -> bool:
+    """True iff a prior submit recorded a 'seed_submitting' intent for this
+    assignment but no matching 'seed_created' landed — i.e. a previous submit
+    crashed in its write window (after create_seed may have hit prod, before the
+    governance writes). On such an assignment we must REFUSE rather than blindly
+    re-create, because the prod seed may already exist (Codex review 22, H1)."""
+    verbs = [ev.get("verb") for ev in store.list_events(conn, limit=10000)
+             if ev.get("assignment_id") == assignment_id]
+    return "seed_submitting" in verbs and "seed_created" not in verbs
 
 
 def submit(assignment_id: str) -> dict:
@@ -186,19 +208,32 @@ def submit(assignment_id: str) -> dict:
             raise ValueError(
                 f"assignment {assignment_id} already has a created seed — "
                 f"refusing a double write.")
+        if _submit_in_flight(conn, assignment_id):
+            raise ValueError(
+                f"assignment {assignment_id} has an in-flight submit — a prior "
+                f"create may have already written a seed to mycontentdev. Refusing "
+                f"to retry blindly; reconcile by source_ref (archive any duplicate "
+                f"or mark this assignment captured) before resubmitting.")
         payload = _load_proposed_payload(conn, assignment_id)
         if payload is None:
             raise ValueError(
                 f"no proposed payload recorded for assignment {assignment_id}")
+        # submit posts the flat body to McdClient.create_seed directly, bypassing
+        # the /api/mcd/seeds route's validation — re-assert it here so an empty
+        # or mistyped payload can never reach prod (M1, review 22).
+        validate_seed_payload(payload)
 
-        # Crash window: if the process dies AFTER create_seed() returns but
-        # BEFORE the two governance writes below land, the seed exists in prod
-        # yet governance has no seed_created event and the status stays
-        # 'approved' — a re-submit would then pass both guards and create a
-        # SECOND seed. For a manually-invoked, board-gated, single-operator tool
-        # this millisecond window is acceptable (the human approve gate is the
-        # real guard); to harden, look up an existing seed by source_ref on the
-        # mcd side before retrying. Mirrors scan()'s outbox-before-DB note.
+        # Record submit intent BEFORE the external write. If the process dies in
+        # the window between create_seed() hitting prod and the governance writes
+        # below, this 'seed_submitting' event (with no matching 'seed_created')
+        # makes the next submit refuse via _submit_in_flight rather than create a
+        # SECOND seed — converting an unsafe crash window into a safe-fail that a
+        # human reconciles. Mirrors scan()'s outbox-before-DB ordering.
+        store.append_event(
+            conn, actor="khanak", verb="seed_submitting",
+            assignment_id=assignment_id, subsystem="mycontentdev",
+            subsystem_ref=payload.get("source_ref"),
+            note="submit intent recorded before create_seed")
         seed = McdClient().create_seed(payload)
 
         store.append_event(
