@@ -19,7 +19,7 @@ import uuid
 
 from .. import catalog  # noqa: F401  (kept for future direct catalog reads)
 from ..adapters.munshi import MunshiAdapter
-from ..clients.mcd_client import McdClient  # noqa: F401  (used by submit() — Task 8)
+from ..clients.mcd_client import McdClient
 from ..governance import store
 from . import outbox
 from .classify import classify_item
@@ -136,5 +136,58 @@ def approve(assignment_id: str) -> dict:
                 f"— only an in-review proposal can be approved.")
         store.set_assignment_status(conn, assignment_id, "approved")
         return {"assignment_id": assignment_id, "status": "approved"}
+    finally:
+        conn.close()
+
+
+def _load_proposed_payload(conn, assignment_id: str) -> dict | None:
+    """Recover the flat create_seed body from the 'seed_proposed' event note."""
+    for ev in store.list_events(conn, limit=10000):
+        if ev.get("assignment_id") == assignment_id and ev.get("verb") == "seed_proposed":
+            try:
+                return json.loads(ev["note"])["payload"]
+            except (TypeError, ValueError, KeyError):
+                return None
+    return None
+
+
+def _already_captured(conn, assignment_id: str) -> bool:
+    return any(ev.get("assignment_id") == assignment_id and ev.get("verb") == "seed_created"
+               for ev in store.list_events(conn, limit=10000))
+
+
+def submit(assignment_id: str) -> dict:
+    """Create the seed for an APPROVED assignment. The only subsystem write.
+
+    Refuses unless status is exactly 'approved' AND no seed was already created
+    for it (idempotent). On success flips the assignment to terminal 'captured'.
+    """
+    conn = store.connect()
+    try:
+        a = _load_assignment(conn, assignment_id)
+        if a is None:
+            raise ValueError(f"unknown assignment: {assignment_id}")
+        if a["status"] != "approved":
+            raise ValueError(
+                f"assignment {assignment_id} is '{a['status']}', not 'approved' "
+                f"— refusing to create a seed.")
+        if _already_captured(conn, assignment_id):
+            raise ValueError(
+                f"assignment {assignment_id} already has a created seed — "
+                f"refusing a double write.")
+        payload = _load_proposed_payload(conn, assignment_id)
+        if payload is None:
+            raise ValueError(
+                f"no proposed payload recorded for assignment {assignment_id}")
+
+        seed = McdClient().create_seed(payload)
+
+        store.append_event(
+            conn, actor="khanak", verb="seed_created",
+            assignment_id=assignment_id, subsystem="mycontentdev",
+            subsystem_ref=str(seed.get("id")) if isinstance(seed, dict) else None,
+            note="seed created from approved munshi bridge")
+        store.set_assignment_status(conn, assignment_id, "captured")
+        return {"assignment_id": assignment_id, "seed": seed}
     finally:
         conn.close()

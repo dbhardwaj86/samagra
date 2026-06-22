@@ -278,3 +278,87 @@ def test_approve_refuses_non_in_review(temp_gov):
 def test_approve_unknown_assignment_raises(temp_gov):
     with pytest.raises(ValueError, match="unknown"):
         run.approve("nope")
+
+
+def _seed_proposed(conn, aid, payload):
+    store.append_event(conn, actor="system", verb="seed_proposed",
+                       assignment_id=aid, subsystem="munshi", subsystem_ref="munshi:1",
+                       note=json.dumps({"payload": payload, "pointers": []}))
+
+
+def _approved_assignment_with_payload(conn, aid, payload):
+    store.add_assignment(conn, id=aid, agent="khanak",
+                         outbox_path=f"board/khanak/outbox/{aid}.md",
+                         pipeline="mycontentdev", seed_ref="munshi:1")
+    store.set_assignment_status(conn, aid, "in-review")
+    _seed_proposed(conn, aid, payload)
+    store.set_assignment_status(conn, aid, "approved")
+
+
+def test_submit_refuses_non_approved(temp_gov, monkeypatch):
+    conn = store.connect()
+    try:
+        store.add_assignment(conn, id="a1", agent="khanak",
+                             outbox_path="o", pipeline="mycontentdev", seed_ref="munshi:1")
+        store.set_assignment_status(conn, "a1", "in-review")
+    finally:
+        conn.close()
+
+    class _Boom:
+        def create_seed(self, payload):  # pragma: no cover
+            raise AssertionError("must not create seed for non-approved")
+    monkeypatch.setattr(run, "McdClient", _Boom)
+    with pytest.raises(ValueError, match="approved"):
+        run.submit("a1")
+
+
+def test_submit_creates_seed_once_and_captures(temp_gov, monkeypatch):
+    payload = {"type": "question", "raw_text": "x", "source_ref": "munshi:1"}
+    conn = store.connect()
+    try:
+        _approved_assignment_with_payload(conn, "a1", payload)
+    finally:
+        conn.close()
+
+    calls = []
+
+    class _Client:
+        def create_seed(self, p):
+            calls.append(p)
+            return {"id": "seed-99", "status": "captured"}
+    monkeypatch.setattr(run, "McdClient", lambda: _Client())
+
+    res = run.submit("a1")
+    assert calls == [payload]                         # exactly one create, exact flat body
+    assert res["seed"]["id"] == "seed-99"
+    conn = store.connect()
+    try:
+        a = next(a for a in store.list_assignments(conn) if a["id"] == "a1")
+        assert a["status"] == "captured"
+        verbs = [e["verb"] for e in store.list_events(conn, limit=1000)
+                 if e["assignment_id"] == "a1"]
+        assert "seed_created" in verbs
+    finally:
+        conn.close()
+
+
+def test_submit_refuses_double_submit(temp_gov, monkeypatch):
+    payload = {"type": "question", "raw_text": "x", "source_ref": "munshi:1"}
+    conn = store.connect()
+    try:
+        _approved_assignment_with_payload(conn, "a1", payload)
+    finally:
+        conn.close()
+
+    n = {"create": 0}
+
+    class _Client:
+        def create_seed(self, p):
+            n["create"] += 1
+            return {"id": "seed-1", "status": "captured"}
+    monkeypatch.setattr(run, "McdClient", lambda: _Client())
+
+    run.submit("a1")                                  # first: ok
+    with pytest.raises(ValueError):                   # second: refused (now 'captured')
+        run.submit("a1")
+    assert n["create"] == 1                            # never a double prod write
