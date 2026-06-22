@@ -112,8 +112,14 @@ should be one focused, committable unit.
   covering all the activity (17 desktop windows, theme reskins, WM geometry, both mobile sweeps) the error
   buffer stayed empty. Verification pass — no code change. Screenshots: mobile+console (dark), mobile+
   samagra (warm).
-- [ ] **A-8 · Adversarial review + gates.** Run an adversarial-review workflow over the accumulated diff;
-  fix confirmed findings. Final gate: backend pytest + `npm run verify`, no `.only`/`.skip`. Paste output.
+- [x] **A-8 · Adversarial review + gates. DONE 2026-06-22.** Ran a scoped **adversarial-review Workflow**
+  (`wm31jrc5a`: 4 review dimensions over the accumulated diff `396ca50..HEAD` + refute-by-default
+  verification of every finding): **0 raw findings, 0 confirmed** — no CRITICAL/HIGH/MEDIUM/LOW. Dimensions:
+  CSS-fix desktop-regression · vitest-guard rigor/non-vacuity · backend A-3 test correctness · a11y/contract
+  + config. (4 agents · 108 tool-uses · ~6.7 min.) The diff is only the A-5 CSS fixes + test guards + A-3
+  backend tests + config + docs — all sound. **Final gates green (clean tree):** backend **154 passed / 0
+  failures**; frontend `npm run verify` → **62 files / 546 tests passed** + lint + tsc + `vite build ✓
+  1.91s`. No `.only`/`.skip` (0 matches in `frontend/src`). **✅ Functional DoD A (A1–A8) is COMPLETE.**
 
 ## Phase B — deploy via Cloudflare tunnel (DoD B1–B5) — public step is OWNER-GATED
 - [ ] **B-0 · Owner confirm (STOP point).** Get from the owner: the exact **custom hostname** (proposed
@@ -168,3 +174,11 @@ _(loop appends new tasks and `BLOCKED:` notes here)_
   `[data-testid=mobile-grid] button[title="<AppName>"]`; Home is `[data-testid=mobile-home-indicator]`.
   Overflow/clip metric: `mobile-app.scrollWidth - clientWidth` (screen is `overflow:hidden`). Reused by
   A-6/A-7.
+- **D-6 · Review Workflows must isolate from the working tree (2026-06-22).** The A-8 adversarial-review
+  Workflow was launched WITHOUT `isolation: 'worktree'`, so its agents ran in the shared repo. Prompted to
+  "verify each guard fails if the fix were reverted," they reverted/re-modified source in place to watch the
+  guards bite, transiently churning the working tree (a concurrent gate run saw a false-red — 3 of my own
+  A-5 guards "failing" on agent-reverted source). They restored byte-identical on completion and the
+  committed HEAD was never at risk. **For future review/audit Workflows: pass `isolation: 'worktree'` OR
+  instruct agents to be strictly read-only (no Edit/Write/git checkout); never run a gate while a
+  tree-mutating Workflow is active.**
