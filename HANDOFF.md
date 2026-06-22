@@ -1,14 +1,23 @@
 # SAMAGRA — Handoff
 
-> **▶▶▶ NEXT SESSION = RALPH LOOP: ship it & tunnel to Cloudflare (2026-06-22).** The next session runs an
-> autonomous "ralph" loop to drive the app to **fully working** and then **deploy it at a custom URL via a
-> `cloudflared` tunnel to the local stack**. Entry point + Definition of Done + guardrails:
-> [`docs/superpowers/loops/ralph-deploy/HANDOFF.md`](docs/superpowers/loops/ralph-deploy/HANDOFF.md); recurring
-> loop prompt: [`…/ralph-deploy/PROMPT.md`](docs/superpowers/loops/ralph-deploy/PROMPT.md); prioritized backlog:
-> [`…/ralph-deploy/BACKLOG.md`](docs/superpowers/loops/ralph-deploy/BACKLOG.md). **DEC-4 is ASSUMED UNBLOCKED**
-> for that session (owner directive) — GUI/deploy work is no longer gated on it (DEC-1/DEC-3 + the
-> never-automated publish gate still hold). **The public-exposure step is OWNER-GATED** and must sit behind
-> Cloudflare Access before the app is reachable (the capture write-paths + admin keys must not be open).
+> **▶▶▶ ✅ SAMAGRA OS DEPLOYED LIVE (2026-06-22).** The ralph ship-&-tunnel loop drove the app to fully working
+> (Phase A: 17 apps × mobile × 3 themes, real data, 0 console errors, gates green) and **deployed it behind
+> Cloudflare Access** at **https://samagra.bhautikiplusprashnavali.com** via a `cloudflared` named tunnel
+> (`samagra-os`, `9b7a3df8…`) → local `:8799`. **Gate verified** (unauth `/api/overview` → HTTP 302 to the
+> Access OTP login; the origin does not fail-closed, so Access is the sole gate). Branch **`ship/samagra-os`**
+> (`cce285d`). Evidence: [`…/ralph-deploy/BACKLOG.md`](docs/superpowers/loops/ralph-deploy/BACKLOG.md)
+> (Phase A A1–A8 ✓; Phase B B1–B4 ✓); as-shipped runbook [`docs/deploy-tunnel.md`](docs/deploy-tunnel.md).
+> - **Owner follow-ups (open):** (1) **delete junk DNS record**
+>   `samagra.pratyakshsims.com.bhautikiplusprashnavali.com` (D-8 — harmless, in the CF dashboard); (2) **durable
+>   persistence** — install a Windows service for `config.samagra.yml` so the URL survives a reboot (B-5;
+>   currently the tunnel + stack run **in-session only**); (3) **browser smoke** — OTP-login then walk apps ×
+>   devices × themes over TLS; (4) **finish the branch** `ship/samagra-os` (C-2).
+> - **Hostname is `bhautiki`, not `pratyakshsims`** — the `cloudflared` `cert.pem` is zone-scoped to
+>   `bhautikiplusprashnavali.com` (D-7); using pratyakshsims would need a browser `cloudflared tunnel login`.
+> - **Owed reviews:** a pre-deploy crown-jewel **security** review (inline) found **no CRITICAL/HIGH**, but the
+>   broad multi-agent + independent **Codex** passes were **529-blocked** (Anthropic capacity event) and remain owed.
+> - **DEC-4** attention-ROI gate stays ASSUMED-UNBLOCKED for this work (deferred, not voided); DEC-1/DEC-3 + the
+>   never-automated publish gate still hold. Loop prompt/backlog under `docs/superpowers/loops/ralph-deploy/`.
 >
 > **▶▶ Phase E3 (mobile + visual polish) BUILT + the carried test-only LOWs CLOSED (2026-06-22).**
 > On branch **`e3/samagra-os`** (3 commits: `0dceb0d` test-LOWs · `73a97b7` E3 · `82edd06` review fixes; **NOT

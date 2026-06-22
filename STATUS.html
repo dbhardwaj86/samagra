@@ -58,7 +58,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
 </head>
 <body>
 <header class="top">
-  <h1>SAMAGRA</h1><span class="sub"><strong>Capture control plane LIVE</strong> (branch <code>feature/control-plane-capture</code>) — real owner-initiated captures end-to-end (Munshi item + mcd seed) + live browsing of all read-only surfaces (482 deployed sims, QX facets fixed) · backend <strong>142 pytest</strong> + frontend <strong>524 vitest / 60 files</strong> green · independent Codex review per implementation · <strong>DEC-3 amended: read-only <em>except owner-initiated capture</em></strong> — see <a href="#capture" style="color:inherit">Capture</a> · <strong>✅ Questions now QX-backed</strong> (exact + semantic + KaTeX maths + figures; <code>88b50a0</code>) + the <strong>2 review LOWs fixed</strong> (<code>e5457ea</code>) — branch ready to merge</span>
+  <h1>SAMAGRA</h1><span class="sub"><strong>✅ DEPLOYED LIVE (2026-06-22)</strong> — SAMAGRA OS is reachable at <a href="https://samagra.bhautikiplusprashnavali.com" style="color:inherit">samagra.bhautikiplusprashnavali.com</a> behind <strong>Cloudflare Access</strong> (one-time-PIN), via a <code>cloudflared</code> named tunnel (<code>samagra-os</code>, <code>9b7a3df8…</code>) → local <code>:8799</code> · <strong>gate verified</strong> (unauth <code>/api/overview</code> → 302 Access login) · Phase A (17 apps × mobile × 3 themes, 0 console errors, gates green) + Phase B (tunnel + Access) done on branch <code>ship/samagra-os</code> (<code>cce285d</code>) · runbook <a href="#" style="color:inherit">docs/deploy-tunnel.md</a> · see <a href="#next" style="color:inherit">Next</a> for owner follow-ups (junk-record cleanup, durable service, browser smoke, finish branch)</span>
   <nav>
     <a href="#overview">Overview</a><a href="#capture">Capture</a><a href="#coherence">Coherence</a><a href="#phases">Phases</a>
     <a href="#samagra">SAMAGRA</a><a href="#experience">OS GUI</a><a href="#arch">Architecture</a><a href="#org">Org</a>
@@ -487,6 +487,23 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   the decided-block path; <code>dispatch_codex</code> + git mocked).</p>
 
   <h2 id="decisions">Recent decisions</h2>
+  <div class="log"><div class="d">2026-06-22 · ✅ DEPLOYED LIVE — cloudflared tunnel behind Cloudflare Access</div>
+    The ralph ship-&-tunnel loop completed Phase A (functional) + Phase B (deploy). SAMAGRA OS is live at
+    <strong><a href="https://samagra.bhautikiplusprashnavali.com">samagra.bhautikiplusprashnavali.com</a></strong>
+    behind <strong>Cloudflare Access</strong> (one-time-PIN to owner), fronting the local stack via a
+    <code>cloudflared</code> named tunnel (<code>samagra-os</code>, <code>9b7a3df8…</code>) →
+    <code>localhost:8799</code> (FastAPI serving <code>frontend/dist</code> + same-origin <code>/api</code>; QX
+    <code>:8783</code> stays internal). <strong>Gate verified</strong>: an unauthenticated
+    <code>GET /api/overview</code> returns <strong>HTTP 302</strong> to the Access login (so the capture
+    write-paths are not open) — the origin does not fail-closed, so Access is the sole gate.
+    <strong>Hostname is <code>bhautiki</code>, not pratyakshsims</strong> — the <code>cloudflared</code>
+    <code>cert.pem</code> is zone-scoped to <code>bhautikiplusprashnavali.com</code> (D-7); the owner chose it
+    over a browser re-login for pratyakshsims. Committed <code>deploy/cloudflared/config.samagra.yml</code> +
+    the as-shipped <code>docs/deploy-tunnel.md</code> (<code>cce285d</code>, branch <code>ship/samagra-os</code>).
+    <strong>Owner follow-ups:</strong> delete the junk DNS record (D-8), install a durable Windows service
+    (B-5; currently in-session only), browser OTP smoke, finish the branch (C-2). A pre-deploy crown-jewel
+    security review found no CRITICAL/HIGH; the broad multi-agent + independent Codex passes were 529-blocked
+    (Anthropic capacity) and remain owed.</div>
   <div class="log"><div class="d">2026-06-22 · Phase E3 built (mobile + polish); DEC-4 consciously deferred by the Chairman</div>
     The owner was asked how to handle E3 given the binding <strong>DEC-4 attention-ROI gate</strong> (which the
     Chairman ratified 2026-06-21 to precede any E3 work) and chose <strong>"proceed with E3 now"</strong> — DEC-4 is
@@ -767,11 +784,15 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
   </table>
 
   <h2 id="next">Next actions</h2>
-  <p><strong>Immediate (branch <code>e3/samagra-os</code>, built + green, then merge):</strong></p>
+  <p><strong>Immediate (branch <code>ship/samagra-os</code> — DEPLOYED LIVE 2026-06-22, <code>cce285d</code>):</strong></p>
   <ol>
-    <li><strong>Merge <code>e3/samagra-os</code></strong> — present <code>superpowers:finishing-a-development-branch</code> and integrate the E3 work (mobile device mode + theme-correct WM geometry + responsive Dashboard) which sits on top of the QX-backed Questions + capture-control-plane work. Gate green: backend <strong>152 pytest</strong> + frontend <strong>541 vitest</strong> + <code>tsc</code>/<code>vite build</code>; adversarial multi-agent review clean (3 findings fixed).</li>
-    <li><strong>Owner browser-vision pixel-QA pass</strong> over the E1 shell + the 11 E2 apps + the new mobile phone frame (the one thing no headless test can judge; never a loop gate, RUBRIC §6). Pixel parity is <strong>not yet claimed</strong>.</li>
-    <li><strong>Run the DEC-4 attention-ROI acceptance gate</strong> — <strong>consciously deferred this session</strong> (the Chairman chose to build E3 first), but still the <em>binding</em> gate for the Phase-3-vs-GUI reprioritization (deferred, not voided). Run it before further GUI investment, ahead of Phase 3.</li>
+    <li><strong>Delete the junk DNS record</strong> <code>samagra.pratyakshsims.com.bhautikiplusprashnavali.com</code> (D-8) in the Cloudflare DNS dashboard — a harmless stray CNAME from the first mis-route (does not affect <code>hermes.*</code> or the live samagra host).</li>
+    <li><strong>Durable persistence (B-5)</strong> — the tunnel + local stack currently run <em>in-session only</em> (background <code>cloudflared … run</code> + <code>serve-local.ps1</code>); install a Windows service pointed at <code>deploy/cloudflared/config.samagra.yml</code> (the default service uses the hermes config) so the public URL survives a reboot.</li>
+    <li><strong>Browser OTP smoke</strong> — log in via Cloudflare Access and walk the apps × both devices × the 3 themes over TLS (same-origin <code>/api</code>, no CORS); the gate-blocks-unauth check is already verified, this confirms the post-auth app path.</li>
+    <li><strong>Finish the branch (C-2)</strong> — <code>superpowers:finishing-a-development-branch</code> to merge/PR <code>ship/samagra-os</code> (Phase A fixes + the deploy artifacts on top of the E3 / QX-Questions / capture work).</li>
+    <li><strong>Owed critical-review passes</strong> — the broad multi-agent + independent Codex reviews were <strong>529-blocked</strong> (Anthropic capacity event); re-run when healthy. The inline crown-jewel security review found <strong>no CRITICAL/HIGH</strong>.</li>
+    <li><strong>Owner browser-vision pixel-QA pass</strong> over the shell + apps + the mobile frame (the one thing no headless test can judge; never a loop gate, RUBRIC §6) — pixel parity <strong>not yet claimed</strong>.</li>
+    <li><strong>DEC-4 attention-ROI acceptance gate</strong> — deferred (not voided); still the <em>binding</em> gate for the Phase-3-vs-GUI reprioritization before deeper GUI investment.</li>
   </ol>
   <p><strong>Done since the last STATUS:</strong> the carried test-only S3/S4 LOW cleanup (HANDOFF item 4) is closed
   (`0dceb0d`) — QX-facets degradation tests, sims parser-robustness tests, the <code>sim_url()</code> validation
