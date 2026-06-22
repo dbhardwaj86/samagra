@@ -161,13 +161,16 @@ should be one focused, committable unit.
   samagra-os`) — **4 QUIC edge connections registered** (maa05/bom08/bom09). Gate smoke-test passed (B-2).
   **LIVE at https://samagra.bhautikiplusprashnavali.com behind Access.** Remaining human check: browser OTP
   login → walk apps × devices × themes over TLS (owner does this; can't OTP via curl).
-- [ ] **B-5 · Persistence + runbook. RUNBOOK UPDATED + LIVE 2026-06-22; durable-service pending.**
-  `docs/deploy-tunnel.md` updated to the as-shipped reality (bhautiki hostname, real tunnel id, cert-zone
-  gotcha D-7, Access verified, junk-record cleanup D-8). The tunnel + stack currently run in THIS session
-  (background `cloudflared … run` + `serve-local.ps1`). **Pending (owner choice):** install a durable
-  Windows service so the public URL survives a reboot — the default service uses the hermes
-  `~/.cloudflared/config.yml`, so point a separate service at `config.samagra.yml` — then confirm recovery
-  after reboot. Until then, exposure ends when this session's `cloudflared`/uvicorn processes stop.
+- [x] **B-5 · Persistence + runbook. DONE 2026-06-22.** `docs/deploy-tunnel.md` updated to the as-shipped
+  reality (bhautiki hostname, real tunnel id, cert-zone gotcha D-7, Access verified, junk-record cleanup D-8).
+  **Durability via a logon Scheduled Task** (chosen over `cloudflared service install`, which would hijack the
+  hermes default `~/.cloudflared/config.yml`): `scripts/serve-durable.ps1` brings the stack up (reuses healthy
+  servers + the built `dist`, no npm needed) + starts the `samagra-os` tunnel **detached** (survives the
+  shell), idempotent, touching ONLY the samagra `--config`; `scripts/install-durable-task.ps1`
+  registers/removes the **"SAMAGRA-OS"** task that runs it **at logon** (user context, no stored password — so
+  the URL is up once the owner is logged in, not at the pre-login lock screen; documented). **Verified:**
+  detached `cloudflared` (pid on `config.samagra.yml`), task State=Ready, gate live (`/api/overview` → 302).
+  Tradeoff for 24/7 pre-login uptime: a Windows service (separate from hermes) — noted in the runbook §8.
 
 ## Phase C — finish
 - [ ] **C-1 · Trackers + memory.** Update STATUS.html / HANDOFF.md / SUMMARY.html + the project memory

@@ -146,18 +146,25 @@ service (step 8). A healthy run registers ~4 QUIC edge connections.
   (Dashboard, Questions, Munshi), both devices + a theme switch, and that `/api/*`
   is same-origin (no CORS).
 
-## 8. Persistence + restart
+## 8. Persistence + restart — DONE (logon Scheduled Task)
 
-- **Quick (current):** keep the `cloudflared ... run` process alive (a dedicated
-  terminal, or `Start-Process`), alongside `serve-local.ps1`. Exposure ends when
-  these processes stop.
-- **Service (durable, pending owner choice):** `cloudflared service install` then
-  start the Windows service — but the default service uses
-  `~/.cloudflared/config.yml` (the hermes config). To run the samagra config as a
-  service, point a **separate** service at `deploy/cloudflared/config.samagra.yml`.
-  Verify the public URL recovers after a host reboot.
-- After restart, re-run `scripts\serve-local.ps1` to bring `:8799` + `:8783` back,
-  then ensure the tunnel is running.
+Durability is set up via a **logon Scheduled Task** (chosen over `cloudflared
+service install`, which would hijack the hermes default `~/.cloudflared/config.yml`):
+
+```powershell
+& .\scripts\install-durable-task.ps1            # register (idempotent) the "SAMAGRA-OS" task
+& .\scripts\install-durable-task.ps1 -Remove    # remove it
+& .\scripts\serve-durable.ps1                   # bring it all up by hand any time
+```
+
+- The task runs **`scripts\serve-durable.ps1`** at logon: it brings the stack up
+  (`serve-local.ps1`, reusing healthy servers + the built `dist`, so no npm is
+  needed) and starts the `samagra-os` tunnel **detached** (survives the shell),
+  idempotent, touching ONLY the samagra `--config`.
+- **Scope:** user context, no stored password — so the URL is up **once the owner
+  is logged in**, not at the pre-login lock screen. For 24/7 pre-login uptime, run
+  cloudflared as a **Windows service** pointed at a copy of `config.samagra.yml`
+  (separate from the hermes default service) instead of / in addition to the task.
 
 ## 9. Teardown
 
