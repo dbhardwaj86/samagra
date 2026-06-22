@@ -37,8 +37,10 @@
 >   "binding gate" the project ships past.
 > - **▶ NEXT:** ✅ committed + merged + **pushed to `origin/main` (`23d6cf1`)**. Optionally set
 >   `SAMAGRA_ACCESS_AUD` + `SAMAGRA_ACCESS_TEAM_DOMAIN` in prod `.env` to upgrade the origin gate from the interim
->   email check to full JWT validation. Then **Phase 3** (DEC-5) — now ungated by DEC-4 — in the next session
->   (needs live `MUNSHI_API_URL`/`MUNSHI_SECRET` in `.env`).
+>   email check to full JWT validation. Then **Phase 3** (DEC-5) — now ungated by DEC-4 — in the next session.
+>   **`MUNSHI_API_URL` + `MUNSHI_SECRET` are ALREADY set in `.env`** (`MunshiClient.available()` and
+>   `McdClient.available()` both `True`, verified 2026-06-22); just restart the durable `:8799` server if they were
+>   added after it started, so the running process picks them up.
 >
 > ---
 >
