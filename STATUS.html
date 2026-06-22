@@ -495,7 +495,7 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
 
   <h2 id="decisions">Recent decisions</h2>
   <div class="log"><div class="d">2026-06-22 · ✅ Post-audit hardening SHIPPED (W1 security · W2 docs · W3 test-debt · W4 DEC-4 RETIRED)</div>
-    The hardening plan is implemented TDD (red→green); <strong>committed (<code>1cb345a</code>) + fast-forward-merged to <code>main</code></strong> (local <code>main</code> 1 ahead of <code>origin/main</code> until pushed — push owner-gated).
+    The hardening plan is implemented TDD (red→green); <strong>committed (<code>1cb345a</code>), fast-forward-merged to <code>main</code>, and pushed to <code>origin/main</code> (<code>23d6cf1</code>)</strong>.
     All additive / defence-in-depth — the live deploy + the read-only-except-owner-capture invariant are unchanged.
     <strong>W1.1 (the HIGH): the origin now fails closed</strong> — new <code>samagra/api/origin_auth.py</code>
     middleware gates the five mutating POSTs + the two admin-keyed live reads; loopback (local dev + the
@@ -834,10 +834,9 @@ code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-ra
     <code>docs/superpowers/plans/2026-06-22-post-audit-hardening.md</code> is implemented TDD: <strong>W1</strong>
     origin fail-closed (<code>origin_auth.py</code>) · QX-HTML sanitize · QX-URL SSRF guard · DDL off GET paths ·
     <code>/open</code> + gitignore + deploy threat-model; <strong>W2</strong> doc-precision; <strong>W3</strong>
-    test-debt. Backend 229 + frontend 559 green. ✅ <strong>Committed + merged to <code>main</code> (<code>1cb345a</code>)</strong>;
-    <strong>remaining owner step: push <code>main</code> → <code>origin/main</code></strong> (1 ahead). Optionally set
-    <code>SAMAGRA_ACCESS_AUD</code> + <code>SAMAGRA_ACCESS_TEAM_DOMAIN</code> in prod <code>.env</code> to upgrade the
-    origin gate from the interim email check to full JWT validation.</li>
+    test-debt. Backend 229 + frontend 559 green. ✅ <strong>Committed + merged + pushed to <code>origin/main</code> (<code>23d6cf1</code>)</strong>.
+    Optionally set <code>SAMAGRA_ACCESS_AUD</code> + <code>SAMAGRA_ACCESS_TEAM_DOMAIN</code> in prod <code>.env</code> to upgrade the
+    origin gate from the interim email check to full JWT validation. Then <strong>Phase 3</strong> (DEC-5, now ungated) next session.</li>
     <li><strong>Owner browser-vision pixel-QA pass</strong> over the shell + apps + the mobile frame (the one thing no headless test can judge; never a loop gate, RUBRIC §6) — pixel parity <strong>not yet claimed</strong>.</li>
     <li><strong>DEC-4 attention-ROI gate — ✅ RESOLVED (2026-06-22, Chairman, option C → DEC-6): RETIRED.</strong> The pre-E3 attention-ROI acceptance gate is formally retired (not deferred); the DEC-2 north-star relaxes from binding to advisory; DEC-1/DEC-3/DEC-5 + the never-automated publish gate stay binding. Mirrored into HANDOFF / STATUS / SUMMARY / both specs / CLAUDE.md. <strong>Phase 3 (DEC-5) is now ungated</strong> — restart it after the E2 visual-QA pass.</li>
   </ol>
