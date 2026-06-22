@@ -2,7 +2,8 @@
 
 > **▶▶▶▶ ✅ POST-AUDIT HARDENING SHIPPED (2026-06-22) — W1 security · W2 docs · W3 test-debt · W4 DEC-4 RETIRED.**
 > The plan [`docs/superpowers/plans/2026-06-22-post-audit-hardening.md`](docs/superpowers/plans/2026-06-22-post-audit-hardening.md)
-> is implemented, TDD throughout (red→green). **Not yet committed/merged — owner-gated.** All additive /
+> is implemented, TDD throughout (red→green). **✅ Committed (`1cb345a`) + fast-forward-merged to `main`; local
+> `main` is 1 ahead of `origin/main` until pushed (push is owner-gated).** All additive /
 > defence-in-depth; the live deploy and the read-only-except-owner-capture invariant are unchanged.
 > **Ground truth now: backend 229 pytest + frontend 559 vitest, both green** (up from the audit's 154/546 — the
 > hardening added the new tests below).
@@ -34,9 +35,10 @@
 >   acceptance gate is **formally retired, not deferred**; the DEC-2 north-star relaxes from *binding* to
 >   *advisory*; **DEC-1 / DEC-3 / DEC-5 + the never-automated publish gate stay binding.** No doc now describes a
 >   "binding gate" the project ships past.
-> - **▶ NEXT:** commit + merge this hardening (owner-gated — suggest `/snap-pre` first); optionally set
->   `SAMAGRA_ACCESS_AUD` + `SAMAGRA_ACCESS_TEAM_DOMAIN` in prod `.env` to upgrade the origin gate from the interim
->   email check to full JWT validation; then **Phase 3** (DEC-5) — now ungated by DEC-4.
+> - **▶ NEXT:** ✅ committed + merged to local `main` (`1cb345a`). **Push `main` → `origin/main`** when ready
+>   (owner-gated; currently 1 ahead). Optionally set `SAMAGRA_ACCESS_AUD` + `SAMAGRA_ACCESS_TEAM_DOMAIN` in prod
+>   `.env` to upgrade the origin gate from the interim email check to full JWT validation. Then **Phase 3**
+>   (DEC-5) — now ungated by DEC-4 — in the next session.
 >
 > ---
 >
