@@ -419,3 +419,15 @@ def test_cli_bridge_submit_dispatch(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["samagra", "bridge", "submit", "a1"])
     cli.main()
     assert seen["aid"] == "a1"
+
+
+def test_scan_returns_empty_when_munshi_unavailable(monkeypatch):
+    class _Unavail:
+        def available(self):
+            return False
+
+        def artifacts(self):  # pragma: no cover - must not be reached
+            raise AssertionError("scan must not read artifacts when unavailable")
+    monkeypatch.setattr(run, "MunshiAdapter", lambda: _Unavail())
+    assert run.scan(dry=True) == []
+    assert run.scan(dry=False) == []

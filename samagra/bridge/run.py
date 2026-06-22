@@ -17,7 +17,6 @@ from __future__ import annotations
 import json
 import uuid
 
-from .. import catalog  # noqa: F401  (kept for future direct catalog reads)
 from ..adapters.munshi import MunshiAdapter
 from ..clients.mcd_client import McdClient
 from ..governance import store
