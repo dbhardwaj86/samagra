@@ -11,7 +11,7 @@
 > batch** (`approve_seed`, never silent), (4) scope = **teaching leverage** (multi-seed from day one). **Preserved:**
 > publish gate · 7-subsystem read-only firewall · 5 guards · DEC-1 bounded scope. **Plan A–G** (spine → deterministic
 > lanes → StyleSeed → coverage graph → async → deferred PRATHAM). **✅ PHASE 1 (dispatch spine) BUILT TDD + MERGED to
-> `main` 2026-06-23** (ff `67a509c`, local; push owed when ready): `samagra/factory/` (`lines`·`dispatch`·`run`·`outbox`)
+> `main` + PUSHED to `origin/main` 2026-06-23** (ff `67a509c`; HEAD `0758cd6` — durable): `samagra/factory/` (`lines`·`dispatch`·`run`·`outbox`)
 > + CLI **`samagra factory plan|approve|approve-seed|build`** — ONE textbook-chapter seed fans to 2 deterministic
 > local-write lanes (`revision`=thin + `lecture`=thick) via the existing lecture renderer; guarded `build()` inherits
 > the bridge's 5 crash-safety guards; per-seed batch gate (`approve-seed`, fork 3); 4-entry-point workflow firewall;
@@ -24,7 +24,7 @@
 > Docs upload) → remediated TDD (H1 gdocs opt-out · M1 factory outbox + firewall · L1 scoped event query · L2 seed_ref
 > normalize · I1 guard-2 test) → re-review 25 **GO-WITH-CAVEATS** → the one new Low (`approve_seed` firewall) closed →
 > effectively **GO**. Gate **303 pytest**. Reports `docs/codex-reviews/24,25`. **▶ NEXT: Phase C** (StyleSeed +
-> further deterministic lanes per Plan A–G). **Owner follow-ups:** push `main` → `origin/main` when ready; clean up
+> further deterministic lanes per Plan A–G). **Owner follow-ups:** ✅ pushed to `origin/main` (`0758cd6`) — durable; optionally clean up
 > any `board/` outbox demo files.
 >
 > ---

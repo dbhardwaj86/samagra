@@ -30,8 +30,8 @@
 > `docs/superpowers/plans/2026-06-23-samagra-content-factory-phase1-dispatch.md`; Chairman vision
 > `CONTENT-FACTORY-VISION.html`. Synthesis from a 16-agent Workflow (run `wf_5fb88c46-838`).
 >
-> **✅ PHASE 1 (dispatch spine) BUILT TDD + Codex-reviewed + MERGED to `main` 2026-06-23** (ff `67a509c`, local;
-> push owed): `samagra/factory/` (`lines` · `dispatch` · `run` · `outbox`) + CLI
+> **✅ PHASE 1 (dispatch spine) BUILT TDD + Codex-reviewed + MERGED to `main` + PUSHED to `origin/main` 2026-06-23**
+> (ff `67a509c`; HEAD `0758cd6` — durable): `samagra/factory/` (`lines` · `dispatch` · `run` · `outbox`) + CLI
 > **`samagra factory plan|approve|approve-seed|build`**. ONE seed fans to 2 deterministic local-write lanes
 > (`revision`=thin + `lecture`=thick) via the existing lecture renderer (`lectures.export.export_one`); the guarded
 > **`build()`** boundary inherits the bridge's 5 crash-safety guards; **per-seed batch gate** (`approve-seed`, fork 3);
