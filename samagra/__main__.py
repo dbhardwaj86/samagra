@@ -127,6 +127,28 @@ def cmd_unlock(args) -> None:
         print("no SAMAGRA locks present")
 
 
+def cmd_factory(args) -> None:
+    from .factory import run
+
+    if args.action == "plan":
+        proposals = run.plan(args.seed_ref, dry=args.dry_run)
+        mode = "dry-run" if args.dry_run else "live"
+        print(f"factory plan ({mode}): {len(proposals)} line(s) for {args.seed_ref}")
+        for p in proposals:
+            aid = p.get("assignment_id", "-")
+            tag = " (reused)" if p.get("reused") else ""
+            print(f"  [{aid}] {p['line']:9} -> {p['expected_output']}{tag}")
+    elif args.action == "approve":
+        res = run.approve(args.assignment_id)
+        print(f"approved {args.assignment_id} -> {res['status']}")
+    elif args.action == "approve-seed":
+        res = run.approve_seed(args.seed_ref)
+        print(f"approved {len(res['approved'])} child(ren) of {args.seed_ref}")
+    elif args.action == "build":
+        res = run.build(args.assignment_id)
+        print(f"built {args.assignment_id} -> {res['line']}: {res['artifact_ref']}")
+
+
 def cmd_bridge(args) -> None:
     from .bridge import run
 
@@ -213,6 +235,19 @@ def main() -> None:
                                   help="create a seed for an APPROVED assignment")
     br_submit.add_argument("assignment_id")
     br.set_defaults(func=cmd_bridge)
+
+    ft = sub.add_parser("factory", help="content factory: one seed -> N content artifacts")
+    ft_sub = ft.add_subparsers(dest="action", required=True)
+    ft_plan = ft_sub.add_parser("plan", help="fan a seed out to product lines")
+    ft_plan.add_argument("seed_ref", help="e.g. textbook:circular-motion")
+    ft_plan.add_argument("--dry-run", action="store_true", help="propose only; record nothing")
+    ft_ap = ft_sub.add_parser("approve", help="approve one in-review child")
+    ft_ap.add_argument("assignment_id")
+    ft_aps = ft_sub.add_parser("approve-seed", help="approve ALL in-review children of a seed (batch)")
+    ft_aps.add_argument("seed_ref")
+    ft_bld = ft_sub.add_parser("build", help="build an APPROVED child (the guarded write boundary)")
+    ft_bld.add_argument("assignment_id")
+    ft.set_defaults(func=cmd_factory)
 
     args = p.parse_args()
     args.func(args)
