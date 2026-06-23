@@ -259,3 +259,26 @@ def test_build_guard2_refuses_existing_product_created_even_if_approved(factory_
         conn.close()
     with pytest.raises(ValueError):
         run.build(a["assignment_id"])
+
+
+def test_approve_seed_skips_non_factory_pipeline_with_same_seed_ref(factory_env):
+    """approve_seed must touch ONLY factory-lane assignments, even if a bridge
+    assignment shares the seed_ref (review 25 — firewall completeness)."""
+    run.plan("textbook:circular-motion", dry=False)   # 2 factory children, in-review
+    conn = store.connect()
+    try:
+        store.add_assignment(conn, id="b9", agent="khanak",
+                             outbox_path="board/khanak/outbox/b9.md",
+                             pipeline="mycontentdev", seed_ref="textbook:circular-motion")
+        store.set_assignment_status(conn, "b9", "in-review")
+    finally:
+        conn.close()
+    res = run.approve_seed("textbook:circular-motion")
+    assert "b9" not in res["approved"]            # bridge assignment untouched
+    assert len(res["approved"]) == 2              # only the 2 factory lanes
+    conn = store.connect()
+    try:
+        b9 = next(r for r in store.list_assignments(conn) if r["id"] == "b9")
+        assert b9["status"] == "in-review"        # NOT approved by the factory workflow
+    finally:
+        conn.close()

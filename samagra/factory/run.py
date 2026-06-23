@@ -106,7 +106,8 @@ def approve_seed(seed_ref: str) -> dict:
     try:
         approved = []
         for a in store.list_assignments(conn):
-            if a.get("seed_ref") == seed_ref and a["status"] == "in-review":
+            if (a.get("seed_ref") == seed_ref and a["status"] == "in-review"
+                    and a.get("pipeline") in LINES):          # workflow firewall (review 25)
                 store.set_assignment_status(conn, a["id"], "approved")
                 approved.append(a["id"])
         return {"seed_ref": seed_ref, "approved": approved}
