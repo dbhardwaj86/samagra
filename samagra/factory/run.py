@@ -69,3 +69,41 @@ def plan(seed_ref: str, dry: bool = True) -> list[dict]:
         if conn is not None:
             conn.close()
     return proposals
+
+
+def _load_assignment(conn, assignment_id: str) -> dict | None:
+    for a in store.list_assignments(conn):
+        if a["id"] == assignment_id:
+            return a
+    return None
+
+
+def approve(assignment_id: str) -> dict:
+    """Board gate: flip one 'in-review' child -> 'approved'. Refuses others."""
+    conn = store.connect()
+    try:
+        a = _load_assignment(conn, assignment_id)
+        if a is None:
+            raise ValueError(f"unknown assignment: {assignment_id}")
+        if a["status"] != "in-review":
+            raise ValueError(
+                f"assignment {assignment_id} is {a['status']!r}, not 'in-review'")
+        store.set_assignment_status(conn, assignment_id, "approved")
+        return {"assignment_id": assignment_id, "status": "approved"}
+    finally:
+        conn.close()
+
+
+def approve_seed(seed_ref: str) -> dict:
+    """PER-SEED BATCH gate (fork 3): flip ALL in-review children of a seed ->
+    'approved' in one explicit human action. Never a silent auto-approve."""
+    conn = store.connect()
+    try:
+        approved = []
+        for a in store.list_assignments(conn):
+            if a.get("seed_ref") == seed_ref and a["status"] == "in-review":
+                store.set_assignment_status(conn, a["id"], "approved")
+                approved.append(a["id"])
+        return {"seed_ref": seed_ref, "approved": approved}
+    finally:
+        conn.close()

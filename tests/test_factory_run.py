@@ -61,3 +61,27 @@ def test_plan_live_is_idempotent_per_seed_and_line(factory_env):
         assert len(store.list_assignments(conn)) == 2   # not 4
     finally:
         conn.close()
+
+
+def test_approve_flips_single_child(factory_env):
+    [a, _] = run.plan("textbook:circular-motion", dry=False)
+    res = run.approve(a["assignment_id"])
+    assert res["status"] == "approved"
+
+
+def test_approve_refuses_non_in_review(factory_env):
+    [a, _] = run.plan("textbook:circular-motion", dry=False)
+    run.approve(a["assignment_id"])
+    with pytest.raises(ValueError):
+        run.approve(a["assignment_id"])   # already approved, not in-review
+
+
+def test_approve_seed_batches_all_children(factory_env):
+    run.plan("textbook:circular-motion", dry=False)
+    res = run.approve_seed("textbook:circular-motion")
+    assert len(res["approved"]) == 2
+    conn = store.connect()
+    try:
+        assert all(r["status"] == "approved" for r in store.list_assignments(conn))
+    finally:
+        conn.close()
