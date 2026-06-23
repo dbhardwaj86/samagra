@@ -37,7 +37,7 @@ def _html_to_docx(html_path: Path, docx_path: Path) -> bool:
     return True
 
 
-def export_one(slug: str, variant: str) -> dict:
+def export_one(slug: str, variant: str, *, upload_gdocs: bool = True) -> dict:
     content = render.load_chapter(slug)
     if variant == "thin":
         content = build_thin(content)
@@ -52,7 +52,7 @@ def export_one(slug: str, variant: str) -> dict:
     have_docx = _html_to_docx(html_path, docx_path)
 
     gdoc = None
-    if have_docx:
+    if have_docx and upload_gdocs:
         title = f"{content.get('title', slug)} — {label}"
         gdoc = gdocs.upload(docx_path, title)
 

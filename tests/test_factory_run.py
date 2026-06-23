@@ -88,7 +88,7 @@ def test_approve_seed_batches_all_children(factory_env):
 
 
 def _stub_export(monkeypatch, tmp_path):
-    def fake_export_one(slug, variant):
+    def fake_export_one(slug, variant, **kw):
         out = tmp_path / f"{slug}-{variant}.html"
         out.write_text(f"<h1>{slug} {variant}</h1>", encoding="utf-8")
         return {"variant": variant, "html": str(out), "docx": None, "gdoc": None}
@@ -137,7 +137,7 @@ def test_build_refuses_in_flight(factory_env, monkeypatch):
         run.build(a["assignment_id"])
 
 def test_build_validates_output(factory_env, monkeypatch):
-    def empty_export(slug, variant):
+    def empty_export(slug, variant, **kw):
         out = factory_env / f"{slug}-{variant}.html"; out.write_text("", encoding="utf-8")
         return {"variant": variant, "html": str(out)}
     monkeypatch.setattr("samagra.lectures.export.export_one", empty_export)
@@ -173,3 +173,89 @@ def test_one_seed_fans_to_two_captured_artifacts(factory_env, monkeypatch):
         assert all(e["subsystem_ref"] for e in created)   # provenance recorded
     finally:
         conn.close()
+
+
+# --- Codex review 24 remediation -------------------------------------------
+
+def test_build_never_uploads_to_external_gdocs(factory_env, monkeypatch):
+    """Phase-1 invariant: a factory build writes ONLY local artifacts — it must
+    never trigger the lecture exporter's external Google Docs upload (review 24 H1)."""
+    def _boom(*a, **k):
+        raise AssertionError("factory build attempted an external Google Docs upload")
+    monkeypatch.setattr("samagra.lectures.gdocs.upload", _boom)
+    monkeypatch.setattr("samagra.lectures.export._html_to_docx", lambda h, d: True)
+    [a, _] = run.plan("textbook:circular-motion", dry=False)
+    run.approve(a["assignment_id"])
+    res = run.build(a["assignment_id"])          # must NOT raise
+    assert res["artifact_ref"].endswith("circular-motion-thin.html")
+
+
+def test_plan_outbox_emits_factory_commands_not_bridge(factory_env):
+    """The board outbox must instruct `samagra factory ...`, never the bridge's
+    `samagra bridge submit` (review 24 M1)."""
+    import pathlib
+    run.plan("textbook:circular-motion", dry=False)
+    files = sorted(pathlib.Path("board/khanak/outbox").glob("*.md"))
+    assert files, "no outbox file written"
+    body = files[0].read_text(encoding="utf-8")
+    assert "samagra factory" in body
+    assert "samagra bridge" not in body
+
+
+def test_factory_approve_refuses_non_factory_pipeline(factory_env):
+    """Workflow firewall: a bridge (mycontentdev) assignment is not approvable via
+    the factory workflow (review 24 M1)."""
+    conn = store.connect()
+    try:
+        store.add_assignment(conn, id="x1", agent="khanak",
+                             outbox_path="board/khanak/outbox/x1.md",
+                             pipeline="mycontentdev", seed_ref="munshi:1")
+        store.set_assignment_status(conn, "x1", "in-review")
+    finally:
+        conn.close()
+    with pytest.raises(ValueError):
+        run.approve("x1")
+
+
+def test_factory_build_refuses_non_factory_pipeline(factory_env):
+    conn = store.connect()
+    try:
+        store.add_assignment(conn, id="x2", agent="khanak",
+                             outbox_path="board/khanak/outbox/x2.md",
+                             pipeline="mycontentdev", seed_ref="munshi:1")
+        store.set_assignment_status(conn, "x2", "in-review")
+        store.set_assignment_status(conn, "x2", "approved")
+    finally:
+        conn.close()
+    with pytest.raises(ValueError):
+        run.build("x2")
+
+
+def test_plan_normalizes_whitespace_in_seed_ref(factory_env):
+    """A padded seed_ref is normalized once at plan entry so it cannot classify yet
+    fail validate_seed_for_line at build time (review 24 L2)."""
+    proposals = run.plan("  textbook:circular-motion  ", dry=False)
+    assert all(p["seed_ref"] == "textbook:circular-motion" for p in proposals)
+    conn = store.connect()
+    try:
+        assert all(r["seed_ref"] == "textbook:circular-motion"
+                   for r in store.list_assignments(conn))
+    finally:
+        conn.close()
+
+
+def test_build_guard2_refuses_existing_product_created_even_if_approved(factory_env, monkeypatch):
+    """Guard 2 in isolation: an approved assignment that already has a
+    product_created event must be refused (review 24 I1)."""
+    _stub_export(monkeypatch, factory_env)
+    [a, _] = run.plan("textbook:circular-motion", dry=False)
+    run.approve(a["assignment_id"])
+    conn = store.connect()
+    try:
+        store.append_event(conn, actor=run._AGENT, verb="product_created",
+                           assignment_id=a["assignment_id"], subsystem="factory",
+                           subsystem_ref="x")
+    finally:
+        conn.close()
+    with pytest.raises(ValueError):
+        run.build(a["assignment_id"])

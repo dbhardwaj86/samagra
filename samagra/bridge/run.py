@@ -142,6 +142,10 @@ def approve(assignment_id: str) -> dict:
         a = _load_assignment(conn, assignment_id)
         if a is None:
             raise ValueError(f"unknown assignment: {assignment_id}")
+        if a["pipeline"] != "mycontentdev":                              # workflow firewall
+            raise ValueError(
+                f"assignment {assignment_id} pipeline {a['pipeline']!r} is not the "
+                f"munshi->mcd bridge — approve it via its own workflow (review 24 M1).")
         if a["status"] != "in-review":
             raise ValueError(
                 f"assignment {assignment_id} is '{a['status']}', not 'in-review' "
@@ -201,6 +205,10 @@ def submit(assignment_id: str) -> dict:
         a = _load_assignment(conn, assignment_id)
         if a is None:
             raise ValueError(f"unknown assignment: {assignment_id}")
+        if a["pipeline"] != "mycontentdev":                              # workflow firewall
+            raise ValueError(
+                f"assignment {assignment_id} pipeline {a['pipeline']!r} is not the "
+                f"munshi->mcd bridge — refusing to submit it via the bridge (review 24 M1).")
         if a["status"] != "approved":
             raise ValueError(
                 f"assignment {assignment_id} is '{a['status']}', not 'approved' "

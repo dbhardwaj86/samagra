@@ -159,3 +159,12 @@ def test_api_assignments_endpoint():
     body = api.api_assignments()
     assert "assignments" in body and "events" in body
     assert any(a["id"] == "a1" for a in body["assignments"])
+
+
+def test_list_events_for_assignment_is_scoped(conn):
+    """Assignment-scoped, unbounded event query (review 24 L1)."""
+    store.append_event(conn, actor="t", verb="v1", assignment_id="A")
+    store.append_event(conn, actor="t", verb="v2", assignment_id="B")
+    store.append_event(conn, actor="t", verb="v3", assignment_id="A")
+    verbs = [e["verb"] for e in store.list_events_for_assignment(conn, "A")]
+    assert verbs == ["v1", "v3"]

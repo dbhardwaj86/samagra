@@ -189,3 +189,10 @@ def list_assignments(conn) -> list[dict]:
 def list_events(conn, limit: int = 200) -> list[dict]:
     return [dict(r) for r in conn.execute(
         "SELECT * FROM events ORDER BY id DESC LIMIT ?", (limit,))]
+
+
+def list_events_for_assignment(conn, assignment_id: str) -> list[dict]:
+    """All events for one assignment, oldest-first, UNBOUNDED (assignment-scoped
+    SQL — no newest-N window). Used by the factory build guards (review 24 L1)."""
+    return [dict(r) for r in conn.execute(
+        "SELECT * FROM events WHERE assignment_id=? ORDER BY id", (assignment_id,))]

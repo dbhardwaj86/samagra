@@ -10,8 +10,8 @@ from __future__ import annotations
 import json
 import uuid
 
-from ..bridge import outbox
 from ..bridge.pointers import resolve_pointers
+from . import outbox
 from ..governance import store
 from . import dispatch
 from .lines import LINES, classify
@@ -31,7 +31,8 @@ def _existing_assignment_for(conn, seed_ref: str, line: str) -> dict | None:
 def plan(seed_ref: str, dry: bool = True) -> list[dict]:
     """Classify a seed into product lines; dry=True writes nothing, dry=False
     records ONE in-review child assignment + outbox + 'product_proposed' per line."""
-    lines = classify(seed_ref)
+    seed_ref = (seed_ref or "").strip()   # normalize ONCE so what we classify is
+    lines = classify(seed_ref)            # exactly what we store + validate (review 24 L2)
     pointers = resolve_pointers(seed_ref.split(":", 1)[-1].replace("-", " "), limit=5)
     proposals: list[dict] = []
     conn = None if dry else store.connect()
@@ -85,6 +86,10 @@ def approve(assignment_id: str) -> dict:
         a = _load_assignment(conn, assignment_id)
         if a is None:
             raise ValueError(f"unknown assignment: {assignment_id}")
+        if a["pipeline"] not in LINES:                                   # workflow firewall
+            raise ValueError(
+                f"assignment {assignment_id} pipeline {a['pipeline']!r} is not a "
+                f"factory lane — approve it via its own workflow (review 24 M1)")
         if a["status"] != "in-review":
             raise ValueError(
                 f"assignment {assignment_id} is {a['status']!r}, not 'in-review'")
@@ -110,15 +115,16 @@ def approve_seed(seed_ref: str) -> dict:
 
 
 def _has_event(conn, assignment_id: str, verb: str) -> bool:
-    return any(e.get("assignment_id") == assignment_id and e.get("verb") == verb
-               for e in store.list_events(conn, limit=10000))
+    return any(e.get("verb") == verb
+               for e in store.list_events_for_assignment(conn, assignment_id))
 
 
 def _build_in_flight(conn, assignment_id: str) -> bool:
     """A prior build recorded 'product_building' but no matching 'product_created'
-    — it crashed in its write window. Refuse rather than re-produce (guard 3)."""
-    verbs = [e.get("verb") for e in store.list_events(conn, limit=10000)
-             if e.get("assignment_id") == assignment_id]
+    — it crashed in its write window. Refuse rather than re-produce (guard 3).
+    Assignment-scoped + unbounded (review 24 L1)."""
+    verbs = [e.get("verb")
+             for e in store.list_events_for_assignment(conn, assignment_id)]
     return "product_building" in verbs and "product_created" not in verbs
 
 
@@ -130,6 +136,10 @@ def build(assignment_id: str) -> dict:
         a = _load_assignment(conn, assignment_id)
         if a is None:
             raise ValueError(f"unknown assignment: {assignment_id}")
+        if a["pipeline"] not in LINES:                                   # workflow firewall
+            raise ValueError(
+                f"assignment {assignment_id} pipeline {a['pipeline']!r} is not a "
+                f"factory lane — refusing via the factory workflow (review 24 M1)")
         if a["status"] != "approved":                                    # guard 1
             raise ValueError(
                 f"assignment {assignment_id} is {a['status']!r}, not 'approved'")

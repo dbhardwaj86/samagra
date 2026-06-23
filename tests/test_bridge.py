@@ -534,3 +534,32 @@ def test_submit_refuses_empty_raw_text(temp_gov, monkeypatch):
     monkeypatch.setattr(run, "McdClient", _Boom)
     with pytest.raises(ValueError, match="raw_text"):
         run.submit("a1")
+
+
+def test_bridge_approve_refuses_non_mycontentdev_pipeline(temp_gov):
+    """Workflow firewall: a factory assignment (pipeline 'revision'/'lecture') is
+    not approvable via the bridge workflow (review 24 M1)."""
+    conn = store.connect()
+    try:
+        store.add_assignment(conn, id="f1", agent="khanak",
+                             outbox_path="board/khanak/outbox/f1.md",
+                             pipeline="revision", seed_ref="textbook:x")
+        store.set_assignment_status(conn, "f1", "in-review")
+    finally:
+        conn.close()
+    with pytest.raises(ValueError):
+        run.approve("f1")
+
+
+def test_bridge_submit_refuses_non_mycontentdev_pipeline(temp_gov):
+    conn = store.connect()
+    try:
+        store.add_assignment(conn, id="f2", agent="khanak",
+                             outbox_path="board/khanak/outbox/f2.md",
+                             pipeline="lecture", seed_ref="textbook:x")
+        store.set_assignment_status(conn, "f2", "in-review")
+        store.set_assignment_status(conn, "f2", "approved")
+    finally:
+        conn.close()
+    with pytest.raises(ValueError):
+        run.submit("f2")

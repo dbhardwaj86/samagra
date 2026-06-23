@@ -31,9 +31,13 @@ def validate_seed_for_line(line: str, seed_ref: str) -> None:
 
 
 def run_line(line: str, slug: str) -> dict:
-    """Run the lane's engine. Phase 1: lecture export with the lane's variant."""
+    """Run the lane's engine. Phase 1: lecture export with the lane's variant.
+
+    upload_gdocs=False keeps the Phase-1 invariant: produce ONLY local artifacts,
+    never the lecture exporter's external Google Docs upload (review 24 H1).
+    """
     spec = LINES[line]
-    return lex.export_one(slug, spec.variant)
+    return lex.export_one(slug, spec.variant, upload_gdocs=False)
 
 
 def validate_product(line: str, result: dict) -> None:
