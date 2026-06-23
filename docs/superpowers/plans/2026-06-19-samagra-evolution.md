@@ -3199,7 +3199,7 @@ Expected: a clean tree, full suite green — Phase 2 governance layer complete (
 ## Phase 3 — Active loop (munshi item → classify → proposed seed payload with exact pointers → board-review assignment → on approval, create seed via capture API)
 
 > **✅ BUILT + MERGED to `main` 2026-06-23 (un-parked).** Phase 3 (the active loop / bridge) was implemented TDD on
-> branch **`phase3/active-loop`** and **fast-forward-merged to `main` (`88d31e0`; not yet pushed to `origin/main`)**
+> branch **`phase3/active-loop`** and **fast-forward-merged to `main` (`88d31e0`) + pushed to `origin/main` (`1c5ec5d`)**
 > per the **reconciled** spec/plan
 > [`specs/2026-06-22-phase3-active-loop-design.md`](../specs/2026-06-22-phase3-active-loop-design.md) +
 > [`plans/2026-06-22-phase3-active-loop.md`](2026-06-22-phase3-active-loop.md), which **supersede the task

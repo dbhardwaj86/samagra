@@ -1,7 +1,7 @@
 # SAMAGRA — Handoff
 
 > **▶▶▶▶▶ ✅ PHASE 3 — ACTIVE LOOP (the bridge) BUILT TDD + GOLDEN THREAD PROVEN LIVE + MERGED to `main` (2026-06-23).**
-> **MERGED to `main` (ff `88d31e0`) after the Codex pre-merge review; NOT yet pushed to `origin/main` (owner-gated).**
+> **MERGED to `main` (ff `88d31e0`) + PUSHED to `origin/main` (HEAD `1c5ec5d`) after the Codex pre-merge review — durable.**
 > DEC-5's primary value engine is real: `samagra/bridge/`
 > (`text` · `classify` · `pointers` · `seed_payload` · `outbox` · `run`) + CLI **`samagra bridge scan|approve|submit`**.
 > The loop: munshi item → classify content/ops → propose a flat seed payload + corpus pointers → record an
@@ -39,10 +39,12 @@
 > - **Known limitation (graceful, by spec):** pointers are usually empty for real verbose questions —
 >   `catalog.search` uses FTS5 **AND** semantics, so a long stem rarely matches all tokens against one catalog title.
 >   Best-effort provenance; the proposal + seed write are unaffected. Future: OR-union / salient-term pointer search.
-> - **▶ NEXT (owner-gated):** (1) **push `main` → `origin/main`** to make the merge durable (20 commits ahead; not
->   done without owner consent — outward-facing); (2) **prod test-entity cleanup** — dismiss munshi note **55** +
->   person "Testbot" (id 16), archive mcd seed **`seed_01KVRFPPT98HJVQ5NRBJ63MKR3`**. Branch `phase3/active-loop`
->   merged (ff `88d31e0`) and deleted; merged-result gate re-run green (272 pytest).
+> - **✅ PUSHED:** `main` → `origin/main` (`d980e6f..1c5ec5d`) 2026-06-23 with owner consent — the Phase 3 merge is
+>   durable on the remote. Branch `phase3/active-loop` merged (ff `88d31e0`) and deleted; merged-result gate re-run
+>   green (272 pytest).
+> - **▶ NEXT (owner-only — needs munshi/mcd access; no sanctioned dismiss/archive write path in code):** prod
+>   test-entity cleanup — dismiss munshi note **55** + person "Testbot" (id 16), archive mcd seed
+>   **`seed_01KVRFPPT98HJVQ5NRBJ63MKR3`**.
 >
 > ---
 >
