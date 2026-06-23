@@ -594,27 +594,31 @@ config.EXPORT_DIR = tmp / "exports"
 store._INITIALIZED.clear()
 store.ensure_tables()
 
-from samagra.factory import deck, lines, run
+from samagra.factory import lines, run
 
 seed = "textbook:circular-motion"
 print("classify:", lines.classify(seed))                       # expect ['revision','lecture','deck']
 
-# Engine truth: project the REAL chapter directly.
-res = deck.build_deck("circular-motion")
-data = json.loads(pathlib.Path(res["json"]).read_text(encoding="utf-8"))
-kinds = {}
-for c in data["cards"]:
-    kinds[c["kind"]] = kinds.get(c["kind"], 0) + 1
-print("deck cards:", res["cards"], "by kind:", kinds)          # expect a mix of equation + callout
-print("sample card:", data["cards"][0])
-
 # Full factory flow in the temp store: one seed -> three captured artifacts.
 proposals = run.plan(seed, dry=False)
 run.approve_seed(seed)
+built = {}
 for p in proposals:
     out = run.build(p["assignment_id"])
+    built[p["line"]] = out["artifact_ref"]
     print("built", p["line"], "->", out["artifact_ref"])
-print("OK — durable governance.db untouched (temp store:", tmp, ")")
+assert len(set(built.values())) == 3, "expected 3 distinct artifacts"
+
+# Inspect the REAL deck the factory just produced (the .json sits beside the .html).
+deck_html = pathlib.Path(built["deck"])
+deck_json = deck_html.with_name(deck_html.name.replace("-deck.html", "-deck.json"))
+data = json.loads(deck_json.read_text(encoding="utf-8"))
+by_kind = {}
+for c in data["cards"]:
+    by_kind[c["kind"]] = by_kind.get(c["kind"], 0) + 1
+print("deck cards:", len(data["cards"]), "by kind:", by_kind)  # expect an equation + callout mix
+print("sample card:", data["cards"][0])
+print("OK — 3 distinct artifacts; durable governance.db untouched (temp:", tmp, ")")
 ```
 
 Run: `python c1_deck_smoke.py`
