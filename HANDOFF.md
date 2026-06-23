@@ -1,5 +1,25 @@
 # SAMAGRA — Handoff
 
+> **▶▶▶▶▶▶ ✅ CONTENT-FACTORY PIVOT — RATIFIED 2026-06-23 by Deepak (Chairman, carte blanche). NEW TOP DIRECTION;
+> NOT YET BUILT.** SAMAGRA → an active, style-conditioned, **multi-output content factory** (physics): one seed →
+> wide content-type coverage, in Deepak's style, behind the never-automated publish gate. **Reframe = activation,
+> not teardown** — the 2026-06-19 spec already parked the machinery (A6 separate student entity · dormant
+> DRAFTER+adversarial-REVIEWER · demand compass). **DEC-7** bridge → guarded **dispatch** boundary (1 seed → N
+> child artifacts; extension that strengthens the firewall; Codex pre-merge review required); **DEC-8** durable
+> **StyleSeed** + advisory scoring + owner-ratified learning loop; **DEC-9** **PRATHAM** student twin = A6 entity,
+> DEFERRED. **4 forks:** (1) **dispatch spine first**, (2) PRATHAM deferred to Phase G, (3) publish gate = **per-seed
+> batch** (`approve_seed`, never silent), (4) scope = **teaching leverage** (multi-seed from day one). **Preserved:**
+> publish gate · 7-subsystem read-only firewall · 5 guards · DEC-1 bounded scope. **Plan A–G** (spine → deterministic
+> lanes → StyleSeed → coverage graph → async → deferred PRATHAM). **▶ NEXT (Phase 1):** build `samagra/factory/`
+> dispatch spine + 2 deterministic local-write lanes (`revision`/`lecture`) from a textbook-chapter seed — **no new
+> prod write path, no migration** (reuses `assignments.pipeline`/`seed_ref`/`artifact_ref`). TDD, subagent-driven,
+> Codex pre-merge review of the `build` boundary (DEC-7). Spec
+> `docs/superpowers/specs/2026-06-23-samagra-content-factory-design.md`; Phase-1 plan
+> `docs/superpowers/plans/2026-06-23-samagra-content-factory-phase1-dispatch.md`; vision `CONTENT-FACTORY-VISION.html`.
+> Synthesis: 16-agent Workflow `wf_5fb88c46-838`. STATUS.html / SUMMARY.html sync = owed at Phase-1 ship.
+>
+> ---
+>
 > **▶▶▶▶▶ ✅ PHASE 3 — ACTIVE LOOP (the bridge) BUILT TDD + GOLDEN THREAD PROVEN LIVE + MERGED to `main` (2026-06-23).**
 > **MERGED to `main` (ff `88d31e0`) + PUSHED to `origin/main` (HEAD `1c5ec5d`) after the Codex pre-merge review — durable.**
 > DEC-5's primary value engine is real: `samagra/bridge/`

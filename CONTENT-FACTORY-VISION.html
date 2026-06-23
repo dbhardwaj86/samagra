@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SAMAGRA → Content Factory — Chairman's Mandate &amp; CEO Strategic Response</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css" rel="stylesheet" />
+<script>
+  window.MathJax = { tex: { inlineMath: [['$', '$']] }, svg: { fontCache: 'global' } };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+:root{
+  --bg:#fbfcfd; --panel:#ffffff; --text:#19212e; --muted:#5b6675; --soft:#7a8595;
+  --line:#e7ebf0; --line2:#eef1f5; --accent:#0d9488; --accent2:#2563eb;
+  --accent-soft:#e6f5f3; --amber:#b45309; --amber-soft:#fdf3e6; --rose:#be123c;
+  --green:#0f9d6b; --shadow:0 1px 2px rgba(16,24,40,.04),0 8px 24px rgba(16,24,40,.06);
+  --radius:14px; --maxw:880px;
+}
+html[data-theme="dark"]{
+  --bg:#0e1117; --panel:#161b22; --text:#e6edf3; --muted:#9aa6b2; --soft:#7d8a98;
+  --line:#252c36; --line2:#1d242d; --accent:#2dd4bf; --accent2:#60a5fa;
+  --accent-soft:#10302c; --amber:#fbbf24; --amber-soft:#2a2113; --rose:#fb7185;
+  --green:#34d399; --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;
+}
+header.top{
+  position:sticky;top:0;z-index:50;backdrop-filter:saturate(160%) blur(10px);
+  background:color-mix(in srgb, var(--bg) 86%, transparent);
+  border-bottom:1px solid var(--line);
+}
+.top .inner{max-width:1240px;margin:0 auto;padding:12px 22px;display:flex;align-items:center;gap:16px}
+.brand{display:flex;align-items:center;gap:11px;font-weight:800;letter-spacing:-.01em;font-size:15px}
+.brand .dot{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:800}
+.top nav{margin-left:auto;display:flex;gap:4px;flex-wrap:wrap}
+.top nav a{color:var(--muted);text-decoration:none;font-size:13px;font-weight:550;padding:6px 10px;border-radius:8px}
+.top nav a:hover{color:var(--text);background:var(--line2)}
+.themebtn{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:8px;width:34px;height:32px;cursor:pointer;font-size:14px}
+.layout{max-width:1240px;margin:0 auto;display:grid;grid-template-columns:248px minmax(0,1fr);gap:38px;padding:34px 22px 90px}
+aside{position:sticky;top:74px;align-self:start;height:calc(100vh - 96px);overflow:auto;padding-right:6px}
+aside .toc-h{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--soft);font-weight:700;margin:6px 0 10px}
+aside a{display:block;color:var(--muted);text-decoration:none;font-size:13.5px;padding:5px 11px;border-left:2px solid transparent;border-radius:0 7px 7px 0;margin:1px 0}
+aside a:hover{color:var(--text);background:var(--line2)}
+aside a.sub{padding-left:22px;font-size:12.5px;color:var(--soft)}
+aside a.active{color:var(--accent);border-left-color:var(--accent);background:var(--accent-soft);font-weight:600}
+main{min-width:0}
+.eyebrow{color:var(--accent);font-weight:700;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase}
+h1{font-size:34px;line-height:1.16;letter-spacing:-.02em;margin:.28em 0 .35em;font-weight:800}
+h2{font-size:23px;letter-spacing:-.01em;margin:2.4em 0 .65em;font-weight:750;padding-top:.5em;scroll-margin-top:80px}
+h3{font-size:17.5px;margin:1.7em 0 .5em;font-weight:680;scroll-margin-top:80px}
+h2 .num{color:var(--soft);font-weight:600;font-size:16px;margin-right:.5em}
+p{margin:.7em 0}
+a{color:var(--accent2)}
+.lede{font-size:18px;color:var(--muted)}
+strong{font-weight:680;color:var(--text)}
+code{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.86em;background:var(--line2);padding:1.5px 6px;border-radius:6px;color:var(--text)}
+pre{background:var(--panel) !important;border:1px solid var(--line);border-radius:12px;padding:15px 17px;overflow:auto;box-shadow:var(--shadow);font-size:13px}
+pre code{background:none;padding:0}
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--panel);border-radius:0 12px 12px 0;padding:14px 18px;margin:1.3em 0;box-shadow:var(--shadow)}
+.callout.amber{border-left-color:var(--amber);background:linear-gradient(0deg,var(--amber-soft),transparent)}
+.callout.blue{border-left-color:var(--accent2)}
+.callout .k{font-weight:700;font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+.callout.amber .k{color:var(--amber)}
+.callout.blue .k{color:var(--accent2)}
+.grid{display:grid;gap:14px}
+.cards2{grid-template-columns:repeat(auto-fit,minmax(255px,1fr))}
+.cards3{grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 17px;box-shadow:var(--shadow)}
+.card h4{margin:0 0 4px;font-size:15px;font-weight:680;display:flex;align-items:center;gap:8px}
+.card .meta{font-size:12px;color:var(--soft);margin-bottom:8px}
+.card p{font-size:13.5px;color:var(--muted);margin:.3em 0}
+.pill{display:inline-block;font-size:11px;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent)}
+.pill.b{background:#e8eefc;color:var(--accent2);border-color:#c9d8f7}
+html[data-theme="dark"] .pill.b{background:#16243f}
+.pill.g{background:#e6f6ee;color:var(--green);border-color:#c2e9d4}
+html[data-theme="dark"] .pill.g{background:#10301f}
+.pill.a{background:var(--amber-soft);color:var(--amber);border-color:#f0d9b5}
+.pill.r{background:#fde7ec;color:var(--rose);border-color:#f6c9d4}
+html[data-theme="dark"] .pill.r{background:#3a1620}
+table{width:100%;border-collapse:collapse;margin:1.1em 0;font-size:13.5px;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line2);vertical-align:top}
+th{background:var(--line2);font-weight:650;font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:var(--soft)}
+tr:last-child td{border-bottom:none}
+td code{font-size:.82em}
+.figure{margin:1.4em 0;padding:18px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.figure svg{width:100%;height:auto;display:block}
+.figcap{font-size:12.5px;color:var(--soft);margin-top:11px;text-align:center}
+.score{display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:26px;border-radius:7px;font-weight:700;font-size:13px;padding:0 8px}
+.s-hi{background:#e6f6ee;color:var(--green)}
+.s-md{background:var(--accent-soft);color:var(--accent)}
+.s-lo{background:var(--amber-soft);color:var(--amber)}
+html[data-theme="dark"] .s-hi{background:#10301f}
+.phase-row{display:flex;gap:14px;align-items:flex-start;padding:13px 0;border-bottom:1px solid var(--line2)}
+.phase-row:last-child{border-bottom:none}
+.phase-badge{flex:0 0 auto;width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px}
+.phase-row.deferred .phase-badge{background:linear-gradient(135deg,var(--soft),var(--muted));opacity:.8}
+.phase-body h4{margin:0 0 2px;font-size:14.5px;font-weight:680}
+.phase-body p{margin:.2em 0;font-size:13px;color:var(--muted)}
+ul.tight{margin:.5em 0;padding-left:1.15em}
+ul.tight li{margin:.32em 0;font-size:14.5px}
+ul.checks{list-style:none;padding-left:0}
+ul.checks li{position:relative;padding-left:26px;margin:.45em 0;font-size:14px}
+ul.checks li::before{content:"✓";position:absolute;left:0;top:0;color:var(--green);font-weight:800}
+ul.crosses li::before{content:"→";color:var(--accent)}
+.kvk{color:var(--soft);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+hr{border:none;border-top:1px solid var(--line);margin:2.4em 0}
+.foot{max-width:var(--maxw);margin:40px auto 0;color:var(--soft);font-size:12.5px;text-align:center}
+.sig{display:flex;gap:18px;flex-wrap:wrap;margin:1.2em 0}
+.sig .who{flex:1 1 240px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 15px;box-shadow:var(--shadow)}
+.sig .who .role{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--soft);font-weight:700}
+.sig .who .name{font-weight:700;font-size:15px;margin-top:2px}
+.sig .who .desc{font-size:12.5px;color:var(--muted);margin-top:3px}
+@media(max-width:980px){
+  .layout{grid-template-columns:1fr;gap:0}
+  aside{position:static;height:auto;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:20px;background:var(--panel)}
+  .top nav{display:none}
+}
+@media print{
+  header.top,aside,.themebtn{display:none!important}
+  .layout{display:block;padding:0;max-width:100%}
+  .card,.callout,table,pre,.figure{box-shadow:none;break-inside:avoid}
+  h1,h2{break-after:avoid}
+  a{color:inherit;text-decoration:none}
+  body{font-size:11pt}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="inner">
+    <span class="brand"><span class="dot">सम</span> SAMAGRA · Content Factory</span>
+    <nav>
+      <a href="#summary">Summary</a>
+      <a href="#today">Today</a>
+      <a href="#factory">The Factory</a>
+      <a href="#products">Products</a>
+      <a href="#eval">Evaluation</a>
+      <a href="#plan">Plan</a>
+      <a href="#decisions">Decisions</a>
+    </nav>
+    <button class="themebtn" id="themebtn" title="Toggle theme" aria-label="Toggle theme">◐</button>
+  </div>
+</header>
+
+<div class="layout">
+<aside>
+  <div class="toc-h">Contents</div>
+  <nav id="toc">
+    <a href="#summary">Executive summary</a>
+    <a href="#mandate">The mandate</a>
+    <a href="#today">1 · What SAMAGRA is today</a>
+    <a href="#reframe">2 · The reframe</a>
+    <a href="#factory">3 · The reimagined factory</a>
+    <a href="#factory" class="sub">3.1 Engine · the dispatch spine</a>
+    <a href="#factory" class="sub">3.2 Moat · the StyleSeed</a>
+    <a href="#factory" class="sub">3.3 Steering · the coverage graph</a>
+    <a href="#fanout">4 · One seed → wide coverage</a>
+    <a href="#products">5 · The student product catalog</a>
+    <a href="#eval">6 · Evaluation of the four angles</a>
+    <a href="#plan">7 · The rough plan (A–G)</a>
+    <a href="#governance">8 · Governance changes</a>
+    <a href="#risks">9 · Risks &amp; mitigations</a>
+    <a href="#decisions">10 · Open decisions (Chairman)</a>
+    <a href="#rec">11 · CEO recommendation</a>
+  </nav>
+</aside>
+
+<main>
+<section id="summary">
+  <div class="eyebrow">Strategy memo · 2026-06-23 · Chairman → CEO · Carte blanche</div>
+  <h1>From a read-only surface to a physics content factory</h1>
+  <p class="lede">A reimagining of SAMAGRA: stop being a window onto the content operation and become the line that <em>manufactures</em> it — turning one physics idea (a lecture, a question, a captured doubt) into a wide spread of catalogued, indexed, style-true student content, with the human publish gate as the one seam that never automates.</p>
+
+  <div class="callout">
+    <div class="k">The one-sentence thesis</div>
+    <p style="margin:.4em 0 0">Build a <strong>style-conditioned, multi-output factory line steered by a coverage graph</strong>: generalize the proven <code>bridge</code> into a guarded dispatch boundary that fans one approved seed into <em>N</em> content types, condition every generated draft on a durable profile of Deepak's voice, and let a concept-coverage matrix compute what to build next — all behind the never-automated publish gate.</p>
+  </div>
+
+  <p>This memo is grounded in a 16-agent exploration of the live codebase (11 subsystem maps), a four-angle reimagining, and an adjudication pass. The headline finding reframes the whole exercise: <strong>your carte blanche is not a teardown of the safety architecture — it is the activation of machinery the 2026-06-19 vision deliberately designed and parked.</strong></p>
+</section>
+
+<section id="mandate">
+  <h2><span class="num">§</span>The mandate, as received &amp; recorded</h2>
+  <div class="sig">
+    <div class="who">
+      <div class="role">Founder &amp; Chairman ("the BOSS")</div>
+      <div class="name">Deepak Bhardwaj</div>
+      <div class="desc">Issues carte blanche: redesign &amp; streamline the company; convert the static read-only surface into a seed-capture → content-generation → <strong>student-facing products factory</strong>. Physics only. In his style. Wide coverage per seed.</div>
+    </div>
+    <div class="who">
+      <div class="role">CEO (accepts &amp; executes)</div>
+      <div class="name">Claude-Deepak</div>
+      <div class="desc">Accepts the mandate. Recommends activating the dormant DRAFTER / REVIEWER / demand-compass rather than relaxing the firewall; sequences the build; preserves the publish gate; surfaces the four forks that are the Chairman's to call.</div>
+    </div>
+  </div>
+  <p>Recorded as <strong>proposed DEC-7 / DEC-8 / DEC-9</strong> (§8) — binding once the Chairman rules on the four open decisions (§10).</p>
+</section>
+
+<section id="today">
+  <h2><span class="num">1</span>What SAMAGRA is today — the assets, not the apps</h2>
+  <p>Strip away the 17-app "OS" chrome and SAMAGRA is already <strong>most of a factory standing still</strong>. It is a control plane that reflects a real teaching operation through read-only adapters, with two owner-initiated write paths and exactly one automated line. Everything the factory needs to <em>compose</em> content already exists and is tested.</p>
+
+  <table>
+    <thead><tr><th>Asset</th><th>What it gives the factory</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td><strong>The bridge</strong> <code>samagra/bridge/</code></td><td>A working <code>scan → classify → propose → board-approve → single-write → captured</code> line. Idempotent, crash-safe (5 guards, Codex-reviewed), event-sourced.</td><td><span class="pill g">proven live</span></td></tr>
+      <tr><td><strong>mycontentdev (mcd)</strong></td><td>A real content backend: <code>/api/admin/query</code> (SQL), a 10-state seed lifecycle <code>captured→…→brief_generated→content_linked→done</code>, 7 seed types incl. <code>notebooklm_link</code>, <code>simulation_idea</code>, <code>experiment</code>. Append-only revisions (user-original + claude-draft).</td><td><span class="pill g">live</span></td></tr>
+      <tr><td><strong>QX engine</strong> (67k questions)</td><td>Exact + <strong>semantic BGE</strong> search over a 67k-vector index, facets, cluster-dedup, a paper builder with answer-safe student/teacher variants, KaTeX+figure render. The cross-link backbone.</td><td><span class="pill g">live :8783</span></td></tr>
+      <tr><td><strong>Catalog</strong> <code>samagra.db</code></td><td>FTS5 index over ~7,044 artifacts from 8 sources, atomic last-known-good refresh. The connective tissue + <code>resolve_pointers</code>.</td><td><span class="pill g">live</span></td></tr>
+      <tr><td><strong>Lecture engine</strong></td><td>59 chapters of Deepak's handwritten notes as <code>content.json</code>; deterministic <code>thin</code>/<code>thick</code> variants; export to HTML / DOCX (OMML math) / Google Docs.</td><td><span class="pill g">live</span></td></tr>
+      <tr><td><strong>Governance</strong> <code>governance.db</code></td><td>Durable assignments + immutable events ledger + review overlay; the board approval model; the <strong>never-automated publish gate</strong>.</td><td><span class="pill g">live</span></td></tr>
+      <tr><td><strong>482 sims</strong> · booklets · INSP</td><td>Deployed pratyaksh simulations + proofed booklets + olympiad papers, all catalogued read-only.</td><td><span class="pill b">read-only</span></td></tr>
+      <tr><td><strong>Generation engines</strong></td><td>NotebookLM MCP (audio / video / slides / infographic studio), Claude (prose), Codex/Gemini workers, image-gen, the <code>run-episode</code> 6-phase orchestrator pattern.</td><td><span class="pill b">available</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout blue">
+    <div class="k">The latent capability</div>
+    <p style="margin:.4em 0 0">The bridge already does, for <em>one</em> output, exactly what a factory does for many: it classifies a raw input, resolves cross-corpus pointers, proposes, gates on a human, and writes exactly once — crash-safe. <strong>The factory is the bridge, widened.</strong></p>
+  </div>
+</section>
+
+<section id="reframe">
+  <h2><span class="num">2</span>The reframe — activation, not teardown</h2>
+  <p>The instinct behind "convert the read-only surface into a factory" is to tear down the read-only firewall (DEC-1/DEC-3). That instinct is wrong, and the project's own design history says why. The 2026-06-19 evolution spec <strong>pre-designed</strong> the content-factory machinery and left it dormant:</p>
+
+  <div class="grid cards3">
+    <div class="card">
+      <h4>① The separate twin (A6)</h4>
+      <p>"If a learner-facing product ever emerges, it is a <strong>SEPARATE entity that consumes SAMAGRA's published corpus</strong>… the published OUTPUT MAY be public-facing via that separate entity."</p>
+      <p class="meta">→ The student surface is <em>permitted by the vision</em>, not a violation. It consumes the corpus; the console stays inward.</p>
+    </div>
+    <div class="card">
+      <h4>② The DRAFTER &amp; REVIEWER</h4>
+      <p>A drafter that "may compound on Deepak's approval history (style/selection/structure)"; <strong>one adversarial reviewer anchored only to external ground-truth</strong>, never trained on his approvals — "catch-rate trending to zero is a RED FLAG (monoculture)."</p>
+      <p class="meta">→ Style replication + a quality moat, already specified.</p>
+    </div>
+    <div class="card">
+      <h4>③ The demand compass</h4>
+      <p>Steer generation by which concepts the QX paper-builder <strong>under-draws</strong> and by post-use flags ("too hard", "students missed this").</p>
+      <p class="meta">→ Coverage-driven prioritization, already named.</p>
+    </div>
+  </div>
+
+  <p style="margin-top:1.1em">So the pivot is: <strong>activate (1)+(2)+(3), and generalize the single bridge write into a many-output dispatch</strong> — while the read-only firewall over the seven source subsystems stays exactly as hardened. This is a far stronger, lower-risk move than relaxing the invariant the whole architecture rests on.</p>
+</section>
+
+<section id="factory">
+  <h2><span class="num">3</span>The reimagined factory</h2>
+  <p>Three layers, each grafted from the best of a competing reimagining, each touching <strong>no binding invariant</strong>:</p>
+
+  <div class="figure">
+    <svg viewBox="0 0 860 470" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+      <defs>
+        <marker id="arr" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0L9 4.5L0 9z" fill="#7a8595"/></marker>
+        <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0d9488"/><stop offset="1" stop-color="#2563eb"/></linearGradient>
+      </defs>
+      <!-- Steering layer -->
+      <rect x="20" y="16" width="820" height="92" rx="12" fill="#e6f5f3" stroke="#bfe5df"/>
+      <text x="34" y="40" font-size="12" font-weight="700" fill="#0d8377">STEERING — coverage graph (rebuildable, read-only)</text>
+      <rect x="34" y="50" width="180" height="44" rx="8" fill="#fff" stroke="#bfe5df"/><text x="124" y="68" font-size="11.5" text-anchor="middle" fill="#19212e">concept × content-type</text><text x="124" y="84" font-size="11.5" text-anchor="middle" fill="#5b6675">coverage matrix</text>
+      <rect x="228" y="50" width="170" height="44" rx="8" fill="#fff" stroke="#bfe5df"/><text x="313" y="68" font-size="11.5" text-anchor="middle" fill="#19212e">empty cells →</text><text x="313" y="84" font-size="11.5" text-anchor="middle" fill="#5b6675">ranked gap seeds</text>
+      <rect x="412" y="50" width="190" height="44" rx="8" fill="#fff" stroke="#bfe5df"/><text x="507" y="68" font-size="11.5" text-anchor="middle" fill="#19212e">FTS5 · BGE · graphify</text><text x="507" y="84" font-size="11.5" text-anchor="middle" fill="#5b6675">three edge-builders</text>
+      <rect x="616" y="50" width="208" height="44" rx="8" fill="#fff" stroke="#bfe5df"/><text x="720" y="68" font-size="11.5" text-anchor="middle" fill="#19212e">demand queue</text><text x="720" y="84" font-size="11.5" text-anchor="middle" fill="#5b6675">computable, de-duplicated</text>
+
+      <!-- Engine layer -->
+      <rect x="20" y="132" width="820" height="150" rx="12" fill="#ffffff" stroke="#e7ebf0"/>
+      <text x="34" y="156" font-size="12" font-weight="700" fill="#2563eb">ENGINE — the dispatch spine (the bridge, widened)</text>
+      <rect x="34" y="172" width="120" height="86" rx="8" fill="#f4f7fb" stroke="#dbe3ee"/><text x="94" y="208" font-size="12" text-anchor="middle" fill="#19212e" font-weight="600">SEED</text><text x="94" y="226" font-size="10.5" text-anchor="middle" fill="#5b6675">the hub node</text>
+      <line x1="154" y1="215" x2="182" y2="215" stroke="#7a8595" marker-end="url(#arr)"/>
+      <rect x="184" y="172" width="150" height="86" rx="8" fill="#f4f7fb" stroke="#dbe3ee"/><text x="259" y="200" font-size="11.5" text-anchor="middle" fill="#19212e" font-weight="600">classify → resolve</text><text x="259" y="218" font-size="10.5" text-anchor="middle" fill="#5b6675">product-line router</text><text x="259" y="234" font-size="10.5" text-anchor="middle" fill="#5b6675">+ resolve_pointers</text>
+      <line x1="334" y1="215" x2="362" y2="215" stroke="#7a8595" marker-end="url(#arr)"/>
+      <rect x="364" y="166" width="170" height="100" rx="8" fill="url(#g1)"/><text x="449" y="200" font-size="12" text-anchor="middle" fill="#fff" font-weight="700">DISPATCH</text><text x="449" y="220" font-size="10.5" text-anchor="middle" fill="#eafaf7">one guarded write</text><text x="449" y="236" font-size="10.5" text-anchor="middle" fill="#eafaf7">boundary · 5 safety guards</text>
+      <line x1="534" y1="215" x2="562" y2="215" stroke="#7a8595" marker-end="url(#arr)"/>
+      <rect x="564" y="172" width="260" height="86" rx="8" fill="#f4f7fb" stroke="#dbe3ee"/><text x="694" y="194" font-size="11" text-anchor="middle" fill="#5b6675">renderers (already built)</text>
+      <text x="694" y="214" font-size="10.5" text-anchor="middle" fill="#19212e">thin.py · QX paper_model · lecture export</text>
+      <text x="694" y="232" font-size="10.5" text-anchor="middle" fill="#19212e">NotebookLM studio · image-gen · create_seed</text>
+      <text x="694" y="250" font-size="10" text-anchor="middle" fill="#5b6675">→ N child artifacts, one per content type</text>
+
+      <!-- Moat injection -->
+      <rect x="184" y="300" width="350" height="56" rx="10" fill="#fdf3e6" stroke="#f0d9b5"/>
+      <text x="359" y="322" font-size="12" font-weight="700" text-anchor="middle" fill="#b45309">MOAT — StyleSeed (durable, owner-curated)</text>
+      <text x="359" y="340" font-size="10.5" text-anchor="middle" fill="#7a6334">voice · sequencing · analogies · rigor · selection priors</text>
+      <path d="M359 300 L449 266" stroke="#b45309" stroke-dasharray="4 3" marker-end="url(#arr)"/>
+      <text x="430" y="290" font-size="10" fill="#b45309">conditions drafts</text>
+
+      <!-- Publish gate seam -->
+      <rect x="560" y="300" width="264" height="56" rx="10" fill="#fff" stroke="#be123c" stroke-width="1.5"/>
+      <text x="692" y="322" font-size="12" font-weight="700" text-anchor="middle" fill="#be123c">⛔ PUBLISH GATE — never automated</text>
+      <text x="692" y="340" font-size="10.5" text-anchor="middle" fill="#7a8595">one human approve · per lane · the load-bearing seam</text>
+      <line x1="694" y1="258" x2="692" y2="298" stroke="#be123c" stroke-dasharray="3 3"/>
+
+      <!-- Downstream -->
+      <rect x="20" y="386" width="820" height="66" rx="12" fill="#f4f7fb" stroke="#dbe3ee" stroke-dasharray="6 4"/>
+      <text x="34" y="410" font-size="12" font-weight="700" fill="#5b6675">DOWNSTREAM (deferred · Chairman-gated) — PRATHAM, the student-facing twin (A6's reserved separate entity)</text>
+      <text x="34" y="432" font-size="11" fill="#7a8595">consumes the published corpus · read-only /api/learn/* · multi-tenant identity · built only after the inward factory is proven</text>
+    </svg>
+    <div class="figcap">The three-layer factory. Steering decides <em>what</em>; the engine manufactures <em>many from one</em>; the moat makes it sound like Deepak; the publish gate stays human on every lane. PRATHAM is the eventual outward consumer, not the first build.</div>
+  </div>
+
+  <h3>3.1 · Engine — the dispatch spine</h3>
+  <p>Generalize <code>bridge.submit</code> (today: one write to mcd) into <code>samagra/bridge/dispatch.py</code> — a single guarded write-boundary that routes by <code>pipeline</code> to an existing renderer. One approved seed fans into <em>N</em> child assignments, each running the <strong>identical</strong> <code>scan → propose → board-approve → single-write → captured</code> discipline with all five crash-safety guards intact. No engine bypasses dispatch.</p>
+<pre><code class="language-python"># the structural heart — every lane shares one guarded boundary
+ENGINES = {
+  "revision":  lambda seed, ptr: thin.build_thin(load(ptr.chapter)),      # deterministic
+  "paper":     lambda seed, ptr: qx.assemble(ptr.qids, variant="student"), # answer-safe
+  "lecture":   lambda seed, ptr: lectures.export(ptr.chapter, "both"),     # HTML/DOCX/GDoc
+  "audio":     lambda seed, ptr: notebooklm.studio_create("audio", ...),   # async-pending
+  "figure":    lambda seed, ptr: imagegen(seed.brief),                     # async-pending
+  "seed":      lambda seed, ptr: McdClient().create_seed(payload),         # today's path
+}
+def dispatch(assignment):           # ← inherits bridge's 5 guards verbatim
+    require_approved(assignment); refuse_double_write(assignment)
+    validate_output(assignment.payload)        # answer-leak guard at the boundary
+    record_intent(assignment)                  # crash-window safe (seed_submitting style)
+    art = ENGINES[assignment.pipeline](assignment.seed, assignment.pointers)
+    record_created(assignment, art); set_status(assignment, "captured")</code></pre>
+  <p class="meta" style="font-size:13px;color:var(--soft)">This activates the five already-decorative pipelines in <code>state.py</code> (textbook / mycontentdev / questions / papers / media) as <em>actual</em> factory lanes. Async engines (NotebookLM, image-gen) get a distinct pending state with their own intent-before-dispatch guard — the one genuinely new robustness problem (§9).</p>
+
+  <h3>3.2 · Moat — the StyleSeed</h3>
+  <p>Insert a style layer between <em>resolve</em> and <em>propose</em>. The <strong>StyleSeed</strong> is a versioned, owner-curated, durable artifact (parallel to <code>governance.db</code>, never reset) with five facets extracted from the 59 chapters' verbatim voice:</p>
+  <ul class="tight">
+    <li><strong>Voice rubric</strong> — idiom, register, the "a gift appears" / "trap" turns of phrase the corpus genuinely carries.</li>
+    <li><strong>Sequencing patterns</strong> — how he orders intuition → equation → caveat.</li>
+    <li><strong>Analogy library</strong> — the recurring physical pictures.</li>
+    <li><strong>Rigor stance</strong> — mined from the <code>flags[]</code> the content.json already encodes.</li>
+    <li><strong>Problem-selection priors</strong> — what he draws, at what difficulty mix.</li>
+  </ul>
+  <p>Deterministic lanes (thin / QX) carry his voice <em>for free</em> (the source IS his words). Only the LLM lanes (NotebookLM script, net-new prose) need conditioning — which bounds the compute cost. An <strong>advisory</strong> style-fit score surfaces on the board, hard-wired to never auto-advance the gate. An owner-ratified <strong>learning loop</strong> mines <code>review_overlay</code> edit-diffs into profile-deltas the human explicitly promotes (mirrors approve/submit) — finally wiring the dormant <code>thin.py</code> LLM hook and the spec's reserved decision-ledger inference. The single adversarial reviewer stays anchored only to external ground-truth; <strong>catch-rate → 0 is a red flag, not success.</strong></p>
+
+  <h3>3.3 · Steering — the coverage graph</h3>
+  <p>Promote the bridge's throwaway "up to 5 pointers" into a first-class, rebuildable <code>concept_graph.db</code> (sibling to <code>catalog.db</code>, read-only-derived — never mistaken for a governance reset). Nodes = concepts + artifacts (by uid, not duplicated); typed edges (<code>teaches</code>, <code>tests</code>, <code>visualizes</code>, <code>prerequisite_of</code>, <code>similar_to</code>) built by three engines already in the repo: FTS5 (free, structural), QX BGE (semantic), graphify (inferred, flagged, cached). The <strong>coverage matrix</strong> — concept × content-type — turns "what should exist next" from a guess into a computable, ranked, pointer-pre-loaded worklist. Empty cells become proposed gap-seeds (the human still approves every one).</p>
+</section>
+
+<section id="fanout">
+  <h2><span class="num">4</span>One seed → wide coverage (worked example)</h2>
+  <p>Drop a single seed — the chapter <strong>Gauss's Law</strong>, whose physics is $\oint \vec{E}\cdot d\vec{A} = Q_{\text{enc}}/\varepsilon_0$ — and the factory fans it across every content type, each from a pointer the catalog already holds:</p>
+
+  <div class="figure">
+    <svg viewBox="0 0 840 300" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+      <defs><marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0L8 4L0 8z" fill="#0d9488"/></marker></defs>
+      <circle cx="120" cy="150" r="56" fill="url(#g1)"/>
+      <text x="120" y="146" font-size="13" font-weight="700" text-anchor="middle" fill="#fff">Gauss's</text>
+      <text x="120" y="164" font-size="13" font-weight="700" text-anchor="middle" fill="#fff">Law</text>
+      <text x="120" y="224" font-size="10.5" text-anchor="middle" fill="#5b6675">seed · the hub</text>
+
+      <g font-size="11.5" fill="#19212e">
+        <line x1="176" y1="130" x2="250" y2="40" stroke="#0d9488" marker-end="url(#arr2)"/>
+        <rect x="250" y="22" width="250" height="34" rx="8" fill="#fff" stroke="#bfe5df"/><text x="262" y="44">Revision sheet · <tspan fill="#5b6675">thin.py (his voice, free)</tspan></text>
+        <line x1="180" y1="140" x2="250" y2="78" stroke="#0d9488" marker-end="url(#arr2)"/>
+        <rect x="250" y="62" width="250" height="34" rx="8" fill="#fff" stroke="#bfe5df"/><text x="262" y="84">Drill / mock paper · <tspan fill="#5b6675">QX 340 tested Qs</tspan></text>
+        <line x1="182" y1="150" x2="250" y2="118" stroke="#0d9488" marker-end="url(#arr2)"/>
+        <rect x="250" y="102" width="250" height="34" rx="8" fill="#fff" stroke="#bfe5df"/><text x="262" y="124">Micro-course · <tspan fill="#5b6675">lecture render + sim</tspan></text>
+        <line x1="182" y1="160" x2="250" y2="158" stroke="#0d9488" marker-end="url(#arr2)"/>
+        <rect x="250" y="142" width="250" height="34" rx="8" fill="#fff" stroke="#bfe5df"/><text x="262" y="164">Audio explainer · <tspan fill="#5b6675">NotebookLM studio</tspan></text>
+        <line x1="180" y1="170" x2="250" y2="198" stroke="#0d9488" marker-end="url(#arr2)"/>
+        <rect x="250" y="182" width="250" height="34" rx="8" fill="#fff" stroke="#bfe5df"/><text x="262" y="204">Spaced-repetition deck · <tspan fill="#5b6675">eq+callout cards</tspan></text>
+        <line x1="176" y1="180" x2="250" y2="238" stroke="#0d9488" marker-end="url(#arr2)"/>
+        <rect x="250" y="222" width="250" height="34" rx="8" fill="#fff" stroke="#bfe5df"/><text x="262" y="244">Sim gallery entry · <tspan fill="#5b6675">pratyaksh (read-only)</tspan></text>
+      </g>
+
+      <!-- gap cells -->
+      <rect x="540" y="40" width="280" height="216" rx="10" fill="#fdf3e6" stroke="#f0d9b5"/>
+      <text x="556" y="64" font-size="11.5" font-weight="700" fill="#b45309">Coverage matrix flags the GAPS:</text>
+      <text x="556" y="90" font-size="11" fill="#7a6334">✗ no numeric-integer drill</text>
+      <text x="556" y="112" font-size="11" fill="#7a6334">✗ no hands-on experiment brief</text>
+      <text x="556" y="134" font-size="11" fill="#7a6334">✗ no comprehension passage</text>
+      <text x="556" y="156" font-size="11" fill="#7a6334">✗ no "common trap" misconception card</text>
+      <line x1="556" y1="172" x2="804" y2="172" stroke="#f0d9b5"/>
+      <text x="556" y="194" font-size="11" font-weight="600" fill="#b45309">→ each empty cell becomes a</text>
+      <text x="556" y="212" font-size="11" font-weight="600" fill="#b45309">ranked, pointer-pre-loaded</text>
+      <text x="556" y="230" font-size="11" font-weight="600" fill="#b45309">proposed seed (human approves)</text>
+    </svg>
+    <div class="figcap">Catalogued, indexed, categorized: every leaf records its source UIDs + <code>style_seed_version</code> in <code>meta</code>, so the corpus is bi-directionally navigable and the demand queue is computed, not guessed.</div>
+  </div>
+</section>
+
+<section id="products">
+  <h2><span class="num">5</span>The student product catalog</h2>
+  <p>The output-first reimagining named the shippable lines (and proved each maps to an engine that already exists). These are the <em>products</em> the factory ships outward through PRATHAM — every one is a deterministic projection of the corpus plus, where useful, a style-conditioned draft.</p>
+
+  <div class="grid cards2">
+    <div class="card"><h4>📘 PathShala <span class="pill">micro-courses</span></h4><div class="meta">lecture render + QX + sim</div><p>"Gauss's Law in 25 min": concept intro + every key equation + 3–5 escalating worked questions + an embedded sim + a 5-question check. One per chapter (59), sub-split for the big ones.</p></div>
+    <div class="card"><h4>📝 Saar <span class="pill g">cheapest — ship first</span></h4><div class="meta">thin.py, verbatim</div><p>Revision sheets &amp; one-pagers: lead prose + every equation + every callout, print HTML + a phone card stack. Zero new engine — the proof slice.</p></div>
+    <div class="card"><h4>🎯 Abhyaas <span class="pill">adaptive sets</span></h4><div class="meta">QX json_search + overlay</div><p>Faceted drill sets from the 67k bank, dedup by cluster, escalating difficulty; next set reweighted by what the student missed. <strong>Zero answer columns</strong>, asserted at the boundary.</p></div>
+    <div class="card"><h4>🗂 Pariksha <span class="pill">exam papers</span></h4><div class="meta">QX paper_model + render</div><p>Full timed mocks / chapter tests / PYQ-style papers; student variant in-browser, teacher key unlocked post-submit. Already answer-safe by construction.</p></div>
+    <div class="card"><h4>🔁 Smriti <span class="pill">spaced repetition</span></h4><div class="meta">deterministic projection</div><p>Anki-style decks: each equation → "state the formula", each key/warn callout → "what's the catch", each verified MCQ → recall card. SM-2 client-side.</p></div>
+    <div class="card"><h4>💬 Samadhan <span class="pill b">doubt resolution</span></h4><div class="meta">outward mirror of munshi capture</div><p>Student doubt → FTS5/BGE-matched to the chapter section + 3 near-duplicate solved questions, instantly. Genuinely novel doubts route to the board as a seed — <strong>never auto-answered</strong>.</p></div>
+    <div class="card"><h4>🎧 Shravan <span class="pill">audio / video</span></h4><div class="meta">NotebookLM (notebooklm_link exists)</div><p>Per-chapter audio overview from the thin sheet; short video reuses the script + sim screen-capture. Board-approved, never auto-published.</p></div>
+    <div class="card"><h4>🧪 Pratyaksh <span class="pill b">sims gallery</span></h4><div class="meta">482 deployed sims, read-only</div><p>Student gallery faceted by chapter, each sim embedded in its capsule + sheet. New sim needs surface as <code>simulation_idea</code>/<code>experiment</code> seeds.</p></div>
+    <div class="card"><h4>🗣 Vaani <span class="pill a">"in Deepak's voice"</span></h4><div class="meta">thick render + the StyleSeed drafter</div><p>His actual words for existing chapters; for net-new topics, a style-compounding drafter — always board-reviewed, the adversarial reviewer anchored to external ground-truth.</p></div>
+    <div class="card"><h4>🗺 Concept Atlas <span class="pill b">operator product</span></h4><div class="meta">the coverage graph, as a surface</div><p>Navigable concept communities + a coverage heatmap (empty cells flagged) + per-concept dossiers. This is the demand engine, made visible.</p></div>
+  </div>
+</section>
+
+<section id="eval">
+  <h2><span class="num">6</span>Evaluation of the four reimaginings</h2>
+  <p>Four independent angles were generated and adjudicated. The synthesis grafts the engine, the moat, and the steering — and <em>defers</em> the student twin. Scores are the adjudicator's, with my concurrence.</p>
+
+  <table>
+    <thead><tr><th>Angle</th><th>Score</th><th>Verdict</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>P4 · Style Seed as the moat</strong><br><span class="kvk">the differentiator</span></td>
+        <td><span class="score s-hi">8.5</span></td>
+        <td>Sharpest strategically — names the one asset no competitor can replicate, and it is <em>genuinely extractable</em> (the content.json carries his voice verbatim). Riskiest to execute (drift, mode-collapse, pre-gate compute). Necessary but not sufficient: a style engine with nowhere to ship is half a factory.</td>
+      </tr>
+      <tr>
+        <td><strong>P3 · Multi-output factory line</strong><br><span class="kvk">the spine</span></td>
+        <td><span class="score s-hi">8.0</span></td>
+        <td>Most faithful-to-architecture, lowest structural risk; literally manufactures wide coverage. Governance changes are <em>extensions, not relaxations</em> — it strengthens the firewall. Loses points on async-engine crash-window surface and a quieter answer to "why defensible / who consumes."</td>
+      </tr>
+      <tr>
+        <td><strong>P2 · Knowledge graph + coverage</strong><br><span class="kvk">the steering</span></td>
+        <td><span class="score s-md">7.0</span></td>
+        <td>Only proposal that makes "what to build next" <em>computable</em>; best steering layer. Concept normalization (QX concept vs textbook slug vs NCERT) is the hard, under-estimated part — the same class of bug that bit the Questions facets. Weakest standalone factory.</td>
+      </tr>
+      <tr>
+        <td><strong>P1 · PRATHAM student twin</strong><br><span class="kvk">the destination</span></td>
+        <td><span class="score s-lo">6.5</span></td>
+        <td>Most concrete catalog of shippable products, and permitted-by-vision (A6). But it is precisely the audience-facing scope the kill-criterion guards; needs the heaviest governance amendment + a wholly-new multi-tenant identity subsystem; publish-gate dilution under student volume threatens the load-bearing invariant. Right destination, wrong <em>first</em> build.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <div class="k">Synthesis</div>
+    <p style="margin:.4em 0 0">Build <strong>P3's engine</strong>, steered by <strong>P2's graph</strong>, differentiated by <strong>P4's moat</strong> — and stage <strong>P1's student twin</strong> as a later, separately-gated phase. The seed is the hub; <code>resolve_pointers</code> is the universal linker; the never-automated publish gate is the one seam on every lane.</p>
+  </div>
+</section>
+
+<section id="plan">
+  <h2><span class="num">7</span>The rough plan — phases A → G</h2>
+  <p>Each phase ends green (TDD, the project's standing discipline) and the risk surface — new write boundaries — gets a Codex pre-merge review exactly as the Phase-3 bridge did.</p>
+
+  <div class="card" style="padding:6px 18px">
+    <div class="phase-row"><div class="phase-badge">A</div><div class="phase-body"><h4>Style spike — prove the moat is real <span class="pill g">read-only, zero code risk</span></h4><p>One-time style extraction over the 59-chapter corpus → a v0 StyleSeed (voice + analogies + sequencing + rigor from <code>flags[]</code> + selection priors), hand-reviewed by Deepak, calibrated on <em>circular-motion</em> as the gold exemplar. Ships an artifact before any pipeline exists.</p></div></div>
+    <div class="phase-row"><div class="phase-badge">B</div><div class="phase-body"><h4>Dispatch spine <span class="pill">TDD · stub engine</span></h4><p>Land <code>samagra/bridge/dispatch.py</code> + the additive governance migration (<code>assignments.engine</code>, <code>parent_seed_ref</code>). Test first: a generalized submit routes by pipeline <em>and</em> still enforces all 5 guards + the answer-leak write-boundary assertion. Codex pre-merge review of the new boundaries.</p></div></div>
+    <div class="phase-row"><div class="phase-badge">C</div><div class="phase-body"><h4>First real lanes = the golden thread <span class="pill">deterministic, no external auth</span></h4><p>Wire the QX drill/paper lane end-to-end (seed → resolve <code>qx:*</code> → approve → dispatch → student paper, zero answers asserted → publish). Add the revision/lecture lane (thin + export). One seed produces a real drill pack through the identical loop — these two carry his voice for free.</p></div></div>
+    <div class="phase-row"><div class="phase-badge">D</div><div class="phase-body"><h4>Style conditioning on the LLM lanes <span class="pill">TDD · all pre-gate</span></h4><p>Wire the <code>thin.py</code> caller seam to <code>samagra/style/generate.py</code> behind a flag; regenerate one chapter style-conditioned vs the baseline; capture Deepak's first edit-diff. Add the advisory style-fit scorer (never auto-advances). Ratify <strong>DEC-7/DEC-8</strong>.</p></div></div>
+    <div class="phase-row"><div class="phase-badge">E</div><div class="phase-body"><h4>Coverage graph as the demand engine <span class="pill">read-only first</span></h4><p>Build <code>concept_graph.db</code> Tier-1 structural edges (QX <code>question_concept</code> + textbook teaches-edges + mcd NCERT aliases); ship <code>GET /api/graph/coverage</code> + a read-only Concept Atlas. Prove fan-out on "Gauss's Law." Then let the coverage scan <em>propose</em> gap-cell seeds (human still approves each).</p></div></div>
+    <div class="phase-row"><div class="phase-badge">F</div><div class="phase-body"><h4>Async LLM lanes + learning-loop maturity <span class="pill a">new robustness work</span></h4><p>Wire NotebookLM (audio/slides) + image-gen (figures) with their distinct async-pending crash-window state; activate the style learning loop (edit-diffs → owner-ratified profile-deltas); add Tier-2 (BGE) + Tier-3 (graphify, cached) edges with review-overlay curation.</p></div></div>
+    <div class="phase-row deferred"><div class="phase-badge">G</div><div class="phase-body"><h4>PRATHAM student twin <span class="pill r">deferred · Chairman-gated</span></h4><p>Only after the inward factory is proven and attention-ROI is positive, and only on an explicit re-scope of DEC-1: the separate student surface (A6 carve-out) — Saar sheets first, a new multi-tenant identity subsystem, a single outward <code>POST /api/factory/publish</code>, batch-by-chapter approval to defend the gate.</p></div></div>
+  </div>
+</section>
+
+<section id="governance">
+  <h2><span class="num">8</span>Governance changes — what moves, what is sacred</h2>
+  <div class="grid cards2">
+    <div class="card" style="border-left:3px solid var(--green)">
+      <h4>✓ Preserved verbatim</h4>
+      <ul class="checks">
+        <li>The <strong>never-automated publish gate</strong> — one human approve, on every lane.</li>
+        <li>The read-only firewall over the <strong>seven source subsystems</strong> (munshi, mcd, QX, textbook, booklets, INSP, sims).</li>
+        <li>The five crash-safety guards; no engine bypasses dispatch.</li>
+        <li>The single adversarial reviewer anchored to external ground-truth; no mining of the decision ledger except the owner-promoted style loop.</li>
+      </ul>
+    </div>
+    <div class="card" style="border-left:3px solid var(--accent2)">
+      <h4>→ Proposed amendments</h4>
+      <p><span class="pill b">DEC-7</span> The bridge generalizes from "one mcd write" to "one guarded dispatch boundary fanning to N engines, each board-approved + single-write." An <em>extension</em> that strengthens the firewall — but a wording change to a binding decision, so it needs a Codex pre-merge review of the new boundaries.</p>
+      <p><span class="pill a">DEC-8</span> The StyleSeed is a durable, versioned, owner-curated governance artifact (never reset). Style-fit scoring is advisory, hard-wired never to auto-advance. The learning loop is owner-ratified-only.</p>
+      <p><span class="pill r">DEC-9</span> PRATHAM (A6's separate entity) is the eventual outward destination; DEC-1's "no audience/users" clause is scoped to the <em>console only</em>. Deferred until the inward factory is proven.</p>
+    </div>
+  </div>
+  <div class="callout amber" style="margin-top:1em">
+    <div class="k">Attention-ROI, re-promoted</div>
+    <p style="margin:.4em 0 0">DEC-2's north-star was relaxed to <em>advisory</em> (DEC-6) because it was un-measurable. The coverage matrix + the seed→product→publish event chain finally make <strong>minutes-of-Deepak-per-published-artifact</strong> computable. The synthesis recommends re-promoting it toward <em>binding</em> as the factory's success/kill metric — your call (§10).</p>
+  </div>
+</section>
+
+<section id="risks">
+  <h2><span class="num">9</span>Risks &amp; mitigations</h2>
+  <table>
+    <thead><tr><th>Risk</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Publish-gate dilution</strong> — one seed → N artifacts → N approvals could overwhelm the operator and turn the gate into a rubber-stamp. <em>The existential risk.</em></td><td>Batch board actions (approve-all-children-of-seed) but <strong>never silent auto-approve</strong>; let deterministic lanes carry volume so human attention concentrates on the LLM lanes; keep publish a manual verb in code.</td></tr>
+      <tr><td><strong>Async crash-window regression</strong> — a submit blocking on a multi-minute cloud generate breaks the synchronous single-write assumption Codex review 22 hardened.</td><td>A distinct async-pending state with its own intent-before-dispatch guard; TDD it before any async lane ships.</td></tr>
+      <tr><td><strong>Style drift / mode collapse</strong> — conditioning on what the system already does well narrows the profile; a "0.95" score erodes the gate.</td><td>Deliberately sample low-fit + novel-concept drafts for review; track concept-space coverage not approval rate; per-concept sub-profiles; score never auto-advances.</td></tr>
+      <tr><td><strong>Concept normalization</strong> — merging QX <code>concept</code> / textbook slug / NCERT naively makes duplicate nodes (the subject-as-folder-id bug class that already hit Questions facets).</td><td>Anchor on QX <code>question_concept</code> as canonical; treat textbook/taxonomy as curated alias edges; ship Tier-1 only first.</td></tr>
+      <tr><td><strong>Scope-creep optics</strong> — "factory / graph / studio / twin" are exactly the expansive labels that caused the 2026-06-21 "SAMAGRA OS" drift.</td><td>Frame everything as "the bridge widened" + "read-only derived steering"; hold the firewall — no app-platform, no student identity, no marketplace until Phase G.</td></tr>
+      <tr><td><strong>Compute-side ROI inversion</strong> — conditioning every proposal with an LLM is far costlier than the regex extractor.</td><td>Cache by <code>(concept, style_seed_version)</code> hash like the Codex diff-cache; only regenerate on profile change; keep deterministic lanes LLM-free.</td></tr>
+      <tr><td><strong>Authenticity at scale</strong> — content that "sounds like Deepak" but he barely reviewed could misrepresent him.</td><td>Record <code>style_seed_version</code> + full approval audit per published artifact; the human publish gate <em>is</em> the authenticity guarantee — defend it.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="decisions">
+  <h2><span class="num">10</span>Open decisions — the Chairman's to call</h2>
+  <p>Carte blanche means the CEO decides the engineering. These four are <em>strategy</em>, and they change the sequencing of the next session. My recommendation is marked; I'll ask you to ratify in chat.</p>
+  <table>
+    <thead><tr><th>#</th><th>Decision</th><th>CEO recommendation</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><strong>Moat vs throughput</strong> — lead with style (slower to first artifact, more defensible) or the dispatch spine (more artifacts sooner, generic until styled)?</td><td>Style spike (A, read-only) <em>then</em> spine (B) — cheap to prove, de-risks everything downstream.</td></tr>
+      <tr><td>2</td><td><strong>Student exposure timing</strong> — when does the factory ship outward (PRATHAM)? You've said student-facing is the goal; the fork is <em>now-in-parallel</em> vs <em>after inward proof</em>.</td><td>Defer to Phase G; prove the inward factory + attention-ROI first. (Saar can be the first thing G ships.)</td></tr>
+      <tr><td>3</td><td><strong>Publish-gate granularity</strong> under fan-out — per-artifact, per-seed (approve-all-children), or per-chapter-batch?</td><td>Per-seed batch, with mandatory adversarial review on every LLM lane; never silent auto-approve.</td></tr>
+      <tr><td>4</td><td><strong>Monetization &amp; scope</strong> — personal teaching-leverage (your batches, no GTM) or a paid product / licensing (full GTM + identity)?</td><td>Build for leverage first; keep the architecture multi-seed-from-day-one so a product pivot stays open without rework.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="rec">
+  <h2><span class="num">11</span>The CEO's recommendation</h2>
+  <div class="callout blue">
+    <div class="k">Next action</div>
+    <p style="margin:.4em 0 0">Approve the pivot as <strong>DEC-7/8/9</strong> and authorize <strong>Phase A — the style spike</strong>: a read-only, zero-code-risk extraction of your voice from the 59 chapters into a v0 StyleSeed you hand-review. It proves the single most important and most uncertain claim — that the moat is extractable — before a line of pipeline code is written, and it produces a usable artifact on day one.</p>
+  </div>
+  <p>On your ruling of the four forks, I will sync the binding docs (<code>HANDOFF.md</code> / <code>STATUS.html</code> / <code>SUMMARY.html</code> / <code>CLAUDE.md</code>), write the formal spec + phased plan under <code>docs/superpowers/</code>, and stand up Phase A. The firewall holds; the gate holds; the bridge widens.</p>
+  <p style="color:var(--soft);font-size:13.5px">— Claude-Deepak, CEO · for ratification by Deepak Bhardwaj, Founder &amp; Chairman</p>
+</section>
+
+<div class="foot">
+  SAMAGRA · समग्र — <em>integrated / whole</em> · Content-factory vision, 2026-06-23 · grounded in a 16-agent codebase exploration (11 maps · 4 reimaginings · adjudication). Proposed decisions are not binding until the Chairman rules on §10.
+</div>
+</main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+<script>
+// theme toggle (respects prior choice + system)
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themebtn');
+  var saved=localStorage.getItem('cf-theme');
+  if(saved){root.setAttribute('data-theme',saved);}
+  else if(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches){root.setAttribute('data-theme','dark');}
+  btn.addEventListener('click',function(){
+    var cur=root.getAttribute('data-theme')==='dark'?'light':'dark';
+    root.setAttribute('data-theme',cur);localStorage.setItem('cf-theme',cur);
+  });
+})();
+// scrollspy
+(function(){
+  var links=[].slice.call(document.querySelectorAll('#toc a'));
+  var map={};links.forEach(function(a){var id=a.getAttribute('href').slice(1);(map[id]=map[id]||[]).push(a);});
+  var ids=Object.keys(map);
+  var obs=new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if(e.isIntersecting){
+        links.forEach(function(a){a.classList.remove('active');});
+        (map[e.target.id]||[]).forEach(function(a){a.classList.add('active');});
+      }
+    });
+  },{rootMargin:'-72px 0px -70% 0px',threshold:0});
+  ids.forEach(function(id){var el=document.getElementById(id);if(el)obs.observe(el);});
+})();
+</script>
+</body>
+</html>
