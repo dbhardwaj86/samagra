@@ -81,7 +81,15 @@ def _deck_html(content: dict, cards: list[dict]) -> str:
     parts = ['<section class="deck">']
     for i, card in enumerate(cards, 1):
         front = _html.escape(card["front"])          # cue text: escape (author-free)
-        back = card["back"]                           # display math / trusted-author callout html
+        # The equation back is MATH TEXT ("$$ <tex> $$") — HTML-escape it so the
+        # browser tokenizer never mistakes a LaTeX '<'/'>'/'&' (real corpus carries
+        # "E(r<R)=0", "\begin{cases} a & b") for a tag/entity start; the browser
+        # decodes it back in the DOM text node MathJax reads. The callout back is
+        # genuine trusted-author HTML and is passed through verbatim. (The card
+        # JSON keeps the RAW back — HTML-encoding is a render concern, not data.)
+        back = card["back"]
+        if card.get("kind") == "equation":
+            back = _html.escape(back)
         parts.append(
             f'<article class="card">'
             f'<div class="card-front"><span class="card-n">{i}.</span> {front}</div>'

@@ -110,6 +110,31 @@ def test_build_deck_html_escapes_card_front(tmp_chapter, monkeypatch):
     assert "A &lt;b&gt;&amp;&lt;/b&gt; B" in html   # escaped, not raw
 
 
+def test_build_deck_html_escapes_equation_math_metacharacters(tmp_chapter):
+    # Real-corpus equations carry raw <, >, & in their LaTeX (e.g. E(r<R)=0,
+    # \begin{cases} a & b). Those MUST be HTML-escaped in the printable so the
+    # browser tokenizer does not swallow the math as a bogus tag (MathJax then
+    # never typesets it). The deck JSON keeps the RAW tex — encoding is a render
+    # concern, not data.
+    chapters = config.TEXTBOOK_CHAPTERS
+    content = json.loads((chapters / tmp_chapter / "content.json").read_text(encoding="utf-8"))
+    content["sections"][0]["blocks"] = [
+        {"type": "equation", "tex": "E(r<R)=0", "number": "7"},
+        {"type": "equation", "tex": "\\begin{cases} a & b \\end{cases}"},
+    ]
+    (chapters / tmp_chapter / "content.json").write_text(json.dumps(content), encoding="utf-8")
+    res = deck.build_deck(tmp_chapter)
+
+    html = Path(res["html"]).read_text(encoding="utf-8")
+    assert "E(r&lt;R)=0" in html                 # math metacharacters escaped in the HTML
+    assert "a &amp; b" in html
+    assert "$$ E(r<R)=0 $$" not in html          # the raw, parser-breaking form is gone
+
+    cards = _deck_json(tmp_chapter)["cards"]      # JSON data stays RAW (clean for consumers)
+    assert cards[0]["back"] == "$$ E(r<R)=0 $$"
+    assert "&" in cards[1]["back"] and "&amp;" not in cards[1]["back"]
+
+
 def test_build_deck_missing_chapter_raises(tmp_chapter):
     with pytest.raises(FileNotFoundError):
         deck.build_deck("no-such-chapter")
