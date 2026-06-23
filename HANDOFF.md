@@ -1,5 +1,37 @@
 # SAMAGRA — Handoff
 
+> **▶▶▶▶▶▶▶ ✅ CONTENT FACTORY PHASE C — SUB-SLICE C1 (the `deck` / Smriti flashcard lane) BUILT TDD + ADVERSARIAL-REVIEWED + MERGED to `main` (2026-06-24).**
+> The first of Phase C's three ratified sub-slices is shipped. **MERGED to `main` (ff `6084952`)** — pushing to `origin/main`
+> right after these tracker edits. New module **`samagra/factory/deck.py`** — a PURE, deterministic `build_deck(slug)` that
+> projects a textbook chapter's equation + callout blocks into `{front, back, ref}` flashcards and writes `<slug>-deck.json`
+> + a printable MathJax `<slug>-deck.html` under `EXPORT_DIR`. **Zero network/gdocs code** — the "no external write path"
+> invariant is enforced **STRUCTURALLY** here (stronger than the lecture lane's opt-out flag). The `Line` dataclass gained a
+> **`kind`** field (`local|qx|mcd`, default `local`) — the Phase-C lane-kind seam, consumed only by C2/C3; `dispatch.run_line`
+> routes the deck lane to the engine; **`classify("textbook:<slug>")` now fans to `[revision, lecture, deck]`** — **one chapter
+> now produces THREE captured local artifacts**. Built subagent-driven TDD (5 tasks, each two-stage reviewed) + an adversarial
+> multi-lens final review.
+> - **Golden thread PROVEN LIVE:** the real `circular-motion` chapter → **50 flashcards** (27 equation + 23 callout) + 3
+>   distinct artifacts via the real factory loop, in an isolated temp governance store (durable `governance.db` untouched).
+> - **Adversarial final review (9-agent, 4 diverse lenses, each finding independently verified):** caught **1 HIGH** the
+>   per-task reviews missed — the deck injected equation LaTeX into the printable HTML **unescaped**, corrupting ~18
+>   real-corpus formulas that contain `<`/`>`/`&` (e.g. gauss-law `E(r<R)=0`), because the browser tokenizer mistook `<R`
+>   for a tag and MathJax never typeset it. **FIXED** (escape the equation back at the HTML boundary, keyed on card kind;
+>   the deck JSON keeps the raw tex) + a regression test, proven on the real gauss-law deck (32 cards, zero bogus tags).
+>   The other 4 findings were verified **false** (nits/low). The **SAFETY lens confirmed all six load-bearing invariants
+>   HELD:** no new prod write path; read-only firewall over the 7 subsystems intact; never-automated publish gate untouched;
+>   the 5 crash-safety guards intact; no migration; no secrets/content committed.
+> - **Invariants:** **NO new prod write path**; **NO migration** (reuses the existing `assignments` columns + `product_*`
+>   event verbs); publish gate untouched.
+> - **Gate: 316 pytest passing** (303 → 316: +13 deck tests in `tests/test_factory_deck.py`); the lone red is the
+>   pre-existing environmental `test_gdocs` (Google API libs missing on this host — factory-independent, fails on `main` too).
+> - **Artifacts:** spec `docs/superpowers/specs/2026-06-23-samagra-content-factory-phase-c-design.md`; plan
+>   `docs/superpowers/plans/2026-06-24-samagra-content-factory-phase-c1-deck.md`; new code `samagra/factory/deck.py` +
+>   `tests/test_factory_deck.py`.
+> - **▶ NEXT:** **C2** = the `paper`/`drill` lanes (QX-read, answer-safe, with the real `_assert_no_answer_leak` guard);
+>   then **C3** = the `seed`/mcd bridge-fold (prod write, dedicated Codex review). *(Per the ratified 3-sub-slice packaging.)*
+>
+> ---
+>
 > **▶▶▶▶▶▶ ✅ CONTENT-FACTORY PIVOT — RATIFIED 2026-06-23 by Deepak (Chairman, carte blanche). NEW TOP DIRECTION;
 > NOT YET BUILT.** SAMAGRA → an active, style-conditioned, **multi-output content factory** (physics): one seed →
 > wide content-type coverage, in Deepak's style, behind the never-automated publish gate. **Reframe = activation,
@@ -24,7 +56,8 @@
 > Docs upload) → remediated TDD (H1 gdocs opt-out · M1 factory outbox + firewall · L1 scoped event query · L2 seed_ref
 > normalize · I1 guard-2 test) → re-review 25 **GO-WITH-CAVEATS** → the one new Low (`approve_seed` firewall) closed →
 > effectively **GO**. Gate **303 pytest**. Reports `docs/codex-reviews/24,25`. **▶ NEXT: Phase C** (StyleSeed +
-> further deterministic lanes per Plan A–G). **Owner follow-ups:** ✅ pushed to `origin/main` (`0758cd6`) — durable; optionally clean up
+> further deterministic lanes per Plan A–G) — **sub-slice C1 (the `deck` lane) is now BUILT + MERGED (ff `6084952`,
+> 2026-06-24); see the C1 banner at the very top.** **Owner follow-ups:** ✅ pushed to `origin/main` (`0758cd6`) — durable; optionally clean up
 > any `board/` outbox demo files.
 >
 > ---
