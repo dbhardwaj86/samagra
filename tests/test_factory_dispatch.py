@@ -31,3 +31,34 @@ def test_validate_seed_for_line_rejects_wrong_prefix():
     with pytest.raises(ValueError):
         dispatch.validate_seed_for_line("revision", "mcd:1")
     dispatch.validate_seed_for_line("revision", "textbook:circular-motion")  # no raise
+
+
+def test_run_line_routes_deck_to_build_deck(monkeypatch, tmp_path):
+    seen = {}
+    out = tmp_path / "circular-motion-deck.html"
+    out.write_text("<h1>deck</h1>", encoding="utf-8")
+
+    def fake_build_deck(slug):
+        seen["slug"] = slug
+        return {"variant": "deck", "html": str(out),
+                "json": str(tmp_path / "circular-motion-deck.json"), "cards": 5}
+
+    monkeypatch.setattr("samagra.factory.deck.build_deck", fake_build_deck)
+    result = dispatch.run_line("deck", "circular-motion")
+    assert seen["slug"] == "circular-motion"
+    assert result["html"] == str(out)
+
+
+def test_run_line_still_routes_lecture_lanes_to_export(monkeypatch, tmp_path):
+    calls = {}
+    html = tmp_path / "x.html"; html.write_text("<h1>x</h1>", encoding="utf-8")
+
+    def fake_export_one(slug, variant, **kw):
+        calls["args"] = (slug, variant)
+        calls["kw"] = kw
+        return {"variant": variant, "html": str(html), "docx": None, "gdoc": None}
+
+    monkeypatch.setattr("samagra.lectures.export.export_one", fake_export_one)
+    dispatch.run_line("revision", "circular-motion")
+    assert calls["args"] == ("circular-motion", "thin")
+    assert calls["kw"].get("upload_gdocs") is False   # lecture lanes never upload (H1)

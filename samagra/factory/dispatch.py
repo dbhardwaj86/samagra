@@ -11,6 +11,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from ..lectures import export as lex
+from . import deck
 from .lines import LINES
 
 
@@ -31,12 +32,16 @@ def validate_seed_for_line(line: str, seed_ref: str) -> None:
 
 
 def run_line(line: str, slug: str) -> dict:
-    """Run the lane's engine. Phase 1: lecture export with the lane's variant.
-
-    upload_gdocs=False keeps the Phase-1 invariant: produce ONLY local artifacts,
-    never the lecture exporter's external Google Docs upload (review 24 H1).
+    """Run the lane's engine. Phase-C lane-kind dispatch:
+      - deck      -> the pure local flashcard engine (no external write).
+      - revision/lecture -> the lecture exporter (upload_gdocs=False keeps the
+        Phase-1 invariant: local artifacts only, never an external Google Docs
+        upload — review 24 H1).
+    Later sub-slices add the qx (paper/drill) + mcd (seed) branches.
     """
     spec = LINES[line]
+    if line == "deck":
+        return deck.build_deck(slug)
     return lex.export_one(slug, spec.variant, upload_gdocs=False)
 
 
