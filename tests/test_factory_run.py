@@ -27,9 +27,9 @@ def factory_env(tmp_path, monkeypatch):
 from samagra.factory import run
 
 
-def test_plan_dry_returns_two_proposals_and_writes_nothing(factory_env):
+def test_plan_dry_returns_three_proposals_and_writes_nothing(factory_env):
     proposals = run.plan("textbook:circular-motion", dry=True)
-    assert [p["line"] for p in proposals] == ["revision", "lecture"]
+    assert [p["line"] for p in proposals] == ["revision", "lecture", "deck"]
     conn = store.connect()
     try:
         assert store.list_assignments(conn) == []   # dry writes nothing
@@ -37,17 +37,17 @@ def test_plan_dry_returns_two_proposals_and_writes_nothing(factory_env):
         conn.close()
 
 
-def test_plan_live_records_two_in_review_children(factory_env):
+def test_plan_live_records_three_in_review_children(factory_env):
     proposals = run.plan("textbook:circular-motion", dry=False)
     assert all("assignment_id" in p for p in proposals)
     conn = store.connect()
     try:
         rows = store.list_assignments(conn)
-        assert {r["pipeline"] for r in rows} == {"revision", "lecture"}
+        assert {r["pipeline"] for r in rows} == {"revision", "lecture", "deck"}
         assert all(r["status"] == "in-review" for r in rows)
         assert all(r["seed_ref"] == "textbook:circular-motion" for r in rows)
         verbs = [e["verb"] for e in store.list_events(conn)]
-        assert verbs.count("product_proposed") == 2
+        assert verbs.count("product_proposed") == 3
     finally:
         conn.close()
 
@@ -58,19 +58,19 @@ def test_plan_live_is_idempotent_per_seed_and_line(factory_env):
     assert all(p.get("reused") for p in again)
     conn = store.connect()
     try:
-        assert len(store.list_assignments(conn)) == 2   # not 4
+        assert len(store.list_assignments(conn)) == 3   # not 6
     finally:
         conn.close()
 
 
 def test_approve_flips_single_child(factory_env):
-    [a, _] = run.plan("textbook:circular-motion", dry=False)
+    a = run.plan("textbook:circular-motion", dry=False)[0]
     res = run.approve(a["assignment_id"])
     assert res["status"] == "approved"
 
 
 def test_approve_refuses_non_in_review(factory_env):
-    [a, _] = run.plan("textbook:circular-motion", dry=False)
+    a = run.plan("textbook:circular-motion", dry=False)[0]
     run.approve(a["assignment_id"])
     with pytest.raises(ValueError):
         run.approve(a["assignment_id"])   # already approved, not in-review
@@ -79,7 +79,7 @@ def test_approve_refuses_non_in_review(factory_env):
 def test_approve_seed_batches_all_children(factory_env):
     run.plan("textbook:circular-motion", dry=False)
     res = run.approve_seed("textbook:circular-motion")
-    assert len(res["approved"]) == 2
+    assert len(res["approved"]) == 3
     conn = store.connect()
     try:
         assert all(r["status"] == "approved" for r in store.list_assignments(conn))
@@ -94,9 +94,17 @@ def _stub_export(monkeypatch, tmp_path):
         return {"variant": variant, "html": str(out), "docx": None, "gdoc": None}
     monkeypatch.setattr("samagra.lectures.export.export_one", fake_export_one)
 
+def _stub_deck(monkeypatch, tmp_path):
+    def fake_build_deck(slug):
+        out = tmp_path / f"{slug}-deck.html"
+        out.write_text(f"<h1>{slug} deck</h1>", encoding="utf-8")
+        return {"variant": "deck", "html": str(out),
+                "json": str(tmp_path / f"{slug}-deck.json"), "cards": 4}
+    monkeypatch.setattr("samagra.factory.deck.build_deck", fake_build_deck)
+
 def test_build_runs_engine_and_captures(factory_env, monkeypatch):
     _stub_export(monkeypatch, factory_env)
-    [a, _] = run.plan("textbook:circular-motion", dry=False)
+    a = run.plan("textbook:circular-motion", dry=False)[0]
     run.approve(a["assignment_id"])
     res = run.build(a["assignment_id"])
     assert res["artifact_ref"].endswith("circular-motion-thin.html")
@@ -112,20 +120,20 @@ def test_build_runs_engine_and_captures(factory_env, monkeypatch):
 
 def test_build_refuses_unapproved(factory_env, monkeypatch):
     _stub_export(monkeypatch, factory_env)
-    [a, _] = run.plan("textbook:circular-motion", dry=False)
+    a = run.plan("textbook:circular-motion", dry=False)[0]
     with pytest.raises(ValueError):       # still in-review
         run.build(a["assignment_id"])
 
 def test_build_refuses_double_build(factory_env, monkeypatch):
     _stub_export(monkeypatch, factory_env)
-    [a, _] = run.plan("textbook:circular-motion", dry=False)
+    a = run.plan("textbook:circular-motion", dry=False)[0]
     run.approve(a["assignment_id"]); run.build(a["assignment_id"])
     with pytest.raises(ValueError):       # captured -> not approved AND product_created exists
         run.build(a["assignment_id"])
 
 def test_build_refuses_in_flight(factory_env, monkeypatch):
     _stub_export(monkeypatch, factory_env)
-    [a, _] = run.plan("textbook:circular-motion", dry=False)
+    a = run.plan("textbook:circular-motion", dry=False)[0]
     run.approve(a["assignment_id"])
     conn = store.connect()                # simulate a crashed prior build: intent, no created
     try:
@@ -141,7 +149,7 @@ def test_build_validates_output(factory_env, monkeypatch):
         out = factory_env / f"{slug}-{variant}.html"; out.write_text("", encoding="utf-8")
         return {"variant": variant, "html": str(out)}
     monkeypatch.setattr("samagra.lectures.export.export_one", empty_export)
-    [a, _] = run.plan("textbook:circular-motion", dry=False)
+    a = run.plan("textbook:circular-motion", dry=False)[0]
     run.approve(a["assignment_id"])
     with pytest.raises(ValueError):       # empty artifact fails the boundary guard
         run.build(a["assignment_id"])
@@ -153,8 +161,9 @@ def test_build_validates_output(factory_env, monkeypatch):
         conn.close()
 
 
-def test_one_seed_fans_to_two_captured_artifacts(factory_env, monkeypatch):
+def test_one_seed_fans_to_three_captured_artifacts(factory_env, monkeypatch):
     _stub_export(monkeypatch, factory_env)
+    _stub_deck(monkeypatch, factory_env)
     seed = "textbook:circular-motion"
     run.plan(seed, dry=False)
     run.approve_seed(seed)                       # per-seed batch
@@ -164,13 +173,15 @@ def test_one_seed_fans_to_two_captured_artifacts(factory_env, monkeypatch):
     finally:
         conn.close()
     arts = [run.build(i)["artifact_ref"] for i in ids]
-    assert len(arts) == 2 and len(set(arts)) == 2   # two distinct catalogued artifacts
+    assert len(arts) == 3 and len(set(arts)) == 3   # revision + lecture + deck, distinct
     conn = store.connect()
     try:
         assert all(r["status"] == "captured" for r in store.list_assignments(conn))
         created = [e for e in store.list_events(conn) if e["verb"] == "product_created"]
-        assert len(created) == 2
+        assert len(created) == 3
         assert all(e["subsystem_ref"] for e in created)   # provenance recorded
+        pipelines = {r["pipeline"] for r in store.list_assignments(conn)}
+        assert pipelines == {"revision", "lecture", "deck"}
     finally:
         conn.close()
 
@@ -184,7 +195,7 @@ def test_build_never_uploads_to_external_gdocs(factory_env, monkeypatch):
         raise AssertionError("factory build attempted an external Google Docs upload")
     monkeypatch.setattr("samagra.lectures.gdocs.upload", _boom)
     monkeypatch.setattr("samagra.lectures.export._html_to_docx", lambda h, d: True)
-    [a, _] = run.plan("textbook:circular-motion", dry=False)
+    a = run.plan("textbook:circular-motion", dry=False)[0]
     run.approve(a["assignment_id"])
     res = run.build(a["assignment_id"])          # must NOT raise
     assert res["artifact_ref"].endswith("circular-motion-thin.html")
@@ -248,7 +259,7 @@ def test_build_guard2_refuses_existing_product_created_even_if_approved(factory_
     """Guard 2 in isolation: an approved assignment that already has a
     product_created event must be refused (review 24 I1)."""
     _stub_export(monkeypatch, factory_env)
-    [a, _] = run.plan("textbook:circular-motion", dry=False)
+    a = run.plan("textbook:circular-motion", dry=False)[0]
     run.approve(a["assignment_id"])
     conn = store.connect()
     try:
@@ -264,7 +275,7 @@ def test_build_guard2_refuses_existing_product_created_even_if_approved(factory_
 def test_approve_seed_skips_non_factory_pipeline_with_same_seed_ref(factory_env):
     """approve_seed must touch ONLY factory-lane assignments, even if a bridge
     assignment shares the seed_ref (review 25 — firewall completeness)."""
-    run.plan("textbook:circular-motion", dry=False)   # 2 factory children, in-review
+    run.plan("textbook:circular-motion", dry=False)   # 3 factory children, in-review
     conn = store.connect()
     try:
         store.add_assignment(conn, id="b9", agent="khanak",
@@ -275,7 +286,7 @@ def test_approve_seed_skips_non_factory_pipeline_with_same_seed_ref(factory_env)
         conn.close()
     res = run.approve_seed("textbook:circular-motion")
     assert "b9" not in res["approved"]            # bridge assignment untouched
-    assert len(res["approved"]) == 2              # only the 2 factory lanes
+    assert len(res["approved"]) == 3              # only the 3 factory lanes
     conn = store.connect()
     try:
         b9 = next(r for r in store.list_assignments(conn) if r["id"] == "b9")
