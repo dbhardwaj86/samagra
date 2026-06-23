@@ -69,6 +69,18 @@ def test_build_deck_callout_card_uses_variant_label_and_body(tmp_chapter):
     assert co["ref"] == "sec-1"
 
 
+def test_build_deck_strips_section_title_whitespace(tmp_chapter):
+    # A section title with surrounding whitespace must not leak a doubled space
+    # (or leading/trailing pad) into the card front cue.
+    chapters = config.TEXTBOOK_CHAPTERS
+    content = json.loads((chapters / tmp_chapter / "content.json").read_text(encoding="utf-8"))
+    content["sections"][0]["title"] = "  Angular position  "
+    (chapters / tmp_chapter / "content.json").write_text(json.dumps(content), encoding="utf-8")
+    deck.build_deck(tmp_chapter)
+    cards = _deck_json(tmp_chapter)["cards"]
+    assert cards[0]["front"] == "Equation 1 - Angular position"
+
+
 def test_build_deck_writes_nonempty_mathjax_html(tmp_chapter):
     res = deck.build_deck(tmp_chapter)
     html_path = Path(res["html"])

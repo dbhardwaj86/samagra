@@ -45,7 +45,7 @@ def _cards_for_chapter(content: dict) -> list[dict]:
     """
     cards: list[dict] = []
     for sec in content.get("sections", []) or []:
-        sec_title = sec.get("title", "") or ""
+        sec_title = (sec.get("title", "") or "").strip()
         sec_ref = sec.get("id") or sec_title
         for block in sec.get("blocks", []) or []:
             t = block.get("type")
