@@ -10,13 +10,22 @@
 > DEFERRED. **4 forks:** (1) **dispatch spine first**, (2) PRATHAM deferred to Phase G, (3) publish gate = **per-seed
 > batch** (`approve_seed`, never silent), (4) scope = **teaching leverage** (multi-seed from day one). **Preserved:**
 > publish gate · 7-subsystem read-only firewall · 5 guards · DEC-1 bounded scope. **Plan A–G** (spine → deterministic
-> lanes → StyleSeed → coverage graph → async → deferred PRATHAM). **▶ NEXT (Phase 1):** build `samagra/factory/`
-> dispatch spine + 2 deterministic local-write lanes (`revision`/`lecture`) from a textbook-chapter seed — **no new
-> prod write path, no migration** (reuses `assignments.pipeline`/`seed_ref`/`artifact_ref`). TDD, subagent-driven,
-> Codex pre-merge review of the `build` boundary (DEC-7). Spec
-> `docs/superpowers/specs/2026-06-23-samagra-content-factory-design.md`; Phase-1 plan
-> `docs/superpowers/plans/2026-06-23-samagra-content-factory-phase1-dispatch.md`; vision `CONTENT-FACTORY-VISION.html`.
-> Synthesis: 16-agent Workflow `wf_5fb88c46-838`. STATUS.html / SUMMARY.html sync = owed at Phase-1 ship.
+> lanes → StyleSeed → coverage graph → async → deferred PRATHAM). **✅ PHASE 1 (dispatch spine) BUILT TDD + MERGED to
+> `main` 2026-06-23** (ff `67a509c`, local; push owed when ready): `samagra/factory/` (`lines`·`dispatch`·`run`·`outbox`)
+> + CLI **`samagra factory plan|approve|approve-seed|build`** — ONE textbook-chapter seed fans to 2 deterministic
+> local-write lanes (`revision`=thin + `lecture`=thick) via the existing lecture renderer; guarded `build()` inherits
+> the bridge's 5 crash-safety guards; per-seed batch gate (`approve-seed`, fork 3); 4-entry-point workflow firewall;
+> **no new prod write path** (gdocs opt-out; local artifacts + governance ledger only), **no migration**. Golden
+> thread **PROVEN LIVE** (`textbook:circular-motion` → 2 distinct CAPTURED artifacts via the real renderer; durable
+> `governance.db` untouched). Built subagent-driven TDD (8 tasks, two-stage reviewed) per Phase-1 plan
+> `docs/superpowers/plans/2026-06-23-samagra-content-factory-phase1-dispatch.md` + spec
+> `docs/superpowers/specs/2026-06-23-samagra-content-factory-design.md`; vision `CONTENT-FACTORY-VISION.html`. **DEC-7
+> Codex pre-merge review:** review 24 **NO-GO** (factory build could trigger the lecture exporter's external Google
+> Docs upload) → remediated TDD (H1 gdocs opt-out · M1 factory outbox + firewall · L1 scoped event query · L2 seed_ref
+> normalize · I1 guard-2 test) → re-review 25 **GO-WITH-CAVEATS** → the one new Low (`approve_seed` firewall) closed →
+> effectively **GO**. Gate **303 pytest**. Reports `docs/codex-reviews/24,25`. **▶ NEXT: Phase C** (StyleSeed +
+> further deterministic lanes per Plan A–G). **Owner follow-ups:** push `main` → `origin/main` when ready; clean up
+> any `board/` outbox demo files.
 >
 > ---
 >
