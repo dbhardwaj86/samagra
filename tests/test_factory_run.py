@@ -85,3 +85,69 @@ def test_approve_seed_batches_all_children(factory_env):
         assert all(r["status"] == "approved" for r in store.list_assignments(conn))
     finally:
         conn.close()
+
+
+def _stub_export(monkeypatch, tmp_path):
+    def fake_export_one(slug, variant):
+        out = tmp_path / f"{slug}-{variant}.html"
+        out.write_text(f"<h1>{slug} {variant}</h1>", encoding="utf-8")
+        return {"variant": variant, "html": str(out), "docx": None, "gdoc": None}
+    monkeypatch.setattr("samagra.lectures.export.export_one", fake_export_one)
+
+def test_build_runs_engine_and_captures(factory_env, monkeypatch):
+    _stub_export(monkeypatch, factory_env)
+    [a, _] = run.plan("textbook:circular-motion", dry=False)
+    run.approve(a["assignment_id"])
+    res = run.build(a["assignment_id"])
+    assert res["artifact_ref"].endswith("circular-motion-thin.html")
+    conn = store.connect()
+    try:
+        row = next(r for r in store.list_assignments(conn) if r["id"] == a["assignment_id"])
+        assert row["status"] == "captured"
+        verbs = [e["verb"] for e in store.list_events(conn)
+                 if e["assignment_id"] == a["assignment_id"]]
+        assert "product_building" in verbs and "product_created" in verbs
+    finally:
+        conn.close()
+
+def test_build_refuses_unapproved(factory_env, monkeypatch):
+    _stub_export(monkeypatch, factory_env)
+    [a, _] = run.plan("textbook:circular-motion", dry=False)
+    with pytest.raises(ValueError):       # still in-review
+        run.build(a["assignment_id"])
+
+def test_build_refuses_double_build(factory_env, monkeypatch):
+    _stub_export(monkeypatch, factory_env)
+    [a, _] = run.plan("textbook:circular-motion", dry=False)
+    run.approve(a["assignment_id"]); run.build(a["assignment_id"])
+    with pytest.raises(ValueError):       # captured -> not approved AND product_created exists
+        run.build(a["assignment_id"])
+
+def test_build_refuses_in_flight(factory_env, monkeypatch):
+    _stub_export(monkeypatch, factory_env)
+    [a, _] = run.plan("textbook:circular-motion", dry=False)
+    run.approve(a["assignment_id"])
+    conn = store.connect()                # simulate a crashed prior build: intent, no created
+    try:
+        store.append_event(conn, actor=run._AGENT, verb="product_building",
+                           assignment_id=a["assignment_id"], subsystem="factory")
+    finally:
+        conn.close()
+    with pytest.raises(ValueError):
+        run.build(a["assignment_id"])
+
+def test_build_validates_output(factory_env, monkeypatch):
+    def empty_export(slug, variant):
+        out = factory_env / f"{slug}-{variant}.html"; out.write_text("", encoding="utf-8")
+        return {"variant": variant, "html": str(out)}
+    monkeypatch.setattr("samagra.lectures.export.export_one", empty_export)
+    [a, _] = run.plan("textbook:circular-motion", dry=False)
+    run.approve(a["assignment_id"])
+    with pytest.raises(ValueError):       # empty artifact fails the boundary guard
+        run.build(a["assignment_id"])
+    conn = store.connect()
+    try:
+        row = next(r for r in store.list_assignments(conn) if r["id"] == a["assignment_id"])
+        assert row["status"] != "captured"   # not captured on a failed build
+    finally:
+        conn.close()

@@ -107,3 +107,55 @@ def approve_seed(seed_ref: str) -> dict:
         return {"seed_ref": seed_ref, "approved": approved}
     finally:
         conn.close()
+
+
+def _has_event(conn, assignment_id: str, verb: str) -> bool:
+    return any(e.get("assignment_id") == assignment_id and e.get("verb") == verb
+               for e in store.list_events(conn, limit=10000))
+
+
+def _build_in_flight(conn, assignment_id: str) -> bool:
+    """A prior build recorded 'product_building' but no matching 'product_created'
+    — it crashed in its write window. Refuse rather than re-produce (guard 3)."""
+    verbs = [e.get("verb") for e in store.list_events(conn, limit=10000)
+             if e.get("assignment_id") == assignment_id]
+    return "product_building" in verbs and "product_created" not in verbs
+
+
+def build(assignment_id: str) -> dict:
+    """The ONE guarded write boundary. Inherits the bridge's five guards; writes a
+    LOCAL artifact (Phase 1); on success flips the assignment -> terminal 'captured'."""
+    conn = store.connect()
+    try:
+        a = _load_assignment(conn, assignment_id)
+        if a is None:
+            raise ValueError(f"unknown assignment: {assignment_id}")
+        if a["status"] != "approved":                                    # guard 1
+            raise ValueError(
+                f"assignment {assignment_id} is {a['status']!r}, not 'approved'")
+        if _has_event(conn, assignment_id, "product_created"):           # guard 2
+            raise ValueError(
+                f"assignment {assignment_id} already built — refusing a double build")
+        if _build_in_flight(conn, assignment_id):                        # guard 3
+            raise ValueError(
+                f"assignment {assignment_id} has an in-flight build — a prior build "
+                f"may have written an artifact. Reconcile before retrying.")
+        line, seed_ref = a["pipeline"], a["seed_ref"]
+        dispatch.validate_seed_for_line(line, seed_ref)                  # cheap pre-check
+        # Record intent BEFORE producing (crash-window safe; mirrors bridge submit).
+        store.append_event(conn, actor=_AGENT, verb="product_building",
+                           assignment_id=assignment_id, subsystem="factory",
+                           subsystem_ref=seed_ref, note="build intent before produce")
+        result = dispatch.run_line(line, seed_ref.split(":", 1)[-1])
+        dispatch.validate_product(line, result)                          # guard 4
+        artifact_ref = result["html"]
+        store.append_event(conn, actor=_AGENT, verb="product_created",
+                           assignment_id=assignment_id, subsystem="factory",
+                           subsystem_ref=artifact_ref,
+                           note=json.dumps({"line": line, "artifact": result},
+                                           ensure_ascii=False))
+        store.set_assignment_status(conn, assignment_id, "captured")     # guard 5 (single write)
+        return {"assignment_id": assignment_id, "line": line,
+                "artifact_ref": artifact_ref}
+    finally:
+        conn.close()
