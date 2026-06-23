@@ -151,3 +151,25 @@ def test_build_validates_output(factory_env, monkeypatch):
         assert row["status"] != "captured"   # not captured on a failed build
     finally:
         conn.close()
+
+
+def test_one_seed_fans_to_two_captured_artifacts(factory_env, monkeypatch):
+    _stub_export(monkeypatch, factory_env)
+    seed = "textbook:circular-motion"
+    run.plan(seed, dry=False)
+    run.approve_seed(seed)                       # per-seed batch
+    conn = store.connect()
+    try:
+        ids = [r["id"] for r in store.list_assignments(conn)]
+    finally:
+        conn.close()
+    arts = [run.build(i)["artifact_ref"] for i in ids]
+    assert len(arts) == 2 and len(set(arts)) == 2   # two distinct catalogued artifacts
+    conn = store.connect()
+    try:
+        assert all(r["status"] == "captured" for r in store.list_assignments(conn))
+        created = [e for e in store.list_events(conn) if e["verb"] == "product_created"]
+        assert len(created) == 2
+        assert all(e["subsystem_ref"] for e in created)   # provenance recorded
+    finally:
+        conn.close()
