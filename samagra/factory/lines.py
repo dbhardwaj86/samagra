@@ -12,8 +12,11 @@ from dataclasses import dataclass
 class Line:
     key: str
     expected_output: str
-    variant: str            # the lectures.export variant this lane renders
+    variant: str            # the lectures.export variant this lane renders (unused by non-export engines)
     source_prefixes: tuple  # seed_ref prefixes this lane applies to
+    kind: str = "local"     # output class: "local" | "qx" | "mcd" (Phase-C lane-kind seam).
+                            # Default keeps revision/lecture local; consumed by C2 (qx
+                            # answer-leak) / C3 (mcd build). In C1 every lane is "local".
 
 
 LINES: dict[str, Line] = {
@@ -21,10 +24,12 @@ LINES: dict[str, Line] = {
                      "thin", ("textbook:",)),
     "lecture": Line("lecture", "Full lecture (thick lecture export)",
                     "thick", ("textbook:",)),
+    "deck": Line("deck", "Flashcard deck (equation/callout projection)",
+                 "deck", ("textbook:",), "local"),
 }
 
 # Deterministic lane order so a seed always fans out the same way.
-_ORDER = ["revision", "lecture"]
+_ORDER = ["revision", "lecture", "deck"]
 
 
 def classify(seed_ref: str) -> list[str]:
