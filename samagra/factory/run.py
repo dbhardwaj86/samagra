@@ -10,11 +10,15 @@ from __future__ import annotations
 import json
 import uuid
 
+from ..adapters.munshi import MunshiAdapter
+from ..bridge.classify import classify_item
 from ..bridge.pointers import resolve_pointers
+from ..bridge.text import item_text
 from . import outbox
 from ..governance import store
 from . import dispatch
 from .lines import LINES, classify
+from .seed_payload import build_seed_payload, validate_seed_payload
 
 _AGENT = "khanak"  # COO/CTO — production lane owner
 
@@ -28,17 +32,141 @@ def _existing_assignment_for(conn, seed_ref: str, line: str) -> dict | None:
     return None
 
 
+def _item_from_artifact(art) -> dict:
+    """Reconstruct the munshi item dict from an Artifact's meta envelope."""
+    meta = getattr(art, "meta", None) or {}
+    return {
+        "id": art.uid.split(":", 1)[-1], "uid": art.uid, "kind": art.kind,
+        "status": art.status, "payload": meta.get("payload") or {},
+        "tags": meta.get("tags"), "person": meta.get("person"),
+        "due": meta.get("due"), "ts": art.updated_at,
+    }
+
+
+def _munshi_item_for(seed_ref: str) -> dict | None:
+    """Read-only: the single munshi item whose uid == seed_ref, else None (munshi
+    unavailable / down / item absent). Linear over the library — fine for the
+    single-operator console."""
+    adapter = MunshiAdapter()
+    if not adapter.available():
+        return None
+    try:
+        arts = list(adapter.artifacts())
+    except Exception:  # noqa: BLE001
+        return None
+    for art in arts:
+        if art.uid == seed_ref:
+            return _item_from_artifact(art)
+    return None
+
+
+def _record_seed_proposal(conn, item: dict, *, dry: bool) -> dict | None:
+    """Propose the mcd `seed` lane for ONE munshi content item: build the flat
+    create_seed payload (reused build_seed_payload) + corpus pointers, dedup per
+    (seed_ref, 'seed'), and record an in-review assignment + a product_proposed
+    event whose note carries the PAYLOAD (build() loads it at write time). Returns
+    None if the item is not content-classified. dry=True builds the proposal but
+    writes nothing (conn may be None)."""
+    if classify_item(item) != "content":
+        return None
+    seed_ref = item.get("uid") or f"munshi:{item.get('id')}"
+    pointers = resolve_pointers(item_text(item), limit=5)
+    payload = build_seed_payload(item, pointers)
+    proposal = {"seed_ref": seed_ref, "line": "seed",
+                "expected_output": LINES["seed"].expected_output,
+                "classification": "content", "pointers": pointers, "payload": payload}
+    if dry:
+        return proposal
+    existing = _existing_assignment_for(conn, seed_ref, "seed")
+    if existing is not None:
+        proposal["assignment_id"] = existing["id"]
+        proposal["reused"] = True
+        return proposal
+    assignment_id = uuid.uuid4().hex
+    outbox_path = outbox.write_outbox_file(
+        agent=_AGENT, assignment_id=assignment_id, pipeline="seed",
+        seed_ref=seed_ref, expected_output=LINES["seed"].expected_output,
+        review_by=_AGENT, payload=payload, pointers=pointers)
+    store.add_assignment(
+        conn, id=assignment_id, agent=_AGENT, outbox_path=outbox_path,
+        pipeline="seed", seed_ref=seed_ref,
+        expected_output=LINES["seed"].expected_output, review_by=_AGENT)
+    store.set_assignment_status(conn, assignment_id, "in-review")
+    store.append_event(
+        conn, actor="system", verb="product_proposed", assignment_id=assignment_id,
+        subsystem="factory", subsystem_ref=seed_ref,
+        note=json.dumps({"line": "seed", "payload": payload, "pointers": pointers},
+                        ensure_ascii=False))
+    proposal["assignment_id"] = assignment_id
+    return proposal
+
+
+def _load_proposed_payload(conn, assignment_id: str) -> dict | None:
+    """Recover the flat create_seed body from this assignment's product_proposed
+    event note. Assignment-scoped + unbounded (no newest-N window — strictly
+    better than the bridge's 10000-row scan). Returns None if absent/malformed
+    (surfaced as a clear refusal, never a silent wrong write)."""
+    for ev in store.list_events_for_assignment(conn, assignment_id):
+        if ev.get("verb") == "product_proposed":
+            try:
+                return json.loads(ev["note"])["payload"]
+            except (TypeError, ValueError, KeyError):
+                return None
+    return None
+
+
+def scan(dry: bool = True) -> list[dict]:
+    """Discovery: propose the mcd `seed` lane for every content-classified munshi
+    item (the folded bridge.scan, F-C2). Read-only over munshi; writes only
+    in-review proposals (never a seed). dry=True writes nothing."""
+    adapter = MunshiAdapter()
+    if not adapter.available():
+        return []
+    proposals: list[dict] = []
+    conn = None if dry else store.connect()
+    try:
+        try:
+            arts = list(adapter.artifacts())
+        except Exception:  # noqa: BLE001
+            arts = []                       # munshi down mid-stream -> degrade (review 22 M2)
+        for art in arts:
+            proposal = _record_seed_proposal(conn, _item_from_artifact(art), dry=dry)
+            if proposal is not None:
+                proposals.append(proposal)
+    finally:
+        if conn is not None:
+            conn.close()
+    return proposals
+
+
 def plan(seed_ref: str, dry: bool = True) -> list[dict]:
     """Classify a seed into product lines; dry=True writes nothing, dry=False
-    records ONE in-review child assignment + outbox + 'product_proposed' per line."""
-    seed_ref = (seed_ref or "").strip()   # normalize ONCE so what we classify is
-    lines = classify(seed_ref)            # exactly what we store + validate (review 24 L2)
+    records ONE in-review child assignment + outbox + 'product_proposed' per line.
+
+    A munshi: seed is the mcd `seed` lane — proposed from its LIVE item (payload),
+    not a slug fan-out; routed here to _record_seed_proposal."""
+    seed_ref = (seed_ref or "").strip()   # normalize ONCE (review 24 L2)
+    if seed_ref.startswith("munshi:"):
+        conn = None if dry else store.connect()
+        try:
+            item = _munshi_item_for(seed_ref)
+            if item is None:
+                return []
+            proposal = _record_seed_proposal(conn, item, dry=dry)
+            return [proposal] if proposal is not None else []
+        finally:
+            if conn is not None:
+                conn.close()
+    lines = classify(seed_ref)            # what we store + validate == what we classify
     pointers = resolve_pointers(seed_ref.split(":", 1)[-1].replace("-", " "), limit=5)
     proposals: list[dict] = []
     conn = None if dry else store.connect()
     try:
         for line in lines:
             spec = LINES[line]
+            if spec.kind == "mcd":            # defense in depth: the seed lane is
+                continue                       # proposed via scan/munshi-plan, never a
+                                               # textbook fan-out (classify excludes it anyway)
             proposal = {"seed_ref": seed_ref, "line": line,
                         "expected_output": spec.expected_output, "pointers": pointers}
             if not dry:
@@ -153,16 +281,36 @@ def build(assignment_id: str) -> dict:
                 f"may have written an artifact. Reconcile before retrying.")
         line, seed_ref = a["pipeline"], a["seed_ref"]
         dispatch.validate_seed_for_line(line, seed_ref)                  # cheap pre-check
+        spec = LINES[line]
+        # mcd PRE-WRITE: load + validate the proposed payload BEFORE recording build
+        # intent, so a structurally invalid payload refuses WITHOUT wedging the
+        # assignment in the in-flight state (no prod write was attempted — nothing
+        # to reconcile). Mirrors the bridge's validate-before-intent order (review 22 M1).
+        payload = None
+        if spec.kind == "mcd":
+            payload = _load_proposed_payload(conn, assignment_id)
+            if payload is None:
+                raise ValueError(
+                    f"no proposed payload recorded for assignment {assignment_id}")
+            validate_seed_payload(payload)
         # Record intent BEFORE producing (crash-window safe; mirrors bridge submit).
         store.append_event(conn, actor=_AGENT, verb="product_building",
                            assignment_id=assignment_id, subsystem="factory",
                            subsystem_ref=seed_ref, note="build intent before produce")
-        result = dispatch.run_line(line, seed_ref.split(":", 1)[-1])
-        dispatch.validate_product(line, result)                          # guard 4
-        artifact_ref = result["html"]
+        # Produce + validate (KIND-AWARE — the five guards above are identical for
+        # every kind; only this produce/validate step differs):
+        if spec.kind == "mcd":
+            result = dispatch.run_seed(payload)          # the ONE mcd prod write (+ id-check)
+            artifact_ref = result["artifact_ref"]        # "mcd:<seed_id>"
+            subsystem_ref = result["seed_id"]
+        else:
+            result = dispatch.run_line(line, seed_ref.split(":", 1)[-1])
+            dispatch.validate_product(line, result)      # guard 4: exists/non-empty (+answer-leak)
+            artifact_ref = result["html"]
+            subsystem_ref = artifact_ref
         store.append_event(conn, actor=_AGENT, verb="product_created",
                            assignment_id=assignment_id, subsystem="factory",
-                           subsystem_ref=artifact_ref,
+                           subsystem_ref=subsystem_ref,
                            note=json.dumps({"line": line, "artifact": result},
                                            ensure_ascii=False))
         store.set_assignment_status(conn, assignment_id, "captured")     # guard 5 (single write)
