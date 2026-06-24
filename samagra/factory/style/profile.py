@@ -85,3 +85,26 @@ def current_version() -> int | None:
 def load_current() -> StyleSeed | None:
     v = current_version()
     return load(v) if v is not None else None
+
+
+def _now() -> str:
+    import datetime
+    return datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+
+def extract_candidate() -> tuple[Path | None, StyleSeed]:
+    """Build the profile from the live corpus. If the facets match the current
+    committed version, write NOTHING and return (None, current). Otherwise write
+    the next version file and return (path, new_seed). Git is the review surface:
+    the owner inspects `git diff` and commits (or discards) the written file."""
+    from . import extract
+
+    chapters = extract.load_corpus()
+    facets = extract.build_profile(chapters)
+    cur = load_current()
+    if cur is not None and content_hash(cur.facets) == content_hash(facets):
+        return None, cur
+    version = 0 if cur is None else cur.version + 1
+    seed = StyleSeed(version=version, facets=facets,
+                     source_corpus_hash=corpus_hash(chapters), created_at=_now())
+    return save(seed), seed
