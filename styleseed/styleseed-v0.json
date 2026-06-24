@@ -1,0 +1,99 @@
+{
+  "created_at": "2026-06-24T20:46:28.756241+00:00",
+  "facets": {
+    "analogy": {
+      "analogy_block_rate": 0.0316,
+      "n_blocks": 3199
+    },
+    "rigor": {
+      "flags_per_section": 0.5188,
+      "kind_mix": [
+        [
+          "clarified",
+          0.7731
+        ],
+        [
+          "corrected",
+          0.1272
+        ],
+        [
+          "note",
+          0.0998
+        ]
+      ]
+    },
+    "selection": {
+      "callout_density": 0.1897,
+      "callout_variant_mix": [
+        [
+          "note",
+          0.4365
+        ],
+        [
+          "key",
+          0.2462
+        ],
+        [
+          "warn",
+          0.1663
+        ],
+        [
+          "tip",
+          0.151
+        ]
+      ],
+      "equation_density": 0.2187
+    },
+    "sequencing": {
+      "mean_sections_per_chapter": 13.1017,
+      "top_block_bigrams": [
+        [
+          "prose>equation",
+          0.2363
+        ],
+        [
+          "equation>prose",
+          0.1297
+        ],
+        [
+          "subheading>prose",
+          0.076
+        ],
+        [
+          "prose>figure",
+          0.0747
+        ],
+        [
+          "prose>callout",
+          0.0686
+        ],
+        [
+          "figure>callout",
+          0.0637
+        ],
+        [
+          "equation>figure",
+          0.0565
+        ],
+        [
+          "figure>prose",
+          0.0488
+        ]
+      ]
+    },
+    "voice": {
+      "hedge_rate": 0.0256,
+      "imperative_rate": 0.0054,
+      "len_mix": {
+        "long": 0.3072,
+        "medium": 0.4048,
+        "short": 0.288
+      },
+      "mean_sentence_len": 16.6154,
+      "n_sentences": 5889,
+      "second_person_rate": 0.0771
+    }
+  },
+  "source_corpus_hash": "97640f64d45e9aecb7c797496b85e9084bb9d211a02af4a03869f4691f5a91f6",
+  "version": 0
+}
