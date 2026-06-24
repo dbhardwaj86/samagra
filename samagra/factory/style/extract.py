@@ -118,3 +118,36 @@ def selection(chapters: list[dict]) -> dict:
         "callout_density": T.round4(types.get("callout", 0) / n_blocks),
         "callout_variant_mix": [[k, T.round4(v / n_co)] for k, v in vmix],
     }
+
+
+import json
+
+FACETS = ("voice", "sequencing", "analogy", "rigor", "selection")
+
+
+def load_corpus() -> list[dict]:
+    """Load every chapter that has a content.json, in stable (sorted) slug order.
+    Read-only over the textbook corpus — the firewall holds."""
+    from ... import config
+    from ...lectures import render
+
+    q = json.loads(config.TEXTBOOK_QUEUE.read_text(encoding="utf-8"))
+    slugs = sorted(c["slug"] for c in q.get("chapters", []) if c.get("slug"))
+    chapters: list[dict] = []
+    for slug in slugs:
+        try:
+            chapters.append(render.load_chapter(slug))
+        except FileNotFoundError:
+            continue
+    return chapters
+
+
+def build_profile(chapters: list[dict]) -> dict:
+    """Assemble all five facets. Deterministic: order-independent aggregates."""
+    return {
+        "voice": voice(chapters),
+        "sequencing": sequencing(chapters),
+        "analogy": analogy(chapters),
+        "rigor": rigor(chapters),
+        "selection": selection(chapters),
+    }

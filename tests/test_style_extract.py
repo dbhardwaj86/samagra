@@ -65,3 +65,36 @@ def test_selection_callout_variant_mix_and_density():
     assert s["equation_density"] == 0.2
     assert s["callout_density"] == 0.4
     assert s["callout_variant_mix"] == [["key", 0.5], ["warn", 0.5]]
+
+
+import json
+
+from samagra import config
+
+
+def _hermetic_corpus(tmp_path, monkeypatch):
+    """Write two content.json files + a queue.json, repoint config at them."""
+    chapters_dir = tmp_path / "chapters"
+    for ch in CORPUS:
+        d = chapters_dir / ch["slug"]
+        d.mkdir(parents=True)
+        (d / "content.json").write_text(json.dumps(ch), encoding="utf-8")
+    queue = tmp_path / "queue.json"
+    queue.write_text(json.dumps({"chapters": [{"slug": c["slug"]} for c in CORPUS]}),
+                     encoding="utf-8")
+    monkeypatch.setattr(config, "TEXTBOOK_CHAPTERS", chapters_dir)
+    monkeypatch.setattr(config, "TEXTBOOK_QUEUE", queue)
+
+
+def test_load_corpus_reads_queue_slugs_in_sorted_order(tmp_path, monkeypatch):
+    _hermetic_corpus(tmp_path, monkeypatch)
+    loaded = extract.load_corpus()
+    assert [c["slug"] for c in loaded] == ["a", "b"]   # sorted, all present
+
+
+def test_build_profile_has_all_five_facets_and_is_deterministic():
+    p1 = extract.build_profile(CORPUS)
+    p2 = extract.build_profile(list(reversed(CORPUS)))   # facets are corpus-wide aggregates
+    assert set(p1) == {"voice", "sequencing", "analogy", "rigor", "selection"}
+    # order-independent: same multiset of chapters -> identical facets
+    assert p1 == p2
