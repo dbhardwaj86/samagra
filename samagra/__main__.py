@@ -156,6 +156,26 @@ def cmd_factory(args) -> None:
     elif args.action == "build":
         res = run.build(args.assignment_id)
         print(f"built {args.assignment_id} -> {res['line']}: {res['artifact_ref']}")
+    elif args.action == "style-extract":
+        from .factory.style import profile as style_profile
+
+        path, seed = style_profile.extract_candidate()
+        if path is None:
+            print(f"factory style-extract: no change (current StyleSeed v{seed.version})")
+        else:
+            print(f"factory style-extract: wrote {path} (StyleSeed v{seed.version})")
+            print("  review the file via `git diff`, then commit to approve.")
+    elif args.action == "style-show":
+        from .factory.style import profile as style_profile
+
+        seed = style_profile.load_current()
+        if seed is None:
+            print("factory style-show: no StyleSeed yet — run `factory style-extract`.")
+        else:
+            print(f"StyleSeed v{seed.version}  (corpus {seed.source_corpus_hash[:12]}, "
+                  f"created {seed.created_at})")
+            for facet in style_profile.FACETS:
+                print(f"  {facet}: {seed.facets.get(facet)}")
 
 
 def cmd_bridge(args) -> None:
@@ -266,6 +286,9 @@ def main() -> None:
     ft_aps.add_argument("seed_ref")
     ft_bld = ft_sub.add_parser("build", help="build an APPROVED child (the guarded write boundary)")
     ft_bld.add_argument("assignment_id")
+    ft_sub.add_parser("style-extract",
+                      help="(re)build the StyleSeed from the 59 chapters (writes next version)")
+    ft_sub.add_parser("style-show", help="print the current StyleSeed version + facets")
     ft.set_defaults(func=cmd_factory)
 
     args = p.parse_args()
