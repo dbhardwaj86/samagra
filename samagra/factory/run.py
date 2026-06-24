@@ -109,9 +109,14 @@ def _load_proposed_payload(conn, assignment_id: str) -> dict | None:
     for ev in store.list_events_for_assignment(conn, assignment_id):
         if ev.get("verb") == "product_proposed":
             try:
-                return json.loads(ev["note"])["payload"]
-            except (TypeError, ValueError, KeyError):
+                note = json.loads(ev["note"])
+            except (TypeError, ValueError):
                 return None
+            # Only a dict note carrying a DICT payload is usable; anything else is
+            # a clean refusal (build() raises "no proposed payload"), never an
+            # opaque AttributeError downstream in validate_seed_payload (DEC-7 F1).
+            payload = note.get("payload") if isinstance(note, dict) else None
+            return payload if isinstance(payload, dict) else None
     return None
 
 

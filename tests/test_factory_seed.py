@@ -302,3 +302,44 @@ def test_build_seed_refuses_empty_raw_text_before_writing(seed_env, monkeypatch)
         assert row["status"] == "approved"               # still retryable after fixing the payload
     finally:
         conn.close()
+
+
+@pytest.mark.parametrize("bad_note", [
+    '"just a bare string"',                              # note is a JSON string, not a dict
+    "null",                                              # note is JSON null
+    "[1, 2, 3]",                                         # note is a JSON list
+    "not valid json at all",                             # note is not JSON
+    json.dumps({"line": "seed", "payload": "not-a-dict"}),   # dict note, NON-DICT payload value
+    json.dumps({"line": "seed"}),                       # dict note, payload key missing
+])
+def test_build_seed_refuses_malformed_proposed_note_cleanly(seed_env, monkeypatch, bad_note):
+    """Defense in depth (DEC-7 Codex F1): a product_proposed note that is not a dict
+    carrying a DICT payload must yield a clean 'no proposed payload' refusal — never
+    an opaque AttributeError/TypeError downstream in validate_seed_payload — and must
+    not write or wedge the assignment."""
+    conn = store.connect()
+    try:
+        store.add_assignment(conn, id="m1", agent="khanak", outbox_path="o",
+                             pipeline="seed", seed_ref="munshi:1")
+        store.set_assignment_status(conn, "m1", "in-review")
+        store.append_event(conn, actor="system", verb="product_proposed",
+                           assignment_id="m1", subsystem="factory",
+                           subsystem_ref="munshi:1", note=bad_note)
+        store.set_assignment_status(conn, "m1", "approved")
+    finally:
+        conn.close()
+
+    class _Boom:
+        def create_seed(self, p):  # pragma: no cover
+            raise AssertionError("must not write from a malformed proposed note")
+    monkeypatch.setattr("samagra.factory.dispatch.McdClient", lambda: _Boom())
+    with pytest.raises(ValueError, match="no proposed payload"):
+        run.build("m1")
+    conn = store.connect()
+    try:
+        verbs = [e["verb"] for e in store.list_events_for_assignment(conn, "m1")]
+        assert "product_building" not in verbs           # anti-wedge: no intent recorded
+        row = next(r for r in store.list_assignments(conn) if r["id"] == "m1")
+        assert row["status"] == "approved"               # retryable
+    finally:
+        conn.close()
