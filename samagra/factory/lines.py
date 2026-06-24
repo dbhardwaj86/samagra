@@ -30,10 +30,14 @@ LINES: dict[str, Line] = {
                   "paper", ("textbook:",), "qx"),
     "drill": Line("drill", "Adaptive drill set (answer-safe)",
                   "drill", ("textbook:",), "qx"),
+    # C3: the folded munshi->mcd bridge. variant=None (no slug render — build()
+    # runs the mcd path directly from the proposed payload). The ONLY mcd writer.
+    "seed": Line("seed", "mycontentdev editorial seed",
+                 None, ("munshi:",), "mcd"),
 }
 
 # Deterministic lane order so a seed always fans out the same way.
-_ORDER = ["revision", "lecture", "deck", "paper", "drill"]
+_ORDER = ["revision", "lecture", "deck", "paper", "drill", "seed"]
 
 
 def classify(seed_ref: str) -> list[str]:

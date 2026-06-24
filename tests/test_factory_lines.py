@@ -12,9 +12,31 @@ def test_unknown_source_fans_to_nothing():
 
 
 def test_registry_has_expected_output_labels():
-    for key in ("revision", "lecture", "deck", "paper", "drill"):
+    for key in ("revision", "lecture", "deck", "paper", "drill", "seed"):
         assert lines.LINES[key].expected_output
-    assert set(lines.LINES) == {"revision", "lecture", "deck", "paper", "drill"}
+    assert set(lines.LINES) == {
+        "revision", "lecture", "deck", "paper", "drill", "seed"}
+
+
+def test_munshi_seed_fans_to_the_seed_lane_only():
+    assert lines.classify("munshi:42") == ["seed"]
+
+
+def test_textbook_seed_still_fans_to_five_content_lanes_not_seed():
+    # the mcd seed lane has a munshi: prefix, so a textbook seed never reaches it
+    assert lines.classify("textbook:circular-motion") == [
+        "revision", "lecture", "deck", "paper", "drill"]
+
+
+def test_seed_line_is_mcd_kind_and_munshi_sourced():
+    seed = lines.LINES["seed"]
+    assert seed.kind == "mcd"
+    assert seed.source_prefixes == ("munshi:",)
+
+
+def test_registry_now_has_six_lanes_including_seed():
+    assert set(lines.LINES) == {
+        "revision", "lecture", "deck", "paper", "drill", "seed"}
 
 
 def test_deck_line_is_local_kind_and_textbook_sourced():
