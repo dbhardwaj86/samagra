@@ -11,8 +11,10 @@ from __future__ import annotations
 from pathlib import Path
 
 from ..lectures import export as lex
+from ..clients.mcd_client import McdClient
 from . import deck, paper
 from .lines import LINES
+from .seed_payload import validate_seed_payload
 
 
 def _slug(seed_ref: str) -> str:
@@ -46,7 +48,30 @@ def run_line(line: str, slug: str) -> dict:
         return deck.build_deck(slug)
     if spec.kind == "qx":
         return paper.build_paper(slug, variant=line)
+    if spec.kind == "mcd":
+        raise ValueError(
+            f"line {line!r} is an mcd lane — built via the seed path (run_seed), "
+            f"not run_line")
     return lex.export_one(slug, spec.variant, upload_gdocs=False)
+
+
+def run_seed(payload: dict) -> dict:
+    """The mcd (`seed`) lane produce step — the ONE prod write after the bridge
+    fold (F-C2). Re-assert the payload contract at the literal write boundary
+    (belt-and-suspenders: build() also validates BEFORE recording intent, but
+    run_seed is the only mcd writer and must never POST an unvalidated body even
+    if a future caller forgets), create the seed via the existing owner-initiated
+    capture contract (McdClient.create_seed), and return a result carrying the new
+    seed id. Raises ValueError on a bad payload OR a response with no id — never a
+    silent blank/duplicate write."""
+    validate_seed_payload(payload)
+    seed = McdClient().create_seed(payload)
+    seed_id = seed.get("id") if isinstance(seed, dict) else None
+    if not seed_id:
+        raise ValueError(
+            "mcd create_seed returned no seed id — refusing to mark captured")
+    return {"variant": "seed", "seed": seed, "seed_id": str(seed_id),
+            "artifact_ref": f"mcd:{seed_id}"}
 
 
 def validate_product(line: str, result: dict) -> None:

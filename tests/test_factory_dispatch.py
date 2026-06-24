@@ -147,3 +147,47 @@ def test_validate_product_qx_scans_json_sidecar_too(tmp_path):
                   encoding="utf-8")
     with pytest.raises(ValueError):
         dispatch.validate_product("paper", {"html": str(html), "json": str(js)})
+
+
+# --- Phase C3: the mcd seed lane ---------------------------------------------
+
+def test_run_line_refuses_the_mcd_seed_lane():
+    # defense in depth: build() runs the mcd path directly; run_line must never
+    # fall through to the lecture exporter for an mcd lane.
+    with pytest.raises(ValueError, match="mcd"):
+        dispatch.run_line("seed", "munshi:1")
+
+
+def test_run_seed_validates_creates_and_returns_mcd_artifact_ref(monkeypatch):
+    calls = []
+
+    class _Client:
+        def create_seed(self, body):
+            calls.append(body)
+            return {"id": "seed-77", "status": "captured"}
+    monkeypatch.setattr("samagra.factory.dispatch.McdClient", lambda: _Client())
+
+    payload = {"type": "question", "raw_text": "Find a.", "source_ref": "munshi:1"}
+    res = dispatch.run_seed(payload)
+    assert calls == [payload]                          # exactly one create, exact flat body
+    assert res["artifact_ref"] == "mcd:seed-77"
+    assert res["seed_id"] == "seed-77"
+    assert res["seed"]["id"] == "seed-77"
+
+
+def test_run_seed_refuses_a_bad_payload_before_writing(monkeypatch):
+    class _Boom:
+        def create_seed(self, body):  # pragma: no cover
+            raise AssertionError("must not POST an invalid payload")
+    monkeypatch.setattr("samagra.factory.dispatch.McdClient", lambda: _Boom())
+    with pytest.raises(ValueError):
+        dispatch.run_seed({"type": "question", "raw_text": ""})
+
+
+def test_run_seed_refuses_a_response_with_no_id(monkeypatch):
+    class _Client:
+        def create_seed(self, body):
+            return {"status": "captured"}              # no id
+    monkeypatch.setattr("samagra.factory.dispatch.McdClient", lambda: _Client())
+    with pytest.raises(ValueError, match="no seed id"):
+        dispatch.run_seed({"type": "rough_idea", "raw_text": "x"})
