@@ -64,3 +64,57 @@ def sequencing(chapters: list[dict]) -> dict:
         "mean_sections_per_chapter": T.round4(sum(sec_counts) / n),
         "top_block_bigrams": [[k, T.round4(v / total)] for k, v in top],
     }
+
+
+def analogy(chapters: list[dict]) -> dict:
+    """Everyday-analogy reach over prose + callouts (substring marker match)."""
+    texts: list[str] = []
+    for ch in chapters:
+        for sec in ch.get("sections", []) or []:
+            for b in sec.get("blocks", []) or []:
+                if b.get("type") in ("prose", "callout"):
+                    texts.append(T.strip_html(b.get("html", "")).lower())
+    n = len(texts) or 1
+    hits = sum(1 for t in texts if any(m in t for m in T.ANALOGY_MARKERS))
+    return {"n_blocks": len(texts), "analogy_block_rate": T.round4(hits / n)}
+
+
+def rigor(chapters: list[dict]) -> dict:
+    """Pedagogical rigor moves from the section-level flags[] array."""
+    kinds: Counter = Counter()
+    n_sections = 0
+    n_flags = 0
+    for ch in chapters:
+        for sec in ch.get("sections", []) or []:
+            n_sections += 1
+            for f in sec.get("flags", []) or []:
+                n_flags += 1
+                kinds[f.get("kind") or "unknown"] += 1
+    s = n_sections or 1
+    total = n_flags or 1
+    dist = sorted(kinds.items(), key=lambda kv: (-kv[1], kv[0]))
+    return {
+        "flags_per_section": T.round4(n_flags / s),
+        "kind_mix": [[k, T.round4(v / total)] for k, v in dist],
+    }
+
+
+def selection(chapters: list[dict]) -> dict:
+    """What gets foregrounded: callout-variant mix + equation/callout density."""
+    variants: Counter = Counter()
+    types: Counter = Counter()
+    for ch in chapters:
+        for sec in ch.get("sections", []) or []:
+            for b in sec.get("blocks", []) or []:
+                t = b.get("type")
+                types[t] += 1
+                if t == "callout":
+                    variants[b.get("variant") or "note"] += 1
+    n_blocks = sum(types.values()) or 1
+    n_co = sum(variants.values()) or 1
+    vmix = sorted(variants.items(), key=lambda kv: (-kv[1], kv[0]))
+    return {
+        "equation_density": T.round4(types.get("equation", 0) / n_blocks),
+        "callout_density": T.round4(types.get("callout", 0) / n_blocks),
+        "callout_variant_mix": [[k, T.round4(v / n_co)] for k, v in vmix],
+    }

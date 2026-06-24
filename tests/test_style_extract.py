@@ -43,3 +43,25 @@ def test_sequencing_bigrams_and_section_count():
     bigrams = dict(s["top_block_bigrams"])
     assert set(bigrams) == {"prose>equation", "equation>callout", "prose>callout"}
     assert bigrams["prose>equation"] == 0.3333   # 1 of 3 transitions
+
+
+def test_analogy_rate_over_prose_and_callouts():
+    a = extract.analogy(CORPUS)
+    # 4 prose/callout blocks; only chapter-a prose ("Imagine ...") has a marker
+    assert a["n_blocks"] == 4
+    assert a["analogy_block_rate"] == 0.25
+
+
+def test_rigor_from_section_flags():
+    r = extract.rigor(CORPUS)
+    # 2 sections, 1 flag (kind "clarified")
+    assert r["flags_per_section"] == 0.5
+    assert r["kind_mix"] == [["clarified", 1.0]]
+
+
+def test_selection_callout_variant_mix_and_density():
+    s = extract.selection(CORPUS)
+    # 5 blocks total: 2 prose, 1 equation, 2 callouts
+    assert s["equation_density"] == 0.2
+    assert s["callout_density"] == 0.4
+    assert s["callout_variant_mix"] == [["key", 0.5], ["warn", 0.5]]
