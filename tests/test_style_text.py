@@ -21,7 +21,7 @@ def test_words_lowercases_and_keeps_apostrophes():
 
 def test_marker_vocabularies_are_frozen_sets():
     # closed sets → deterministic membership tests, no accidental mutation
-    for vocab in (T.SECOND_PERSON, T.HEDGES, T.IMPERATIVE_STARTERS):
+    for vocab in (T.SECOND_PERSON, T.HEDGES, T.IMPERATIVE_STARTERS, T.ANALOGY_MARKERS):
         assert isinstance(vocab, frozenset) and vocab
     assert "you" in T.SECOND_PERSON
     assert "imagine" in T.IMPERATIVE_STARTERS
