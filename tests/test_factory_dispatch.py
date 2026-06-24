@@ -62,3 +62,62 @@ def test_run_line_still_routes_lecture_lanes_to_export(monkeypatch, tmp_path):
     dispatch.run_line("revision", "circular-motion")
     assert calls["args"] == ("circular-motion", "thin")
     assert calls["kw"].get("upload_gdocs") is False   # lecture lanes never upload (H1)
+
+
+def test_run_line_routes_paper_to_build_paper(monkeypatch, tmp_path):
+    seen = {}
+    out = tmp_path / "circular-motion-paper.html"
+    out.write_text("<h1>paper</h1>", encoding="utf-8")
+
+    def fake_build_paper(slug, *, variant):
+        seen["args"] = (slug, variant)
+        return {"variant": variant, "html": str(out),
+                "json": str(tmp_path / "circular-motion-paper.json"), "questions": 4}
+
+    monkeypatch.setattr("samagra.factory.paper.build_paper", fake_build_paper)
+    result = dispatch.run_line("paper", "circular-motion")
+    assert seen["args"] == ("circular-motion", "paper")   # variant from the lane key
+    assert result["html"] == str(out)
+
+
+def test_run_line_routes_drill_to_build_paper_with_drill_variant(monkeypatch, tmp_path):
+    seen = {}
+    out = tmp_path / "circular-motion-drill.html"
+    out.write_text("<h1>drill</h1>", encoding="utf-8")
+
+    def fake_build_paper(slug, *, variant):
+        seen["variant"] = variant
+        return {"variant": variant, "html": str(out),
+                "json": str(tmp_path / "x.json"), "questions": 2}
+
+    monkeypatch.setattr("samagra.factory.paper.build_paper", fake_build_paper)
+    dispatch.run_line("drill", "circular-motion")
+    assert seen["variant"] == "drill"
+
+
+def test_validate_product_qx_refuses_answer_marker(tmp_path):
+    leaky = tmp_path / "p.html"
+    leaky.write_text('<div class="stem">x</div>'
+                     '<div class="answer"><span class="answer-label">Ans: 42</span></div>',
+                     encoding="utf-8")
+    with pytest.raises(ValueError):
+        dispatch.validate_product("paper", {"html": str(leaky)})
+
+
+def test_validate_product_qx_allows_clean_paper_even_with_word_answer(tmp_path):
+    # A legitimate stem may contain the WORD "answer"; that must NOT trip the
+    # structural marker guard (no class="answer"/answer-label/etc.).
+    clean = tmp_path / "p.html"
+    clean.write_text('<div class="stem">What is the answer to this question?</div>'
+                     '<div class="options"><div class="opt"><span class="opt-label">(A)</span> 5</div></div>',
+                     encoding="utf-8")
+    dispatch.validate_product("paper", {"html": str(clean)})   # no raise
+
+
+def test_validate_product_answer_leak_is_noop_for_local_lanes(tmp_path):
+    # The guard is qx-only: a local lane artifact that (contrived) carries an
+    # answer marker is NOT scanned (lecture/deck carry no answer columns by
+    # construction; scanning them would be wrong-layer).
+    f = tmp_path / "r.html"
+    f.write_text('<div class="answer">Ans: 1</div>', encoding="utf-8")
+    dispatch.validate_product("revision", {"html": str(f)})    # no raise (local kind)

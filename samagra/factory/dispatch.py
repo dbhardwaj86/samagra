@@ -11,7 +11,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from ..lectures import export as lex
-from . import deck
+from . import deck, paper
 from .lines import LINES
 
 
@@ -33,15 +33,19 @@ def validate_seed_for_line(line: str, seed_ref: str) -> None:
 
 def run_line(line: str, slug: str) -> dict:
     """Run the lane's engine. Phase-C lane-kind dispatch:
-      - deck      -> the pure local flashcard engine (no external write).
-      - revision/lecture -> the lecture exporter (upload_gdocs=False keeps the
+      - deck            -> the pure local flashcard engine (no external write).
+      - paper/drill     -> the QX-backed answer-safe paper engine (kind 'qx';
+        read-only QX, local write; variant = the lane key sizes paper vs drill).
+      - revision/lecture-> the lecture exporter (upload_gdocs=False keeps the
         Phase-1 invariant: local artifacts only, never an external Google Docs
         upload — review 24 H1).
-    Later sub-slices add the qx (paper/drill) + mcd (seed) branches.
+    The mcd (seed) branch lands in C3.
     """
     spec = LINES[line]
     if line == "deck":
         return deck.build_deck(slug)
+    if spec.kind == "qx":
+        return paper.build_paper(slug, variant=line)
     return lex.export_one(slug, spec.variant, upload_gdocs=False)
 
 
@@ -58,7 +62,35 @@ def validate_product(line: str, result: dict) -> None:
     _assert_no_answer_leak(line, result)
 
 
+# Structural answer/solution markers QX uses in its AUTHORING views (never in the
+# read-only /api/qsearch student render, which stops at stem/options/passage/matrix).
+# All are HTML class/attribute tokens — they cannot occur in legitimately rendered
+# question PROSE (a stem may contain the word "answer"; it can never contain
+# class="answer"), so scanning for them is false-positive-free.
+_ANSWER_MARKERS = (
+    'class="answer"',
+    "answer-label",
+    "answer_confidence",
+    "data-answer",
+    "data-correct",
+    'class="solution"',
+)
+
+
 def _assert_no_answer_leak(line: str, result: dict) -> None:
-    # Phase 1 lecture lanes carry no answer columns by construction. The QX
-    # paper lane (Phase C) overrides this to assert the student variant has none.
-    return
+    """For QX (paper/drill) lanes ONLY: re-assert the published artifact carries no
+    answer/solution data. Defense in depth — we do not trust the upstream render to
+    be answer-free and re-check at our write boundary. Reads the assembled artifact
+    and raises ValueError on any structural answer/solution marker. kind in
+    {local, mcd} keep the no-op (lecture/deck carry no answer columns; the mcd
+    payload is validated by validate_seed_payload, not this guard)."""
+    spec = LINES.get(line)
+    if spec is None or spec.kind != "qx":
+        return
+    html = result.get("html")
+    text = (Path(html).read_text(encoding="utf-8") if html else "").lower()
+    for marker in _ANSWER_MARKERS:
+        if marker in text:
+            raise ValueError(
+                f"line {line!r} artifact carries an answer/solution marker "
+                f"({marker!r}) — refusing to publish a paper that may leak answers")
