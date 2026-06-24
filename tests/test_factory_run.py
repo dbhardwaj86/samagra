@@ -362,6 +362,17 @@ def test_build_guard2_refuses_existing_product_created_even_if_approved(factory_
         run.build(a["assignment_id"])
 
 
+def test_cli_factory_scan_dispatch(monkeypatch):
+    import sys as _sys
+    import samagra.__main__ as cli
+    seen = {}
+    monkeypatch.setattr("samagra.factory.run.scan",
+                        lambda dry=True: seen.update(dry=dry) or [])
+    monkeypatch.setattr(_sys, "argv", ["samagra", "factory", "scan", "--dry-run"])
+    cli.main()
+    assert seen["dry"] is True
+
+
 def test_approve_seed_skips_non_factory_pipeline_with_same_seed_ref(factory_env):
     """approve_seed must touch ONLY factory-lane assignments, even if a bridge
     assignment shares the seed_ref (review 25 — firewall completeness)."""

@@ -130,7 +130,16 @@ def cmd_unlock(args) -> None:
 def cmd_factory(args) -> None:
     from .factory import run
 
-    if args.action == "plan":
+    if args.action == "scan":
+        proposals = run.scan(dry=args.dry_run)
+        mode = "dry-run" if args.dry_run else "live"
+        print(f"factory scan ({mode}): {len(proposals)} content seed proposal(s)")
+        for p in proposals:
+            aid = p.get("assignment_id", "-")
+            tag = " (reused)" if p.get("reused") else ""
+            print(f"  [{aid}] {p['seed_ref']} -> {p['payload']['type']}  "
+                  f"({len(p['pointers'])} pointer(s)){tag}")
+    elif args.action == "plan":
         proposals = run.plan(args.seed_ref, dry=args.dry_run)
         mode = "dry-run" if args.dry_run else "live"
         print(f"factory plan ({mode}): {len(proposals)} line(s) for {args.seed_ref}")
@@ -166,9 +175,13 @@ def cmd_bridge(args) -> None:
         print(f"approved {args.assignment_id} -> {res['status']}")
     elif args.action == "submit":
         res = run.submit(args.assignment_id)
-        seed = res.get("seed") or {}
-        print(f"submitted {args.assignment_id} -> seed {seed.get('id')} "
-              f"({seed.get('status')})")
+        ref = res.get("artifact_ref")
+        if ref:                                          # delegated factory build
+            print(f"submitted {args.assignment_id} -> {ref}")
+        else:                                            # legacy {"seed": {...}} shape
+            seed = res.get("seed") or {}
+            print(f"submitted {args.assignment_id} -> seed {seed.get('id')} "
+                  f"({seed.get('status')})")
 
 
 def main() -> None:
@@ -238,6 +251,10 @@ def main() -> None:
 
     ft = sub.add_parser("factory", help="content factory: one seed -> N content artifacts")
     ft_sub = ft.add_subparsers(dest="action", required=True)
+    ft_scan = ft_sub.add_parser("scan",
+                                help="propose mcd seeds from munshi content items")
+    ft_scan.add_argument("--dry-run", action="store_true",
+                         help="propose only; record nothing")
     ft_plan = ft_sub.add_parser("plan", help="fan a seed out to product lines")
     ft_plan.add_argument("seed_ref", help="e.g. textbook:circular-motion")
     ft_plan.add_argument("--dry-run", action="store_true", help="propose only; record nothing")
