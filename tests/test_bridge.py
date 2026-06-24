@@ -215,3 +215,15 @@ def test_cli_bridge_submit_dispatch(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["samagra", "bridge", "submit", "a1"])
     cli.main()
     assert seen["aid"] == "a1"
+
+
+def test_cli_bridge_scan_prints_real_factory_proposal_without_crash(monkeypatch, capsys):
+    """After the C3 fold, `bridge scan` returns the FACTORY proposal shape (seed_ref,
+    payload, pointers — NO 'item' key). The deprecated CLI print must not crash on a
+    real proposal (the dispatch test returns [], so it never iterated the loop)."""
+    proposal = {"assignment_id": "a1", "seed_ref": "munshi:note-1", "line": "seed",
+                "payload": {"type": "question"}, "pointers": []}
+    monkeypatch.setattr("samagra.bridge.run.scan", lambda dry=True: [proposal])
+    monkeypatch.setattr(sys, "argv", ["samagra", "bridge", "scan", "--dry-run"])
+    cli.main()                                          # must NOT raise KeyError: 'item'
+    assert "munshi:note-1" in capsys.readouterr().out

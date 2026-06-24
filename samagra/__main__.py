@@ -168,7 +168,9 @@ def cmd_bridge(args) -> None:
         for p in proposals:
             aid = p.get("assignment_id", "-")
             tag = " (reused)" if p.get("reused") else ""
-            print(f"  [{aid}] {p['item']['uid']} -> {p['payload']['type']}  "
+            # C3: the folded factory.scan returns the factory proposal shape
+            # (seed_ref/payload/pointers — no legacy 'item' key).
+            print(f"  [{aid}] {p['seed_ref']} -> {p['payload']['type']}  "
                   f"({len(p['pointers'])} pointer(s)){tag}")
     elif args.action == "approve":
         res = run.approve(args.assignment_id)
