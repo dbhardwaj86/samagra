@@ -2,6 +2,7 @@
 yields byte-identical facets (sorted aggregates, no randomness)."""
 from __future__ import annotations
 
+import json
 from collections import Counter
 
 from . import text as T
@@ -119,8 +120,6 @@ def selection(chapters: list[dict]) -> dict:
         "callout_variant_mix": [[k, T.round4(v / n_co)] for k, v in vmix],
     }
 
-
-import json
 
 FACETS = ("voice", "sequencing", "analogy", "rigor", "selection")
 
