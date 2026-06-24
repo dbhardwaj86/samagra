@@ -7,7 +7,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-FACETS = ("voice", "sequencing", "analogy", "rigor", "selection")
+from .extract import FACETS  # re-export: single source of truth for the facet names
 
 
 @dataclass(frozen=True)
@@ -60,7 +60,13 @@ def save(seed: StyleSeed) -> Path:
 
 
 def load(version: int) -> StyleSeed:
-    return StyleSeed(**json.loads(path_for(version).read_text(encoding="utf-8")))
+    d = json.loads(path_for(version).read_text(encoding="utf-8"))
+    return StyleSeed(
+        version=d["version"],
+        facets=d["facets"],
+        source_corpus_hash=d["source_corpus_hash"],
+        created_at=d["created_at"],
+    )
 
 
 def current_version() -> int | None:
