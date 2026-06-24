@@ -1,5 +1,49 @@
 # SAMAGRA — Handoff
 
+> **▶▶▶▶▶▶▶ ✅ CONTENT FACTORY PHASE C — SUB-SLICE C2 (the `paper` / Pariksha + `drill` / Abhyaas lanes) BUILT TDD + ADVERSARIAL-REVIEWED + MERGED to `main` + PUSHED to `origin/main` (2026-06-24, ff `78cf72a`).**
+> The second of Phase C's three ratified sub-slices is shipped. New PURE engine **`samagra/factory/paper.py`** —
+> `build_paper(slug, *, variant)` reads the **read-only** QX engine's `/api/qsearch` (question-only render: stem /
+> options / passage / matrix, with KaTeX `data-tex` spans + figures — QX's search route NEVER renders `rj["answer"]`,
+> so it is **answer-free by construction**) and assembles a printable, KaTeX-enabled **`paper`** (the full page of hits)
+> or **`drill`** (the first `_DRILL_SIZE=8`, a focused subset), absolutizing asset URLs and writing
+> `<slug>-<variant>.{json,html}` under `EXPORT_DIR`. **NO new prod write path** — QX is read-only and the only writes
+> are local files (no gdocs/network at all). The **`Line.kind="qx"`** seam (added in C1) is consumed:
+> `dispatch.run_line` routes `kind=="qx"` → the engine; **`classify("textbook:<slug>")` now fans to
+> `[revision, lecture, deck, paper, drill]`** — **one chapter now produces FIVE captured local artifacts**. The real
+> **`_assert_no_answer_leak`** guard is ACTIVATED for `kind=="qx"`: a defense-in-depth structural-marker scan over
+> BOTH written artifacts (html + json) that refuses any answer/solution marker at the guarded `build()` boundary.
+> **`build()` is unchanged** — the five crash-safety guards are identical for every kind.
+> - **Answer-safety (the crown jewel):** the marker set anchors on **QX-specific class tokens** (`class="answer"`,
+>   `answer-label`, `pq-ans`, `pkey`, …), never the bare word "answer" — so it is **false-positive-free** (a stem that
+>   says "what is the answer to…" passes) yet catches all three of QX's answer renderers. **QX-down ⇒ `ValueError`
+>   before any write** (clean refusal, no partial artifact — mirrors the bridge's munshi-down posture).
+> - **Golden thread PROVEN LIVE against the live QX engine** (`scripts/c2_smoke.py`, isolated temp governance store):
+>   `circular-motion` → **paper 25 questions + drill 8 questions**, both answer-free, both captured; durable
+>   `governance.db` untouched.
+> - **Adversarial final review (10-agent Workflow, 4 diverse lenses — correctness/safety/test-quality/spec-fidelity —
+>   each finding independently verified; run `wf_3ffe75d5-cc1`):** 6 raw → **4 confirmed (0 HIGH, 1 MEDIUM, 3 LOW),
+>   2 refuted.** The **MEDIUM** (the load-bearing catch the per-task TDD missed, exactly like C1's HIGH): the marker
+>   set caught QX's `builder_pages`/`qx_browser` answer markup but **missed its THIRD answer renderer** — the teacher
+>   `paper_render` (`<span class="pq-ans">Ans: …`, the `<div class="pkey">` answer-key appendix). A **latent**
+>   defense-in-depth gap (no live leak — the search render is structurally answer-free — but the single most plausible
+>   future regression is QX reusing that sibling renderer). **FIXED** — add `pq-ans`+`pkey` markers + scan the JSON
+>   sidecar + regression test (proven false-positive-free against the real 25-question live paper). The 3 LOWs fixed
+>   (scan json too; parametrize the leak/QX-down/clean e2e tests over `paper` AND `drill`; assert the drill cap reaches
+>   the on-disk artifact). 2 findings **correctly refuted** (the escaping-bypass IS caught by the e2e leak test; the
+>   off-by-one cap IS pinned by the `== _DRILL_SIZE` symbol assertion). **All six load-bearing invariants HELD.**
+> - **Invariants:** **NO new prod write path**; **NO migration** (reuses `assignments` columns + `product_*` verbs);
+>   publish gate untouched; read-only firewall over the 7 subsystems intact; no secrets.
+> - **Gate: 341 pytest** (316 → 341; the lone red is the pre-existing environmental `test_gdocs`, Google API libs
+>   missing on this host — factory-independent, fails on `main` too).
+> - **Artifacts:** spec `docs/superpowers/specs/2026-06-23-samagra-content-factory-phase-c-design.md` (§3.2/§4); plan
+>   `docs/superpowers/plans/2026-06-24-samagra-content-factory-phase-c2-paper-drill.md`; new code
+>   `samagra/factory/paper.py` + `tests/test_factory_paper.py` + `scripts/c2_smoke.py`.
+> - **▶ NEXT:** **C3** = the `seed`/mcd **bridge-fold** — the factory `seed` lane becomes the canonical munshi→mcd
+>   write (`samagra bridge` deprecated/delegates, exactly ONE prod-write path), **prod write** behind a **dedicated
+>   DEC-7 Codex pre-merge review** of the write boundary (mirroring bridge review 22). *(The last of the 3 sub-slices.)*
+>
+> ---
+>
 > **▶▶▶▶▶▶▶ ✅ CONTENT FACTORY PHASE C — SUB-SLICE C1 (the `deck` / Smriti flashcard lane) BUILT TDD + ADVERSARIAL-REVIEWED + MERGED to `main` (2026-06-24).**
 > The first of Phase C's three ratified sub-slices is shipped. **MERGED to `main` (ff `6084952`)** — pushing to `origin/main`
 > right after these tracker edits. New module **`samagra/factory/deck.py`** — a PURE, deterministic `build_deck(slug)` that
