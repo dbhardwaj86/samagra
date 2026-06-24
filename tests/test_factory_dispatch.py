@@ -121,3 +121,29 @@ def test_validate_product_answer_leak_is_noop_for_local_lanes(tmp_path):
     f = tmp_path / "r.html"
     f.write_text('<div class="answer">Ans: 1</div>', encoding="utf-8")
     dispatch.validate_product("revision", {"html": str(f)})    # no raise (local kind)
+
+
+def test_validate_product_qx_refuses_qx_teacher_paper_markup(tmp_path):
+    # Defense in depth: QX has a THIRD answer renderer — its teacher paper_render
+    # emits <span class="pq-ans">Ans: ..</span> / "pq-ans unv" and a <div
+    # class="pkey"> answer-key appendix. The guard must catch those shapes too
+    # (the single most plausible future leak = QX reusing that sibling renderer).
+    for body in ('<div class="stem">x</div><span class="pq-ans">Ans: 42</span>',
+                 '<div class="stem">x</div><span class="pq-ans unv">Ans: 5</span>',
+                 '<div class="stem">x</div><div class="pkey"><table><td>1</td><td>42</td></table></div>'):
+        f = tmp_path / "p.html"
+        f.write_text(body, encoding="utf-8")
+        with pytest.raises(ValueError):
+            dispatch.validate_product("paper", {"html": str(f)})
+
+
+def test_validate_product_qx_scans_json_sidecar_too(tmp_path):
+    # The JSON sidecar embeds each question's raw QX html verbatim and is a
+    # written artifact too — the guard must scan it, not only the printable html.
+    html = tmp_path / "p.html"
+    html.write_text('<div class="stem">clean</div>', encoding="utf-8")
+    js = tmp_path / "p.json"
+    js.write_text('{"questions":[{"html":"<span class=\\"pq-ans\\">Ans: 9</span>"}]}',
+                  encoding="utf-8")
+    with pytest.raises(ValueError):
+        dispatch.validate_product("paper", {"html": str(html), "json": str(js)})

@@ -117,6 +117,17 @@ def test_drill_keeps_all_when_fewer_than_cap(export_dir, monkeypatch):
     assert drill["questions"] == 2
 
 
+def test_drill_cap_propagates_to_the_on_disk_artifact(export_dir, monkeypatch):
+    # The persisted artifact is the published product — assert the cap reaches the
+    # written JSON, not only the returned count (a bug that capped the return but
+    # wrote the full list would otherwise pass).
+    monkeypatch.setattr(paper, "QxClient", _ManyQx)   # 12 results
+    paper.build_paper("circular-motion", variant="drill")
+    data = _deck_json(export_dir, "circular-motion-drill.json")
+    assert data["variant"] == "drill"
+    assert len(data["questions"]) == paper._DRILL_SIZE   # exactly 8 on disk, not 12
+
+
 def test_build_paper_json_lists_questions(export_dir, monkeypatch):
     monkeypatch.setattr(paper, "QxClient", _FakeQx)
     paper.build_paper("circular-motion", variant="paper")

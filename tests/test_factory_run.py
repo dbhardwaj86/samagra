@@ -106,8 +106,10 @@ def _stub_paper(monkeypatch, tmp_path):
     def fake_build_paper(slug, *, variant):
         out = tmp_path / f"{slug}-{variant}.html"
         out.write_text(f'<h1>{slug} {variant}</h1><div class="stem">q</div>', encoding="utf-8")
-        return {"variant": variant, "html": str(out),
-                "json": str(tmp_path / f"{slug}-{variant}.json"), "questions": 3}
+        js = tmp_path / f"{slug}-{variant}.json"   # write BOTH artifacts (mirror build_paper)
+        js.write_text(f'{{"variant":"{variant}","questions":[{{"html":"<div class=\\"stem\\">q</div>"}}]}}',
+                      encoding="utf-8")
+        return {"variant": variant, "html": str(out), "json": str(js), "questions": 3}
     monkeypatch.setattr("samagra.factory.paper.build_paper", fake_build_paper)
 
 def test_build_runs_engine_and_captures(factory_env, monkeypatch):
@@ -207,7 +209,10 @@ def _approve_lane(seed, line):
     return aid
 
 
-def test_build_paper_lane_refuses_when_qx_leaks_an_answer(factory_env, monkeypatch):
+# Both qx lanes (paper AND drill) traverse the real build_paper + real answer-leak
+# guard end-to-end — parametrized so a drill-specific regression can't hide.
+@pytest.mark.parametrize("lane", ["paper", "drill"])
+def test_build_qx_lane_refuses_when_qx_leaks_an_answer(factory_env, monkeypatch, lane):
     class _LeakyQx:
         base_url = "http://127.0.0.1:8783"
         def __init__(self, *a, **k): pass
@@ -219,7 +224,7 @@ def test_build_paper_lane_refuses_when_qx_leaks_an_answer(factory_env, monkeypat
                     "total": 1, "page": 1, "page_size": 25, "mode": "exact",
                     "degraded": False, "facets": {}}
     monkeypatch.setattr("samagra.factory.paper.QxClient", _LeakyQx)
-    aid = _approve_lane("textbook:circular-motion", "paper")
+    aid = _approve_lane("textbook:circular-motion", lane)
     with pytest.raises(ValueError):
         run.build(aid)                            # answer-leak guard refuses at the boundary
     conn = store.connect()
@@ -230,13 +235,14 @@ def test_build_paper_lane_refuses_when_qx_leaks_an_answer(factory_env, monkeypat
         conn.close()
 
 
-def test_build_paper_lane_refuses_when_qx_unreachable(factory_env, monkeypatch):
+@pytest.mark.parametrize("lane", ["paper", "drill"])
+def test_build_qx_lane_refuses_when_qx_unreachable(factory_env, monkeypatch, lane):
     class _DownQx:
         base_url = "http://127.0.0.1:8783"
         def __init__(self, *a, **k): pass
         def search(self, **kw): raise RuntimeError("connection refused")
     monkeypatch.setattr("samagra.factory.paper.QxClient", _DownQx)
-    aid = _approve_lane("textbook:circular-motion", "paper")
+    aid = _approve_lane("textbook:circular-motion", lane)
     with pytest.raises(ValueError):
         run.build(aid)                            # clean refusal, no partial artifact
     conn = store.connect()
@@ -247,7 +253,8 @@ def test_build_paper_lane_refuses_when_qx_unreachable(factory_env, monkeypatch):
         conn.close()
 
 
-def test_build_paper_lane_captures_answer_free_paper(factory_env, monkeypatch):
+@pytest.mark.parametrize("lane", ["paper", "drill"])
+def test_build_qx_lane_captures_answer_free_artifact(factory_env, monkeypatch, lane):
     class _CleanQx:
         base_url = "http://127.0.0.1:8783"
         def __init__(self, *a, **k): pass
@@ -258,9 +265,9 @@ def test_build_paper_lane_captures_answer_free_paper(factory_env, monkeypatch):
                     "total": 1, "page": 1, "page_size": 25, "mode": "exact",
                     "degraded": False, "facets": {}}
     monkeypatch.setattr("samagra.factory.paper.QxClient", _CleanQx)
-    aid = _approve_lane("textbook:circular-motion", "paper")
+    aid = _approve_lane("textbook:circular-motion", lane)
     res = run.build(aid)
-    assert res["artifact_ref"].endswith("circular-motion-paper.html")
+    assert res["artifact_ref"].endswith(f"circular-motion-{lane}.html")
     conn = store.connect()
     try:
         row = next(r for r in store.list_assignments(conn) if r["id"] == aid)

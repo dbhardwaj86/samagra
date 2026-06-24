@@ -62,11 +62,19 @@ def validate_product(line: str, result: dict) -> None:
     _assert_no_answer_leak(line, result)
 
 
-# Structural answer/solution markers QX uses in its AUTHORING views (never in the
-# read-only /api/qsearch student render, which stops at stem/options/passage/matrix).
+# Structural answer/solution markers QX uses across its THREE answer renderers,
+# none of which appear in the read-only /api/qsearch student render (stem / options
+# / passage / matrix only):
+#   - builder_pages / qx_browser authoring views: class="answer" / answer-label
+#   - paper_render teacher paper:               class="pq-ans" (or "pq-ans unv"),
+#                                               and the class="pkey" answer-key appendix
 # All are HTML class/attribute tokens — they cannot occur in legitimately rendered
 # question PROSE (a stem may contain the word "answer"; it can never contain
-# class="answer"), so scanning for them is false-positive-free.
+# class="answer" or pq-ans), so scanning for them is false-positive-free. The guard
+# is defense in depth: there is no live leak today (the search render never reads
+# rj["answer"]), but the single most plausible future regression is QX reusing its
+# sibling teacher renderer (paper_render._question_html), whose pq-ans / pkey markup
+# these markers now catch.
 _ANSWER_MARKERS = (
     'class="answer"',
     "answer-label",
@@ -74,21 +82,28 @@ _ANSWER_MARKERS = (
     "data-answer",
     "data-correct",
     'class="solution"',
+    "pq-ans",
+    "pkey",
 )
 
 
 def _assert_no_answer_leak(line: str, result: dict) -> None:
-    """For QX (paper/drill) lanes ONLY: re-assert the published artifact carries no
+    """For QX (paper/drill) lanes ONLY: re-assert the published artifacts carry no
     answer/solution data. Defense in depth — we do not trust the upstream render to
-    be answer-free and re-check at our write boundary. Reads the assembled artifact
-    and raises ValueError on any structural answer/solution marker. kind in
-    {local, mcd} keep the no-op (lecture/deck carry no answer columns; the mcd
-    payload is validated by validate_seed_payload, not this guard)."""
+    be answer-free and re-check at our write boundary. Scans EVERY written artifact
+    (the printable html AND the sibling json, which embeds each question's raw QX
+    body verbatim) and raises ValueError on any structural answer/solution marker.
+    kind in {local, mcd} keep the no-op (lecture/deck carry no answer columns; the
+    mcd payload is validated by validate_seed_payload, not this guard)."""
     spec = LINES.get(line)
     if spec is None or spec.kind != "qx":
         return
-    html = result.get("html")
-    text = (Path(html).read_text(encoding="utf-8") if html else "").lower()
+    blobs = []
+    for key in ("html", "json"):          # scan every written artifact, not just the html
+        path = result.get(key)
+        if path and Path(path).is_file():  # read what was actually written (defensive)
+            blobs.append(Path(path).read_text(encoding="utf-8"))
+    text = "\n".join(blobs).lower()
     for marker in _ANSWER_MARKERS:
         if marker in text:
             raise ValueError(
