@@ -1,5 +1,22 @@
 # SAMAGRA — Handoff
 
+> **▶▶▶▶▶▶▶▶▶ ✅ PHASE D1 (StyleSeed MOAT) BUILT subagent-driven TDD (10 tasks) + final opus review (READY-TO-MERGE, all 4 invariants HELD) + MERGED to `main` + PUSHED to `origin/main` 2026-06-25 (ff `df8c1ef..214597b`) — durable.**
+> The deterministic, read-only half of Phase D (StyleSeed/DEC-8) is shipped. New PURE package **`samagra/factory/style/`**:
+> - **`text.py`** — shared tokenizer + 4 frozen marker vocabularies shared across all 5 facets.
+> - **`extract.py`** — 5 deterministic facets over the 59 `content.json` chapters: **voice** · **sequencing** · **analogy** · **rigor** (from the real `section.flags[]` — `kind_mix [clarified 0.77, corrected 0.13, note 0.10]`) · **selection**; plus `load_corpus`/`build_profile`.
+> - **`profile.py`** — `StyleSeed` frozen dataclass + sha256 content/corpus hashing + versioned **git-committed JSON** (`styleseed/styleseed-v0.json`) + `extract_candidate` change-detect/version-bump.
+> - **`condition.py`** — `to_system_prompt` = the conditioning interface the future LLM lanes prompt-cache against.
+> - **`score.py`** — `style_fit` = the deterministic **advisory** scorer; structurally never auto-advances the gate (DEC-8 invariant, hard-coded).
+> - **Config:** `STYLESEED_DIR = REPO_ROOT/styleseed`; **CLI:** `samagra factory style-extract | style-show`.
+> - **v0 committed** (`styleseed/styleseed-v0.json`) — the real 59-chapter profile, proving the real `section.flags[]` are read.
+> - **4 forks ruled at brainstorm:** F-D1=B (moat + a first live LLM lane, not moat-only); F-D2=Samadhan (misconception brief, `claude-opus-4-8`); F-D3=C (git-committed JSON moat, owner accepts public-repo exposure); F-D4=opt-in (samadhan excluded from default textbook fan-out).
+> - **Invariants HELD (all 4):** no API key / no LLM (pure deterministic); no new prod write path (only `styleseed/*.json`; the 7 source subsystems stay read-only); DEC-8 advisory scorer never auto-advances the gate; no governance/`assignments` migration (`style_events` table is D2/D3). Publish gate untouched.
+> - **Gate: 384 pytest** (360 → 384; +25 style tests across 6 suites; 383 passing — lone red = pre-existing env `test_gdocs`).
+> - **Artifacts:** spec `docs/superpowers/specs/2026-06-24-samagra-content-factory-phase-d-design.md`; plan `docs/superpowers/plans/2026-06-25-samagra-content-factory-phase-d1-styleseed.md`; new code `samagra/factory/style/`; committed profile `styleseed/styleseed-v0.json`.
+> - **▶ NEXT: Phase D2 — Samadhan live LLM lane:** `samagra/clients/llm_client.py` (the ONE Anthropic call site, `claude-opus-4-8`, key from gitignored `.env`, never logged); `samagra/factory/samadhan.py` (generate → adversarial-review → advisory `style_fit` score → local-write, behind `_assert_review_clean` at the guarded `build()` boundary); samadhan is **opt-in only** (F-D4 — excluded from default textbook fan-out); mocked-LLM tests + opt-in live smoke; **dedicated DEC-7 Codex pre-merge review** of the compute/secret boundary. Then **D3** = `style_events` learning-loop scaffold + `factory style-ratify`.
+>
+> ---
+>
 > **▶▶▶▶▶▶▶▶ ⏸ PHASE D (StyleSeed, DEC-8) — SCOPED, then PAUSED by the Chairman (2026-06-24). No code shipped this session; HEAD stays at the Phase-C-complete `a19d382`.**
 > The session opened **Phase D = StyleSeed** (the durable style MOAT, DEC-8) and grounded the design. Asked to choose
 > the Phase-D scope — *moat-only (read-only)* vs *moat + a first live LLM generation lane* — the Chairman chose
