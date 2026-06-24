@@ -1,5 +1,39 @@
 # SAMAGRA — Handoff
 
+> **▶▶▶▶▶▶▶▶ ⏸ PHASE D (StyleSeed, DEC-8) — SCOPED, then PAUSED by the Chairman (2026-06-24). No code shipped this session; HEAD stays at the Phase-C-complete `a19d382`.**
+> The session opened **Phase D = StyleSeed** (the durable style MOAT, DEC-8) and grounded the design. Asked to choose
+> the Phase-D scope — *moat-only (read-only)* vs *moat + a first live LLM generation lane* — the Chairman chose
+> **"pause for now; keep the docs updated."** So Phase D is **deferred, not started**; this entry records the captured
+> decision + grounding so resuming is frictionless.
+> - **The captured gating fork (decide on resume):** **(A) moat-only** — ship the durable, versioned StyleSeed artifact
+>   (a 5-facet *deterministic* extraction from the 59 `content.json` chapters: voice · sequencing · analogy ·
+>   rigor-from-`flags[]` · selection priors), the conditioning interface a future LLM lane will read, a **deterministic
+>   advisory style-fit scorer** (surfaces on the board, **never** auto-advances the gate), and owner-ratified
+>   learning-loop scaffolding over `review_overlay`. NO API key, NO LLM call, NO new prod write path, deterministic
+>   tests. Gate = owner review of v0 StyleSeed. Matches spec §4 exactly. **(B) moat + first LLM lane** — also a
+>   synchronous net-new-prose lane calling an Anthropic model (`claude-*`) conditioned on the StyleSeed, behind the
+>   mandatory adversarial reviewer + the never-automated publish gate; adds API-key handling in a PUBLIC repo
+>   (gitignored `.env`/env var, never logged/committed), real per-call token cost, the LLM mocked in tests, and a
+>   dedicated Codex pre-merge review of the new compute/secret boundary.
+> - **Grounding done this session (so resume needs no re-discovery):** (1) **No prose-generation LLM client exists** in
+>   `samagra` today — the `anthropic|openai|claude` hits are all non-generative (the `org.py` roster text, the Codex
+>   *review* hook, a comment); Phase D is genuinely greenfield LLM territory. (2) The **dormant LLM seam exists**:
+>   `samagra/lectures/thin.py` is deterministic but documented "swap this for an LLM summarization pass without
+>   changing callers." (3) `review_overlay` lives in `samagra/governance/store.py` — the substrate for DEC-8's
+>   owner-ratified learning loop. (4) **Storage fork still open** (spec §3.4/§7): StyleSeed as a file under
+>   `state/style/` vs a `governance.db` table via the additive `_MIGRATIONS` hook — decide in the Phase-D plan. (5) Per
+>   the spec's own phasing, the **heavy async LLM lanes (NotebookLM audio/slides, image-gen figures) are Phase F**, not D.
+> - **DEC-8 invariants (unchanged, still binding once built):** StyleSeed is owner-curated + versioned + never reset;
+>   style-fit scoring is **advisory only**, hard-wired never to auto-advance the gate; the learning loop (mine
+>   `review_overlay` edit-diffs → profile-deltas) is **owner-ratified-only**; the single adversarial reviewer stays
+>   anchored only to external ground-truth.
+> - **Process when resumed:** the brainstorm context is grounded and the gating question was already asked; on a "go for
+>   Phase D" the next steps are: lock scope (A vs B) → `writing-plans` → subagent-driven TDD → live golden-thread smoke →
+>   adversarial multi-lens review → (if B) dedicated Codex pre-merge review → finish. Spec to extend:
+>   `docs/superpowers/specs/2026-06-23-samagra-content-factory-design.md` §3.4/§4.
+>
+> ---
+>
 > **▶▶▶▶▶▶▶ ✅ CONTENT FACTORY PHASE C — SUB-SLICE C3 (the `seed`/mcd lane — the BRIDGE FOLD) BUILT TDD + ADVERSARIAL-REVIEWED + DEC-7-CODEX-PRE-MERGE-REVIEWED + MERGED to `main` + PUSHED to `origin/main` (2026-06-24). PHASE C COMPLETE.**
 > The last of Phase C's three ratified sub-slices — and the one prod-write slice — is shipped. The munshi→mcd write
 > **folds into the factory** as the canonical **`seed` lane** (`Line.kind="mcd"`, source prefix `munshi:`).

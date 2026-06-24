@@ -13,6 +13,13 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "frontend", "run", "dev"],
       "port": 5173
+    },
+    {
+      "name": "samagra-check",
+      "runtimeExecutable": ".venv/Scripts/python.exe",
+      "runtimeArgs": ["-m", "uvicorn", "samagra.api.app:app", "--host", "127.0.0.1", "--port", "8790"],
+      "port": 8790,
+      "autoPort": false
     }
   ]
 }
