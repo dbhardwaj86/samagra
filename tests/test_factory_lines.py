@@ -1,8 +1,9 @@
 from samagra.factory import lines
 
 
-def test_textbook_seed_fans_to_revision_lecture_and_deck():
-    assert lines.classify("textbook:circular-motion") == ["revision", "lecture", "deck"]
+def test_textbook_seed_fans_to_five_content_lanes():
+    assert lines.classify("textbook:circular-motion") == [
+        "revision", "lecture", "deck", "paper", "drill"]
 
 
 def test_unknown_source_fans_to_nothing():
@@ -11,10 +12,9 @@ def test_unknown_source_fans_to_nothing():
 
 
 def test_registry_has_expected_output_labels():
-    assert lines.LINES["revision"].expected_output
-    assert lines.LINES["lecture"].expected_output
-    assert lines.LINES["deck"].expected_output
-    assert set(lines.LINES) == {"revision", "lecture", "deck"}
+    for key in ("revision", "lecture", "deck", "paper", "drill"):
+        assert lines.LINES[key].expected_output
+    assert set(lines.LINES) == {"revision", "lecture", "deck", "paper", "drill"}
 
 
 def test_deck_line_is_local_kind_and_textbook_sourced():
@@ -26,3 +26,11 @@ def test_deck_line_is_local_kind_and_textbook_sourced():
 def test_existing_lanes_default_to_local_kind():
     assert lines.LINES["revision"].kind == "local"
     assert lines.LINES["lecture"].kind == "local"
+
+
+def test_paper_and_drill_are_qx_kind_and_textbook_sourced():
+    for key in ("paper", "drill"):
+        ln = lines.LINES[key]
+        assert ln.kind == "qx"
+        assert ln.source_prefixes == ("textbook:",)
+        assert ln.variant == key      # the engine reads variant to size paper vs drill

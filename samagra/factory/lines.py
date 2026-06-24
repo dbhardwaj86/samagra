@@ -26,10 +26,14 @@ LINES: dict[str, Line] = {
                     "thick", ("textbook:",)),
     "deck": Line("deck", "Flashcard deck (equation/callout projection)",
                  "deck", ("textbook:",), "local"),
+    "paper": Line("paper", "Question paper (answer-safe)",
+                  "paper", ("textbook:",), "qx"),
+    "drill": Line("drill", "Adaptive drill set (answer-safe)",
+                  "drill", ("textbook:",), "qx"),
 }
 
 # Deterministic lane order so a seed always fans out the same way.
-_ORDER = ["revision", "lecture", "deck"]
+_ORDER = ["revision", "lecture", "deck", "paper", "drill"]
 
 
 def classify(seed_ref: str) -> list[str]:
