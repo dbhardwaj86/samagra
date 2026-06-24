@@ -1,5 +1,60 @@
 # SAMAGRA — Handoff
 
+> **▶▶▶▶▶▶▶ ✅ CONTENT FACTORY PHASE C — SUB-SLICE C3 (the `seed`/mcd lane — the BRIDGE FOLD) BUILT TDD + ADVERSARIAL-REVIEWED + DEC-7-CODEX-PRE-MERGE-REVIEWED + MERGED to `main` + PUSHED to `origin/main` (2026-06-24). PHASE C COMPLETE.**
+> The last of Phase C's three ratified sub-slices — and the one prod-write slice — is shipped. The munshi→mcd write
+> **folds into the factory** as the canonical **`seed` lane** (`Line.kind="mcd"`, source prefix `munshi:`).
+> - **The write boundary:** new PURE **`samagra/factory/seed_payload.py`** is the relocated canonical home for
+>   `SEED_TYPES` / `build_seed_payload` / `validate_seed_payload` (`bridge/seed_payload.py` is now a re-export shim).
+>   **`dispatch.run_seed(payload)`** is the ONE prod write: `validate_seed_payload` → `McdClient.create_seed` → assert a
+>   seed id → return `artifact_ref="mcd:<seed_id>"`. `dispatch.run_line` **refuses** `kind=="mcd"` (defense in depth —
+>   the mcd path never renders a slug).
+> - **`factory.run`** grows **`scan()`** (the folded `bridge.scan` — proposes the seed lane for every content-classified
+>   munshi item, read-only, never writes a seed), **`plan("munshi:<id>")`** (single-item proposal), and a **`build()`
+>   mcd branch**: load the proposed payload from the assignment's `product_proposed` note + `validate_seed_payload`
+>   **BEFORE** recording the `product_building` intent (**anti-wedge** — a structurally-bad payload refuses cleanly,
+>   leaving the assignment `approved`/retryable, never wedged in-flight), then `run_seed`, `product_created`
+>   (`subsystem_ref`=the seed id), flip → terminal `captured`. **`build()`'s five crash-safety guards are written ONCE
+>   and shared across every lane kind** — only the produce/validate step branches.
+> - **classify:** `munshi:<id>` → `[seed]`; **textbook still → `[revision, lecture, deck, paper, drill]`** (the seed lane
+>   is excluded by its `munshi:` prefix — a chapter is NEVER written to mcd).
+> - **F-C2 bridge fold (one path):** `samagra bridge {scan,approve,submit}` are now thin **deprecating delegators** (a
+>   one-line stderr notice + forward to the factory; `submit → factory.build`). The bridge's own `create_seed` write is
+>   **RETIRED** ⇒ the factory `seed` lane is the **only assignment-driven mcd writer**. (Precise nuance, confirmed by the
+>   review: the pre-existing **DEC-3 owner-capture web endpoint** `POST /api/mcd/seeds` remains the separate sanctioned
+>   human-UI capture path, untouched by C3 — so F-C2's "one path" means one *agent/CLI* path.) New CLI verb
+>   **`samagra factory scan`**.
+> - **Golden thread PROVEN LIVE** (`scripts/c3_smoke.py`, isolated temp governance store; REAL munshi + REAL mcd):
+>   `factory scan` found 11 real content proposals → built **`munshi:52` → real seed `seed_01KVWDS8NTEV1C0NVN7T6EN79W`**,
+>   captured, exactly one `product_created`; durable `governance.db` untouched.
+> - **Adversarial final review (10-agent Workflow, 4 lenses — prod-write-safety / firewall-one-path / migration-regression
+>   / correctness-edge — each finding independently verified; run `wf_eeac9f1a-4e6`):** 6 raw → **1 confirmed (MEDIUM),
+>   5 refuted.** The MEDIUM: `cmd_bridge`'s scan CLI print still used the OLD bridge proposal shape `p['item']['uid']`,
+>   but the folded `factory.scan` returns `seed_ref` — so `samagra bridge scan` would `KeyError: 'item'` on any real
+>   proposal (masked because the CLI tests returned `[]`) → **FIXED** (`p['seed_ref']`) + a regression test with a
+>   realistic proposal. The 5 refuted included the web-endpoint "second caller" (the sanctioned DEC-3 path — not a defect)
+>   and legacy `mycontentdev` assignments now being firewall-refused (a SAFE fail — see note below).
+> - **DEC-7 dedicated Codex pre-merge review** (`docs/codex-reviews/26-factory-phase-c3-seed-fold-premerge.report.md`) =
+>   **GO-WITH-CAVEATS** (0 HIGH, 0 MEDIUM, 1 LOW). The boundary passed all 9 invariant checks. LOW **F1**:
+>   `_load_proposed_payload` could surface a downstream `AttributeError` in `validate_seed_payload` on a note whose
+>   `payload` value is a non-dict → **FIXED** (return the payload only if the note is a dict carrying a dict payload, else
+>   `None` → a clean refusal) + a 6-case parametrized regression → **effectively GO**.
+> - **Invariants HELD:** exactly one (assignment-driven) mcd write path; no double-write / in-flight-safe / no-write-without-approve;
+>   `validate_seed_payload` gates every write; no textbook→mcd; **NO new prod write *mechanism*** (the existing `create_seed`
+>   capture contract) · **NO migration** (reuses `assignments` cols + `product_*` verbs) · publish gate untouched ·
+>   read-only firewall intact · no secrets.
+> - **Gate: 360 pytest** (341 → 360; lone red = the pre-existing environmental `test_gdocs`, Google API libs missing —
+>   factory-independent).
+> - ⚠ **OWNER FOLLOW-UPS:** (1) **archive the prod test seed `seed_01KVWDS8NTEV1C0NVN7T6EN79W`** (from `munshi:52`, created
+>   by the C3 live smoke) in the mycontentdev UI — joins the Phase-3 cleanup of `munshi:55`/its seed. (2) Any pre-C3
+>   **non-terminal** legacy `pipeline="mycontentdev"` assignment in the durable `governance.db` is now firewall-refused by
+>   the factory (a safe, deliberate fail — the one real such row is already terminal `captured`); reconcile any future one
+>   by re-planning under the `seed` lane (`samagra factory scan` / `plan munshi:<id>`). No code change warranted.
+> - **Artifacts:** spec `docs/superpowers/specs/2026-06-23-samagra-content-factory-phase-c-design.md` (§3.3/§5/§6); plan
+>   `docs/superpowers/plans/2026-06-24-samagra-content-factory-phase-c3-seed-fold.md`; new code
+>   `samagra/factory/seed_payload.py` + `dispatch.run_seed` + `factory.run` scan/plan/build mcd branch; bridge delegators
+>   `samagra/bridge/run.py`; tests `tests/test_factory_seed.py` + `tests/test_factory_seed_payload.py`; smoke
+>   `scripts/c3_smoke.py`; review `docs/codex-reviews/26-...`.
+
 > **▶▶▶▶▶▶▶ ✅ CONTENT FACTORY PHASE C — SUB-SLICE C2 (the `paper` / Pariksha + `drill` / Abhyaas lanes) BUILT TDD + ADVERSARIAL-REVIEWED + MERGED to `main` + PUSHED to `origin/main` (2026-06-24, ff `78cf72a`).**
 > The second of Phase C's three ratified sub-slices is shipped. New PURE engine **`samagra/factory/paper.py`** —
 > `build_paper(slug, *, variant)` reads the **read-only** QX engine's `/api/qsearch` (question-only render: stem /

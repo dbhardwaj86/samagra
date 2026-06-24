@@ -91,8 +91,35 @@
 > the `drill` e2e path, assert the drill cap on-disk); 2 findings correctly refuted. **6 load-bearing invariants HELD**
 > (no new prod write · read-only firewall · publish gate · 5 guards · no migration · no secrets). Gate **341 pytest**
 > (340 green; lone red = pre-existing env `test_gdocs`). Plan
-> `docs/superpowers/plans/2026-06-24-samagra-content-factory-phase-c2-paper-drill.md`. **Next: Phase C3** (`seed`/mcd
-> **bridge-fold** — the one prod-write path, with a dedicated DEC-7 Codex pre-merge review).
+> `docs/superpowers/plans/2026-06-24-samagra-content-factory-phase-c2-paper-drill.md`. **Phase C3 SHIPPED (below).**
+>
+> **✅ PHASE C3 (`seed`/mcd lane — the BRIDGE FOLD) BUILT TDD + adversarial-multi-lens-reviewed + DEC-7-Codex-pre-merge-
+> reviewed + MERGED to `main` + PUSHED to `origin/main` 2026-06-24**: the munshi→mcd write FOLDS into the factory as the
+> canonical `seed` lane (`Line.kind="mcd"`, prefix `munshi:`). New PURE `samagra/factory/seed_payload.py` (relocated
+> canonical home; `bridge/seed_payload.py` = re-export shim) + `dispatch.run_seed(payload)` = the ONE prod write
+> (`validate_seed_payload` → `McdClient.create_seed` → assert id → `artifact_ref="mcd:<seed_id>"`); `run_line` refuses
+> `kind=="mcd"`. `factory.run` grows `scan()` (the folded `bridge.scan` over munshi content items), `plan("munshi:<id>")`,
+> and a `build()` **mcd branch**: load proposed payload + `validate_seed_payload` **BEFORE** recording the
+> `product_building` intent (**anti-wedge** — a structurally-bad payload refuses without wedging the assignment in-flight),
+> then `run_seed`, `product_created` (`subsystem_ref`=seed id), flip → terminal `captured`. **`build()`'s 5 crash-safety
+> guards are written ONCE + shared across every lane kind** (only the produce/validate step branches). `classify("munshi:<id>")
+> → [seed]`; **textbook still fans to the 5 content lanes** (seed excluded by the `munshi:` prefix). **F-C2 bridge fold:**
+> `samagra bridge {scan,approve,submit}` are now thin **deprecating delegators** (stderr notice + forward; `submit →
+> factory.build`); the bridge's own `create_seed` write is **RETIRED** ⇒ the factory seed lane is the **only
+> assignment-driven mcd writer** (the pre-existing **DEC-3 owner-capture web endpoint** `POST /api/mcd/seeds` remains the
+> separate sanctioned UI path — untouched by C3; F-C2's "one path" = one agent/CLI path). New CLI `samagra factory scan`.
+> **NO new prod write *mechanism*** (reuses the existing `create_seed` capture contract) · **no migration** (reuses
+> `assignments` cols + `product_*` verbs) · **publish gate untouched** · **read-only firewall intact**. Golden thread
+> **PROVEN LIVE** (real `munshi:52` → real seed `seed_01KVWDS8NTEV1C0NVN7T6EN79W`, captured; durable `governance.db`
+> untouched). ⚠ **OWNER CLEANUP:** archive that prod test seed `seed_01KVWDS8NTEV1C0NVN7T6EN79W`. **Adversarial final
+> review** (10-agent Workflow, 4 lenses × independent verify; run `wf_eeac9f1a-4e6`): 6 raw → **1 confirmed (MED), 5
+> refuted** — the MED: `cmd_bridge` scan CLI print used the stale `p['item']['uid']` key the folded `factory.scan` no
+> longer emits (KeyError on a real proposal, masked by tests returning `[]`) → **FIXED** (`seed_ref`) + regression. **DEC-7
+> dedicated Codex pre-merge review (`docs/codex-reviews/26`) = GO-WITH-CAVEATS** (0 HIGH/MED; 1 LOW F1: `_load_proposed_payload`
+> could surface a downstream `AttributeError` on a non-dict note payload) → **FIXED** (return only a dict payload, else
+> `None`) + 6-case regression → **effectively GO**. Gate **360 pytest** (359 green; lone red = pre-existing env
+> `test_gdocs`). Plan `docs/superpowers/plans/2026-06-24-samagra-content-factory-phase-c3-seed-fold.md`. **PHASE C COMPLETE**
+> (C1 deck · C2 paper/drill · C3 seed-fold) — exactly ONE prod-write path, behind the never-automated publish gate.
 >
 > **✅ Direction-coherence decision (ratified 2026-06-21 by Deepak; amended by DEC-6 on 2026-06-22):** a coherence
 > audit found execution solid but the strategic direction drifting — "SAMAGRA OS" had re-introduced the OS-sized
