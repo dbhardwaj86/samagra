@@ -96,6 +96,10 @@ GOVERNANCE_DB = REPO_ROOT / "governance.db"
 STATE_DIR = REPO_ROOT / "state"
 BUILD_DIR = REPO_ROOT / "build"
 EXPORT_DIR = BUILD_DIR / "lectures"
+# StyleSeed (Phase D): durable, owner-curated, git-COMMITTED style profile(s).
+# Unlike state/ (rebuildable) this is version-controlled — git is the review/
+# approval surface (fork F-D3). One file per version: styleseed-v<N>.json.
+STYLESEED_DIR = REPO_ROOT / "styleseed"
 
 # --- portal ---
 HOST = os.environ.get("SAMAGRA_HOST", "127.0.0.1")
