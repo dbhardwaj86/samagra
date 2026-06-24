@@ -121,20 +121,46 @@
 > `test_gdocs`). Plan `docs/superpowers/plans/2026-06-24-samagra-content-factory-phase-c3-seed-fold.md`. **PHASE C COMPLETE**
 > (C1 deck · C2 paper/drill · C3 seed-fold) — exactly ONE prod-write path, behind the never-automated publish gate.
 >
-> **⏸ PHASE D (StyleSeed, DEC-8) — SCOPED, then PAUSED by the Chairman 2026-06-24 ("pause for now; keep the docs
-> updated"). Deferred, not started; HEAD stays at Phase-C-complete `a19d382`, no code shipped.** Phase D = the durable
-> style MOAT: read-only extraction of a versioned 5-facet voice profile (voice · sequencing · analogy ·
-> rigor-from-`flags[]` · selection priors) from the 59 `content.json` chapters, a conditioning interface for LLM lanes,
-> a **deterministic advisory style-fit scorer** (never auto-advances the gate), and an owner-ratified learning loop over
-> `review_overlay`. **Captured gating fork to decide on resume: (A) moat-only** (read-only; no API key/LLM call; no new
-> prod write path; deterministic tests; matches spec §4) **vs (B) moat + a first live LLM prose lane** (`claude-*`
-> conditioned on the StyleSeed, behind the adversarial reviewer — adds API-key handling in this PUBLIC repo (gitignored
-> `.env`, never logged), token cost, mocked-LLM tests, a dedicated Codex pre-merge review). **Grounding (so resume needs
-> no re-discovery):** no prose-generation LLM client exists yet (the `anthropic|openai|claude` hits are non-generative);
-> the dormant LLM seam is `lectures/thin.py`; the learning-loop substrate is `review_overlay` in `governance/store.py`;
-> the StyleSeed storage fork (file under `state/style/` vs a `governance.db` table via the `_MIGRATIONS` hook) is still
-> open (spec §3.4/§7); the heavy async LLM lanes (NotebookLM/image-gen) are **Phase F**, not D. **DEC-8 invariants
-> unchanged.** Spec to extend: `docs/superpowers/specs/2026-06-23-samagra-content-factory-design.md` §3.4/§4.
+> **✅ PHASE D RESUMED 2026-06-25 on the user's "go for phase D" (the gate the prior pause required); 4 forks ruled —
+> F-D1=(B) moat + a first live LLM lane · F-D2=Samadhan misconception brief (the lane) · F-D3=(C) git-committed JSON moat
+> (owner accepts public-repo exposure) · F-D4=samadhan opt-in (excluded from the default textbook fan-out).** Phase D =
+> the durable style MOAT + a first generative lane: a versioned 5-facet voice profile (voice · sequencing · analogy ·
+> rigor-from-`flags[]` · selection priors) from the 59 `content.json` chapters, a conditioning interface for the LLM
+> lanes, a **deterministic advisory style-fit scorer** (never auto-advances the gate), and an owner-ratified learning
+> loop over `review_overlay`. Spec `docs/superpowers/specs/2026-06-24-samagra-content-factory-phase-d-design.md`
+> (extends the umbrella spec §3.4/§4).
+>
+> **✅ PHASE D1 (the StyleSeed MOAT — the deterministic, no-API-key half) BUILT subagent-driven TDD (10 tasks, fresh
+> implementer + spec+quality review each) + final-opus-review (READY-TO-MERGE, all 4 invariants HELD) + MERGED to `main`
+> + PUSHED to `origin/main` 2026-06-25** (ff `df8c1ef..214597b`; durable): new PURE package `samagra/factory/style/` —
+> `text.py` (single-source tokenizer + 4 frozen marker vocabularies) · `extract.py` (5 deterministic facets over the 59
+> chapters: voice/sequencing/analogy/**rigor-from-`section.flags[]`**/selection + `load_corpus`/`build_profile`) ·
+> `profile.py` (`StyleSeed` frozen dataclass + sha256 content/corpus hash + versioned git-committed JSON +
+> `extract_candidate` change-detect; `created_at` excluded from the hash ⇒ idempotent re-runs) · `condition.py`
+> (`to_system_prompt` = the conditioning interface the LLM lanes prompt-cache; embeds `<facets>` JSON) · `score.py`
+> (`style_fit` deterministic **ADVISORY** scorer — structurally never gates, DEC-8). `config.STYLESEED_DIR =
+> REPO_ROOT/styleseed` (fork C: git-committed = the review surface). CLI **`samagra factory style-extract|style-show`**.
+> **v0 committed** (`styleseed/styleseed-v0.json`): real 59-chapter profile (rigor.kind_mix `[clarified 0.77, corrected
+> 0.13, note 0.10]` proves the real `section.flags[]` are read). **Invariants HELD:** no API key/no LLM (pure
+> deterministic) · no new prod write path (only the local `styleseed/*.json`; the 7 subsystems stay read-only) · the
+> advisory scorer never auto-advances the gate · **NO governance/`assignments` migration** (the `style_events` table is
+> D2/D3). Gate **384 pytest green** (25 new style tests; lone red = pre-existing env `test_gdocs`). Plan
+> `docs/superpowers/plans/2026-06-25-samagra-content-factory-phase-d1-styleseed.md`. ⚠ **Process learning:** a review
+> subagent's git inspection left HEAD detached mid-run → Tasks 8/9/tidy/v0 committed off-branch; caught by `git merge
+> --ff-only`'s "leaving N commits behind" warning and recovered to the true tip — **after subagent-driven git work,
+> verify the branch ref is at the true HEAD before merging.**
+>
+> **▶ PHASE D2 (next) = the Samadhan live LLM lane** (gets its own grounded plan): `samagra/clients/llm_client.py` = the
+> ONE Anthropic call site (`claude-opus-4-8`, adaptive thinking, structured output, the StyleSeed system block
+> prompt-cached, **API key from gitignored `.env` — never logged; missing-key raises BEFORE build intent = anti-wedge**;
+> dependency-injected/mockable) + `samagra/factory/samadhan.py` (`build_samadhan(slug)`: condition on the StyleSeed →
+> generate → **adversarial reviewer anchored ONLY to the chapter ground-truth, refute-framed** → advisory style-score →
+> local write; clean→`captured`, any unresolved error→`changes` via the new `_assert_review_clean` capture gate) +
+> `Line.kind="llm"`/`auto_fan` wiring. **Needs mocked-LLM tests + an opt-in live smoke + a dedicated DEC-7 Codex
+> pre-merge review of the generation boundary.** Then **PHASE D3 = the `style_events` learning-loop scaffold**
+> (`_MIGRATIONS[2]` table + `learn.py` mining `review_overlay` → candidate deltas + `factory style-ratify`,
+> owner-ratified-only). The heavy async LLM lanes (NotebookLM/image-gen) remain **Phase F**, not D. **DEC-8 invariants
+> unchanged.**
 >
 > **✅ Direction-coherence decision (ratified 2026-06-21 by Deepak; amended by DEC-6 on 2026-06-22):** a coherence
 > audit found execution solid but the strategic direction drifting — "SAMAGRA OS" had re-introduced the OS-sized
@@ -174,8 +200,8 @@
 
 <!-- scribe:begin v1 -->
 ## TeachingOS memory — auto-generated by scribe; edit OUTSIDE this block only
-_Updated 2026-06-24T17:12. Source: agent session distillation._
-- (5) 2026-06-24 claude: User Deepak Bhardwaj (Founder & Chairman of SAMAGRA) approved a 'content-factory pivot' converting the SAMAGRA package from a read-only console into a style-conditioned multi-output content factory for JEE/NEET physics. [content-factory pivot, SAMAGRA, TeachingOS, JEE, NEET]
+_Updated 2026-06-24T18:42. Source: agent session distillation._
+- (5) 2026-06-24 claude: SAMAGRA (TeachingOS project) is implementing a content-factory pivot to generate multi-output physics content for JEE/NEET, moving beyond a read-only console. [SAMAGRA, TeachingOS, content factory, JEE/NEET physics]
 - (5) 2026-06-24 codex: Core logic matches design spec docs/superp; no fundamental issues. [design, validation]
 - (5) 2026-06-23 codex: Remediation commit 91baeeb resolves H1 (high severity) and M1 (medium severity) completely. [remediation, severity]
 - (5) 2026-06-23 claude: Phase 3 scope is backend bridge + CLI, defined during brainstorming. [Phase 3, backend bridge, CLI, SAMAGRA]
@@ -198,7 +224,10 @@ _Updated 2026-06-24T17:12. Source: agent session distillation._
 - (5) 2026-06-19 claude: Produced 10 concrete suggestions for improving the future vision direction based on the current intent. [suggestions, vision direction]
 - (5) 2026-06-18 claude: The final plan was recorded using `cbm record-plan docs/superpowers/plans/2026-06-19-samagra-evolution.md --title 'SAMAGRA Evolution'`. [cbm, record-plan, plan storage]
 - (5) 2026-06-18 claude: TeachingOS is designed to automate the creation of JEE/NEET physics educational content from handwritten notes to multiple output formats including lectures, booklets, and question banks. [TeachingOS, JEE/NEET, content pipeline]
-- (4) 2026-06-24 claude: The development is split into phases: Phase C1 (deck generation), Phase C2, and Phase C3, each implemented using subagent-driven development with the writing-plans skill. [phase C1, phase C2, phase C3, subagent-driven development, writing-plans]
+- (4) 2026-06-24 claude: The project is TeachingOS and has entered Phase D. [TeachingOS, Phase D]
+- (4) 2026-06-24 claude: User Deepak Bhardwaj explicitly requested proceeding with Phase C3 after completing C1 and C2. [Phase C3, user request]
+- (4) 2026-06-24 claude: Development workflow uses superpower skills: brainstorming, writing-plans, subagent-driven-development, and finishing-a-development-branch. [superpowers, writing-plans, subagent-driven, brainstorming]
+- (4) 2026-06-24 claude: The goal is to cross-link existing lectures and tools to create a catalogued, indexed, categorized content system for physics. [cross-linking, content catalog, physics lectures]
 - (4) 2026-06-24 codex: Missing exception handling in bridge fold: raise on invalid input instead of silent failure. [exception handling, bridge]
 - (4) 2026-06-23 codex: No new critical issues introduced by remediation; code maintains existing test coverage. [regression, test coverage]
 - (4) 2026-06-23 codex: The review inspected the diff from commit bb88bd8 to 69cfd51 on the feature/content-factory-phase1 branch. [git diff, code review]
@@ -207,8 +236,5 @@ _Updated 2026-06-24T17:12. Source: agent session distillation._
 - (4) 2026-06-23 claude: Final step: review then merge branch, serve on localhost for checks. [merge, review, localhost, verification]
 - (4) 2026-06-22 claude: Use 'cbm snap pre' (or full path) before commit to take snapshot and auto-enroll in cbm registry. [cbm, snapshot]
 - (4) 2026-06-22 claude: Post-audit hardening passed all tests: 229 pytest, 559 vitest. [tests, hardening]
-- (4) 2026-06-22 claude: Completed adversarial code review and codex analysis of TeachingOS codebase. [code review, adversarial review]
-- (4) 2026-06-22 claude: User created an application deployment policy for SAMAGRA OS. [SAMAGRA OS, deployment policy]
-- (4) 2026-06-22 claude: User created an access policy for SAMAGRA OS. [SAMAGRA OS, access policy]
 Deep recall: C:\SandBox\claude_box\memboxes\scribe\bin\scribe.cmd q "<topic>"
 <!-- scribe:end -->
