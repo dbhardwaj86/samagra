@@ -154,6 +154,44 @@ def test_build_refuses_in_flight(factory_env, monkeypatch):
     with pytest.raises(ValueError):
         run.build(a["assignment_id"])
 
+
+def test_mcd_build_failure_keeps_failsafe_wedge_no_rollback(factory_env, monkeypatch):
+    """DEC-7 re-review caveat: the mcd lane's produce is the ONE external prod write,
+    so a crash must KEEP the fail-safe in-flight wedge (manual reconcile) — it must
+    NOT roll back like the local-write lanes (no `product_build_failed`, retry
+    refused), or a retry could double-write a seed (Phase 3 review 22 hazard)."""
+    import json as _json
+
+    class _Boom:
+        def create_seed(self, body):
+            raise RuntimeError("mcd POST failed mid-write")
+    monkeypatch.setattr("samagra.factory.dispatch.McdClient", lambda: _Boom())
+    conn = store.connect()
+    try:
+        store.add_assignment(conn, id="s1", agent=run._AGENT, outbox_path="x",
+                             pipeline="seed", seed_ref="munshi:1")
+        store.set_assignment_status(conn, "s1", "in-review")
+        store.set_assignment_status(conn, "s1", "approved")
+        store.append_event(
+            conn, actor="system", verb="product_proposed", assignment_id="s1",
+            subsystem="factory", subsystem_ref="munshi:1",
+            note=_json.dumps({"line": "seed",
+                              "payload": {"type": "question", "raw_text": "Find a.",
+                                          "source_ref": "munshi:1"}}))
+    finally:
+        conn.close()
+    with pytest.raises(RuntimeError):
+        run.build("s1")
+    conn = store.connect()
+    try:
+        verbs = [e["verb"] for e in store.list_events_for_assignment(conn, "s1")]
+    finally:
+        conn.close()
+    assert "product_build_failed" not in verbs            # mcd is NOT rolled back
+    assert "product_building" in verbs and "product_created" not in verbs
+    with pytest.raises(ValueError):                        # retry refused (wedge holds)
+        run.build("s1")
+
 def test_build_validates_output(factory_env, monkeypatch):
     def empty_export(slug, variant, **kw):
         out = factory_env / f"{slug}-{variant}.html"; out.write_text("", encoding="utf-8")

@@ -84,6 +84,17 @@ def test_missing_verdict_defaults_to_error_failclosed(styleseed, export, fake_ch
     assert res["items"] == 2 and res["errors"] == 1
 
 
+def test_misindexed_verdict_clears_no_item(styleseed, export, fake_chapter):
+    # DEC-7 re-review caveat: a verdict whose idx matches no item must clear NOTHING
+    # (both items stay unreviewed -> fail-closed -> errors==2), so a mis-indexed
+    # reviewer response can't smuggle an unreviewed item to `captured`.
+    client = FakeLLM(items=[{"concept": "a", "misconception": "m", "correction": "k", "why": "w"},
+                            {"concept": "b", "misconception": "m2", "correction": "k2", "why": "w2"}],
+                     verdicts=[{"idx": 99, "verdict": "ok", "rationale": "stray"}])
+    res = samadhan.build_samadhan("x", client=client)
+    assert res["items"] == 2 and res["errors"] == 2
+
+
 def test_html_escapes_untrusted_text_but_json_keeps_raw(styleseed, export, fake_chapter):
     client = FakeLLM(items=[{"concept": "Gauss", "misconception": "E(r<R) & B>0 always",
                              "correction": "for r<R the field is 0",
