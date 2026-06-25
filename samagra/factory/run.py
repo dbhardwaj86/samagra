@@ -271,12 +271,23 @@ def _has_event(conn, assignment_id: str, verb: str) -> bool:
 
 
 def _build_in_flight(conn, assignment_id: str) -> bool:
-    """A prior build recorded 'product_building' but no matching 'product_created'
-    — it crashed in its write window. Refuse rather than re-produce (guard 3).
-    Assignment-scoped + unbounded (review 24 L1)."""
-    verbs = [e.get("verb")
-             for e in store.list_events_for_assignment(conn, assignment_id)]
-    return "product_building" in verbs and "product_created" not in verbs
+    """A prior build recorded 'product_building' with neither a matching
+    'product_created' (success) nor a 'product_build_failed' (a rolled-back
+    local-write failure) — it crashed inside its write window. Refuse rather than
+    re-produce (guard 3). A 'product_build_failed' reconciles one 'product_building'
+    so a transient LOCAL-write-lane failure (e.g. an LLM 502) is RETRYABLE, not a
+    permanent wedge (DEC-7 remediation); the mcd lane never emits it, so its
+    fail-safe wedge is unchanged. Assignment-scoped + unbounded (review 24 L1)."""
+    building = created = failed = 0
+    for e in store.list_events_for_assignment(conn, assignment_id):
+        v = e.get("verb")
+        if v == "product_building":
+            building += 1
+        elif v == "product_created":
+            created += 1
+        elif v == "product_build_failed":
+            failed += 1
+    return building > created + failed
 
 
 def build(assignment_id: str) -> dict:
@@ -326,25 +337,43 @@ def build(assignment_id: str) -> dict:
                            subsystem_ref=seed_ref, note="build intent before produce")
         # Produce + validate (KIND-AWARE — the five guards above are identical for
         # every kind; only this produce/validate step differs):
-        if spec.kind == "mcd":
-            result = dispatch.run_seed(payload)          # the ONE mcd prod write (+ id-check)
-            artifact_ref = result["artifact_ref"]        # "mcd:<seed_id>"
-            subsystem_ref = result["seed_id"]
-        else:
-            result = dispatch.run_line(line, seed_ref.split(":", 1)[-1])
-            dispatch.validate_product(line, result)      # guard 4: exists/non-empty (+answer-leak)
-            artifact_ref = result["html"]
-            subsystem_ref = artifact_ref
+        try:
+            if spec.kind == "mcd":
+                result = dispatch.run_seed(payload)          # the ONE mcd prod write (+ id-check)
+                artifact_ref = result["artifact_ref"]        # "mcd:<seed_id>"
+                subsystem_ref = result["seed_id"]
+            else:
+                result = dispatch.run_line(line, seed_ref.split(":", 1)[-1])
+                dispatch.validate_product(line, result)      # guard 4: exists/non-empty (+answer-leak/review)
+                artifact_ref = result["html"]
+                subsystem_ref = artifact_ref
+        except Exception:
+            # A LOCAL-write lane (local/qx/llm) commits NO external state in its
+            # produce step (only a local file, safe to overwrite on retry), so a
+            # transient produce failure ROLLS BACK the in-flight intent -> the
+            # assignment is retryable, not permanently wedged (DEC-7 D2 HIGH). The
+            # mcd lane is the deliberate exception: its produce is the ONE external
+            # prod write, which MAY have committed before a crash, so it KEEPS the
+            # fail-safe in-flight wedge (manual reconcile) — we do NOT roll it back.
+            if spec.kind != "mcd":
+                store.append_event(
+                    conn, actor=_AGENT, verb="product_build_failed",
+                    assignment_id=assignment_id, subsystem="factory",
+                    subsystem_ref=seed_ref,
+                    note="produce failed before product_created; in-flight intent rolled back")
+            raise
         store.append_event(conn, actor=_AGENT, verb="product_created",
                            assignment_id=assignment_id, subsystem="factory",
                            subsystem_ref=subsystem_ref,
                            note=json.dumps({"line": line, "artifact": result},
                                            ensure_ascii=False))
         # Terminal status (guard 5, single write): an llm brief with an unresolved
-        # reviewer error lands in 'changes' (owner review) — never a silent capture;
-        # every deterministic/mcd lane and a clean brief -> terminal 'captured'.
-        status = "changes" if (spec.kind == "llm" and result.get("errors", 0) > 0) \
-            else "captured"
+        # reviewer error OR a degenerate empty brief (no items) lands in 'changes'
+        # (owner review) — never a silent capture; every deterministic/mcd lane and a
+        # clean, non-empty brief -> terminal 'captured'.
+        needs_review = spec.kind == "llm" and (
+            result.get("errors", 0) > 0 or result.get("items", 0) == 0)
+        status = "changes" if needs_review else "captured"
         store.set_assignment_status(conn, assignment_id, status)
         return {"assignment_id": assignment_id, "line": line,
                 "artifact_ref": artifact_ref, "status": status}

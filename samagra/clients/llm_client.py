@@ -86,14 +86,27 @@ def configured() -> bool:
 
 
 def _extract_json(response) -> dict:
-    """Pull the JSON object out of a Messages response's text blocks."""
+    """Pull the JSON object out of a Messages response's text blocks. Raises a
+    concise RuntimeError — never echoing the content / prompt / key — on a
+    refusal, an empty/blocked response, or a non-JSON / truncated body, so the
+    lane surfaces a clean error instead of an opaque crash (DEC-7 remediation)."""
+    stop = getattr(response, "stop_reason", None)
+    if stop == "refusal":
+        raise RuntimeError("LLM declined the request (stop_reason=refusal)")
     parts = []
     for block in getattr(response, "content", None) or []:
         text = getattr(block, "text", None)
         if text:
             parts.append(text)
     raw = "".join(parts).strip()
-    return json.loads(raw)
+    if not raw:
+        raise RuntimeError(f"LLM returned no text content (stop_reason={stop!r})")
+    try:
+        return json.loads(raw)
+    except ValueError as e:                 # JSONDecodeError is a ValueError subclass
+        raise RuntimeError(
+            f"LLM response was not valid JSON (stop_reason={stop!r}, "
+            f"chars={len(raw)})") from e
 
 
 class LLMClient:
@@ -117,8 +130,7 @@ class LLMClient:
             thinking={"type": "adaptive"},
             system=[{"type": "text", "text": system_text,
                      "cache_control": {"type": "ephemeral"}}],
-            output_config={"format": {"type": "json_schema", "name": "out",
-                                      "schema": schema}},
+            output_config={"format": {"type": "json_schema", "schema": schema}},
             messages=[{"role": "user", "content": user_text}],
         )
 

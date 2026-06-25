@@ -118,3 +118,57 @@ def test_missing_key_refuses_before_intent_no_wedge(env, monkeypatch):
     finally:
         c.close()
     assert "product_building" not in verbs and a["status"] == "approved"
+
+
+# --- DEC-7 remediation: the LLM produce window must not permanently wedge ----
+class BoomLLM:
+    def generate_samadhan(self, chapter, *, system):
+        raise RuntimeError("transient 502 from the model")
+    def review_samadhan(self, items, chapter):
+        return {"verdicts": []}
+
+
+class EmptyLLM:
+    def generate_samadhan(self, chapter, *, system):
+        return {"items": []}
+    def review_samadhan(self, items, chapter):
+        return {"verdicts": []}
+
+
+def test_llm_produce_failure_rolls_back_and_is_retryable(env, monkeypatch):
+    # A post-intent LLM failure must ROLL BACK the in-flight intent (local-write
+    # lane: nothing external committed), leaving the assignment retryable — not
+    # permanently wedged (the DEC-7 HIGH).
+    monkeypatch.setattr(samadhan.llm_client, "LLMClient", lambda: BoomLLM())
+    props = run.plan("textbook:circular-motion", dry=False, lane="samadhan")
+    run.approve_seed("textbook:circular-motion")
+    aid = props[0]["assignment_id"]
+    with pytest.raises(RuntimeError):
+        run.build(aid)
+    c = store.connect()
+    try:
+        a = [x for x in store.list_assignments(c) if x["id"] == aid][0]
+        verbs = [e["verb"] for e in store.list_events_for_assignment(c, aid)]
+    finally:
+        c.close()
+    assert a["status"] == "approved"                       # not wedged
+    assert "product_build_failed" in verbs and "product_created" not in verbs
+    # retry with a working client -> succeeds and captures (no manual reconcile)
+    monkeypatch.setattr(samadhan.llm_client, "LLMClient",
+                        lambda: FakeLLM([{"idx": 0, "verdict": "ok", "rationale": "r"}]))
+    res = run.build(aid)
+    assert res["status"] == "captured"
+
+
+def test_empty_brief_lands_in_changes_not_wedge(env, monkeypatch):
+    # An empty generation (no items) is a degenerate brief: route to `changes`
+    # (owner review), never silent capture and never a wedge.
+    monkeypatch.setattr(samadhan.llm_client, "LLMClient", lambda: EmptyLLM())
+    res = _approve_and_build("textbook:circular-motion")
+    assert res["status"] == "changes"
+    c = store.connect()
+    try:
+        verbs = [e["verb"] for e in store.list_events_for_assignment(c, res["assignment_id"])]
+    finally:
+        c.close()
+    assert "product_created" in verbs

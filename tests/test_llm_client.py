@@ -67,3 +67,38 @@ def test_review_samadhan_uses_groundtruth_only_system(monkeypatch):
     sys_text = sdk.messages.calls[0]["system"][0]["text"].lower()
     assert "refute" in sys_text or "ground" in sys_text
     assert "styleseed" not in sys_text
+
+
+# --- DEC-7 remediation: response parsing must fail cleanly, never leak --------
+def test_extract_json_raises_clean_on_empty_refusal_and_bad():
+    from samagra.clients import llm_client as L
+    # empty content (e.g. stop_reason=max_tokens with no text)
+    empty = type("R", (), {"content": [], "stop_reason": "max_tokens"})()
+    with pytest.raises(RuntimeError):
+        L._extract_json(empty)
+    # refusal
+    ref = type("R", (), {"content": [], "stop_reason": "refusal"})()
+    with pytest.raises(RuntimeError):
+        L._extract_json(ref)
+    # non-JSON / truncated body
+    block = type("B", (), {"type": "text", "text": "not json {"})()
+    bad = type("R", (), {"content": [block], "stop_reason": "end_turn"})()
+    with pytest.raises(RuntimeError):
+        L._extract_json(bad)
+
+
+def test_extract_json_error_never_leaks_content():
+    from samagra.clients import llm_client as L
+    block = type("B", (), {"type": "text", "text": "SECRET-PLAINTEXT not json"})()
+    bad = type("R", (), {"content": [block], "stop_reason": "end_turn"})()
+    with pytest.raises(RuntimeError) as ei:
+        L._extract_json(bad)
+    assert "SECRET-PLAINTEXT" not in str(ei.value)
+
+
+def test_output_config_has_no_unknown_name_field():
+    sdk = _FakeSDK('{"items": []}')
+    c = llm_client.LLMClient(sdk=sdk)
+    c.generate_samadhan({"title": "X"}, system="S")
+    fmt = sdk.messages.calls[0]["output_config"]["format"]
+    assert set(fmt.keys()) == {"type", "schema"}        # no stray "name" (not in SDK 0.96 schema)

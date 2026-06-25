@@ -1108,4 +1108,16 @@ git commit -m "feat(cli): Phase D2 — factory plan --lane; opt-in live samadhan
 
 ## After Task 5 (controller, before merge)
 - **Dedicated DEC-7 Codex pre-merge review of the generation boundary** (required by F-D1/spec §8). Then an adversarial multi-lens pass (as for every prior slice). Remediate any HIGH/MED TDD. Then finishing-a-development-branch (merge/push gated on the owner).
-- **Owner action for the live smoke:** run `ANTHROPIC_API_KEY=… python -m pytest tests/test_samadhan_live_smoke.py -v` once to prove a real Samadhan end-to-end (optional; not part of the standing gate).
+- **Owner action for the live smoke:** run `SAMAGRA_LIVE_LLM_SMOKE=1 ANTHROPIC_API_KEY=… python -m pytest tests/test_samadhan_live_smoke.py -v` once to prove a real Samadhan end-to-end (optional; not part of the standing gate).
+
+## Pre-merge review outcome + remediation (2026-06-25)
+
+Three independent reviews ran over `main...HEAD`: the **dedicated DEC-7 Codex generation-boundary review** (via the codex runtime; reviewed manually as the sandboxed CLI couldn't write temp files) returned **NO-GO**; two Claude lenses (secrets/correctness, safety/invariants) returned **GO-WITH-CAVEATS** with all secrets/firewall/guard invariants PASS. The findings converged; all were **remediated TDD** (+6 tests; gate **437 passing / 439 collected / 1 pre-existing `test_gdocs` red / 1 skipped live smoke**):
+
+- **HIGH — the LLM in-flight window wedged on any post-intent failure.** `product_building` is recorded before the network call; a transient error / empty items / bad JSON before `product_created` left the assignment permanently in-flight (guard 3 refused retry). **FIXED:** `build()` wraps the produce/validate step; a LOCAL-write lane (local/qx/llm) records `product_build_failed` and rolls back the intent on failure → retryable. `_build_in_flight` is now count-based (`building > created + failed`). The **mcd lane keeps its fail-safe wedge** (its produce is the one external prod write — never auto-rolled-back). Regression: a `BoomLLM` produce failure leaves the assignment `approved` + retryable, then a working client captures.
+- **MED — partial/missing reviewer verdicts defaulted to `ok`.** **FIXED (fail-closed):** in `build_samadhan`, an item with no explicit `ok` verdict (missing idx, or any non-`ok`) counts as an **error** → routes the brief to `changes`, so an unreviewed item can never reach `captured`.
+- **MED — `_extract_json` had no stop_reason/empty/truncated handling.** **FIXED:** raises a concise `RuntimeError` (refusal / empty content / non-JSON), **never echoing the content/prompt/key** (regression asserts no plaintext leak).
+- **LOW — stray `"name":"out"` in `output_config.format`** (not in the installed SDK's schema → possible live 400). **FIXED:** dropped.
+- **Empty-items brief** now routes to `changes` (owner review), never a wedge or silent capture.
+
+**Deferred fast-follow (documented, fails closed):** a brief that lands in `changes` cannot currently be re-generated in-band — `approve` requires `in-review`, and the status-blind dedup returns the same `changes` assignment. The owner reviews the written artifact (the review surface) but reopening/regenerating a `changes` brief needs a small owner command (`factory reopen <aid>` or similar). Safe (never a bad write), but the `changes`→regenerate loop is incomplete until that lands.

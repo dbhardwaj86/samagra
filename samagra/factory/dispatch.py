@@ -140,20 +140,21 @@ def _assert_no_answer_leak(line: str, result: dict) -> None:
 
 
 def _assert_review_clean(line: str, result: dict) -> None:
-    """For llm (samadhan) lanes ONLY: assert the adversarial review actually RAN and
-    was persisted before this artifact can be considered for capture. Raises if the
-    result lacks an integer `errors` or a non-empty `verdicts` list (a brief whose
-    reviewer was skipped/corrupted must never reach `captured`). It does NOT raise on
-    errors>0 — an error-flagged brief is a valid artifact that build() routes to
-    `changes` (owner review), never silent capture. This is the llm analog of
-    _assert_no_answer_leak: the artifact records the verdicts; the capture GATE
-    (errors==0) is applied by build()."""
+    """For llm (samadhan) lanes ONLY: assert the result is well-formed enough to be
+    routed (an integer `errors` + an integer `items` count, and — when there ARE
+    items — a non-empty `verdicts` list, so a brief whose reviewer was skipped is
+    never captured). It does NOT raise on errors>0 or on an empty brief (items==0):
+    those are valid artifacts that build() routes to `changes` (owner review), never
+    silent capture. This is the llm analog of _assert_no_answer_leak — the artifact
+    records the verdicts; the capture GATE (errors==0 and items>0) is applied by
+    build()."""
     spec = LINES.get(line)
     if spec is None or spec.kind != "llm":
         return
-    if not isinstance(result.get("errors"), int):
-        raise ValueError(f"line {line!r} produced no reviewer error count — "
+    if not isinstance(result.get("errors"), int) or not isinstance(result.get("items"), int):
+        raise ValueError(f"line {line!r} produced no reviewer error/item count — "
                          f"refusing to capture an unreviewed brief")
-    if not isinstance(result.get("verdicts"), list) or not result["verdicts"]:
+    if result["items"] > 0 and (
+            not isinstance(result.get("verdicts"), list) or not result["verdicts"]):
         raise ValueError(f"line {line!r} produced no reviewer verdicts — "
                          f"refusing to capture an unreviewed brief")

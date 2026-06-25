@@ -99,9 +99,14 @@ def build_samadhan(slug: str, *, client=None) -> dict:
 
     scored = []
     for i, it in enumerate(items):
-        v = by_idx.get(i, {"verdict": "ok", "rationale": ""})
-        scored.append({**it, "verdict": v.get("verdict", "ok"),
-                       "rationale": v.get("rationale", "")})
+        # FAIL-CLOSED (DEC-7 remediation): an item the reviewer did not explicitly
+        # clear (missing idx, or a verdict that isn't "ok") counts as an error, so a
+        # partial-coverage reviewer can never let an unreviewed item reach `captured`.
+        v = by_idx.get(i)
+        if v is None:
+            v = {"verdict": "error", "rationale": "no reviewer verdict for this item"}
+        verdict = "ok" if v.get("verdict") == "ok" else "error"
+        scored.append({**it, "verdict": verdict, "rationale": v.get("rationale", "")})
     errors = sum(1 for s in scored if s.get("verdict") == "error")
 
     prose = "\n".join(_prose(it) for it in items)

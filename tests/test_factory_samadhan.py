@@ -73,6 +73,17 @@ def test_error_verdict_is_counted(styleseed, export, fake_chapter):
     assert res["errors"] == 1
 
 
+def test_missing_verdict_defaults_to_error_failclosed(styleseed, export, fake_chapter):
+    # DEC-7 remediation: 2 items but only 1 verdict -> the UNREVIEWED item fails
+    # CLOSED (counts as an error), so partial reviewer coverage can't let an
+    # unreviewed item slip to `captured`.
+    client = FakeLLM(items=[{"concept": "a", "misconception": "m", "correction": "k", "why": "w"},
+                            {"concept": "b", "misconception": "m2", "correction": "k2", "why": "w2"}],
+                     verdicts=[{"idx": 0, "verdict": "ok", "rationale": "ok"}])
+    res = samadhan.build_samadhan("x", client=client)
+    assert res["items"] == 2 and res["errors"] == 1
+
+
 def test_html_escapes_untrusted_text_but_json_keeps_raw(styleseed, export, fake_chapter):
     client = FakeLLM(items=[{"concept": "Gauss", "misconception": "E(r<R) & B>0 always",
                              "correction": "for r<R the field is 0",
