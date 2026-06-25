@@ -183,16 +183,49 @@
 > finds them. Plan `docs/superpowers/plans/2026-06-25-samagra-content-factory-phase-d3-learning-loop.md`. **D2 is now the only
 > remaining Phase-D slice.**
 >
-> **▶ PHASE D2 (next, the only remaining Phase-D slice) = the Samadhan live LLM lane** (gets its own grounded plan): `samagra/clients/llm_client.py` = the
-> ONE Anthropic call site (`claude-opus-4-8`, adaptive thinking, structured output, the StyleSeed system block
-> prompt-cached, **API key from gitignored `.env` — never logged; missing-key raises BEFORE build intent = anti-wedge**;
-> dependency-injected/mockable) + `samagra/factory/samadhan.py` (`build_samadhan(slug)`: condition on the StyleSeed →
-> generate → **adversarial reviewer anchored ONLY to the chapter ground-truth, refute-framed** → advisory style-score →
-> local write; clean→`captured`, any unresolved error→`changes` via the new `_assert_review_clean` capture gate) +
-> `Line.kind="llm"`/`auto_fan` wiring. **Needs mocked-LLM tests + an opt-in live smoke + a dedicated DEC-7 Codex
-> pre-merge review of the generation boundary.** **PHASE D3 (the `style_events` learning-loop scaffold) is already SHIPPED
-> (above)** — the substrate D2 will feed. The heavy async LLM lanes (NotebookLM/image-gen) remain **Phase F**, not D.
-> **DEC-8 invariants unchanged.**
+> **✅ PHASE D2 (the SAMADHAN LIVE LLM LANE — SAMAGRA's FIRST generative content lane, fork F-D2) BUILT subagent-driven
+> TDD (5 tasks) + dedicated Codex DEC-7 generation-boundary review (NO-GO → remediated → re-review GO; caveats closed) +
+> 2 Claude adversarial lenses + MERGED to `main` + PUSHED to `origin/main` 2026-06-25** (ff `f7d2be6..30e7bcc`; durable).
+> Driven by the user's **"ok start D2"**. **⇒ PHASE D COMPLETE** (D1 moat · D2 lane · D3 learning loop). New
+> **`samagra/clients/llm_client.py`** = the ONE Anthropic call site (`claude-opus-4-8`, adaptive thinking, **structured
+> output** `output_config` json_schema [installed anthropic 0.96.0 supports it], the StyleSeed system block prompt-cached
+> `cache_control:ephemeral`; **key ONLY from the gitignored `.env`, never logged/repr'd, missing-key → `RuntimeError`**;
+> **injectable fake SDK ⇒ no standing test hits the network or needs a key**; `generate_samadhan`/`review_samadhan` own the
+> SDK call + parsing; **`review_samadhan` NEVER receives the StyleSeed = the DEC-8 reviewer firewall, STRUCTURAL**;
+> `_extract_json` hardened — refusal/empty/bad-JSON → clean `RuntimeError`, no content/key leak). New
+> **`samagra/factory/samadhan.py`** `build_samadhan(slug, *, client=None)`: load chapter ground-truth → require committed
+> StyleSeed → `condition.to_system_prompt` → generate → **adversarial reviewer anchored ONLY to the chapter, refute-framed**
+> → advisory `style_fit` (never gates) → write local `<slug>-samadhan.{json,html}`; **`preflight()`** anti-wedge;
+> **fail-closed verdict mapping** (an item with no explicit `ok` verdict → `error`); **HTML-escapes untrusted LLM text** at
+> the boundary (the C1 lesson), JSON keeps RAW. Wiring: **`Line.auto_fan`** (samadhan `kind="llm"`, `auto_fan=False` →
+> **opt-in F-D4**: `classify("textbook:")` still = `[revision,lecture,deck,paper,drill]`; samadhan reached only via
+> `factory plan textbook:<slug> --lane samadhan`); `run_line` llm branch; **`build()` llm preflight (chapter+StyleSeed+key)
+> BEFORE the `product_building` intent** (anti-wedge) + **capture/changes gate** (reviewer `errors>0` OR empty `items==0` →
+> `changes` [owner review], else → `captured`; never a silent capture) + **rollback-on-failure** (records
+> `product_build_failed` for LOCAL-write lanes; `_build_in_flight` now count-based ⇒ a transient LLM failure is
+> **RETRYABLE**, not a permanent wedge — **the mcd lane keeps its fail-safe wedge**, never double-writing a seed); `plan(lane=)`;
+> CLI `build_parser()` extract + **`factory plan --lane`**; opt-in live smoke gated on **`SAMAGRA_LIVE_LLM_SMOKE` (a flag,
+> not key-only)** so the standing gate stays offline even once `.env` carries a key. `requirements.txt` += `anthropic>=0.96`;
+> `.env.example` += blank `ANTHROPIC_API_KEY=` + `SAMAGRA_LLM_MODEL`. **DEC-7 Codex review:** round-1 **NO-GO** (HIGH: the LLM
+> in-flight window wedged on any post-intent failure; MED: partial reviewer verdicts defaulted to `ok`; MED: `_extract_json`
+> crashed on stop/refusal/empty/truncated; LOW: stray `"name"` not in the 0.96 schema) → **remediated TDD** (rollback /
+> fail-closed / robust parse / drop name / empty→changes) → **re-review GO-WITH-CAVEATS** (all 3 RESOLVED, 0 new) → 2
+> caveats closed (regressions pinning the mcd fail-safe wedge + the mis-indexed-verdict fail-close). **Invariants HELD:**
+> secrets env-only (never logged/committed; `.env` gitignored) · **no new prod write path** (the Anthropic call is outbound
+> generation, never a write to the 7 read-only subsystems; only local files + governance rows) · **publish gate untouched**
+> · the **five `build()` crash-safety guards intact** · **DEC-8 reviewer firewall structural** · advisory scorer never gates
+> · **no migration**. Gate **439 pytest** (441 collected; lone red = pre-existing env `test_gdocs`; 1 skipped = opt-in live
+> smoke). ⚠ **git-race process learning:** a **background** plan-commit overlapping the Task-1 implementer subagent (which
+> also committed) raced the index during the ~90s pre-commit hook → the plan commit was **orphaned** (recovered by
+> re-commit). **NEVER run a background git commit concurrently with a subagent that also commits** — serialize all git.
+> ⚠ **Deferred fast-follow** (fails closed): a brief in `changes` can't be re-generated in-band (needs a `factory reopen`
+> owner command). ⚠ **Owner action:** run the live smoke once — `SAMAGRA_LIVE_LLM_SMOKE=1 ANTHROPIC_API_KEY=… python -m
+> pytest tests/test_samadhan_live_smoke.py -v` — to validate the real generation boundary. Plan
+> `docs/superpowers/plans/2026-06-25-samagra-content-factory-phase-d2-samadhan.md` (incl. the review/remediation log).
+>
+> **▶ PHASE D COMPLETE** (D1 deterministic moat · D2 Samadhan LLM lane · D3 learning loop). **NEXT per the umbrella
+> roadmap: Phase E (coverage graph / Concept Atlas) or Phase F (the heavy async LLM lanes — NotebookLM audio/slides,
+> image-gen figures).** PRATHAM student twin = **Phase G** (DEC-9, deferred). **DEC-8 invariants unchanged.**
 >
 > **✅ Direction-coherence decision (ratified 2026-06-21 by Deepak; amended by DEC-6 on 2026-06-22):** a coherence
 > audit found execution solid but the strategic direction drifting — "SAMAGRA OS" had re-introduced the OS-sized
@@ -232,9 +265,8 @@
 
 <!-- scribe:begin v1 -->
 ## TeachingOS memory — auto-generated by scribe; edit OUTSIDE this block only
-_Updated 2026-06-24T21:42. Source: agent session distillation._
-- (5) 2026-06-24 claude: User approved the plan for Phase D (StyleSeed) of TeachingOS. [TeachingOS, StyleSeed, Phase D]
-- (5) 2026-06-24 claude: Phase D = StyleSeed (DEC-8) is the durable style moat for the SAMAGRA content factory. [StyleSeed, SAMAGRA]
+_Updated 2026-06-25T18:13. Source: agent session distillation._
+- (5) 2026-06-25 claude: Phase D (StyleSeed, DEC-8) is a style moat for the SAMAGRA content factory in the TeachingOS project. [Phase D, StyleSeed, DEC-8, SAMAGRA]
 - (5) 2026-06-24 claude: SAMAGRA (TeachingOS project) is implementing a content-factory pivot to generate multi-output physics content for JEE/NEET, moving beyond a read-only console. [SAMAGRA, TeachingOS, content factory, JEE/NEET physics]
 - (5) 2026-06-24 codex: Core logic matches design spec docs/superp; no fundamental issues. [design, validation]
 - (5) 2026-06-23 codex: Remediation commit 91baeeb resolves H1 (high severity) and M1 (medium severity) completely. [remediation, severity]
@@ -258,15 +290,16 @@ _Updated 2026-06-24T21:42. Source: agent session distillation._
 - (5) 2026-06-19 claude: Produced 10 concrete suggestions for improving the future vision direction based on the current intent. [suggestions, vision direction]
 - (5) 2026-06-18 claude: The final plan was recorded using `cbm record-plan docs/superpowers/plans/2026-06-19-samagra-evolution.md --title 'SAMAGRA Evolution'`. [cbm, record-plan, plan storage]
 - (5) 2026-06-18 claude: TeachingOS is designed to automate the creation of JEE/NEET physics educational content from handwritten notes to multiple output formats including lectures, booklets, and question banks. [TeachingOS, JEE/NEET, content pipeline]
+- (4) 2026-06-25 codex: The Samagra factory uses a pattern to decouple content generation from distribution, with run.py as the main orchestrator. [factory pattern, content generation, orchestration]
+- (4) 2026-06-25 codex: The LLM client in llm_client.py is abstracted behind a clean interface, allowing different model providers to be swapped easily. [LLM, client, abstraction, provider]
+- (4) 2026-06-25 codex: The review requested reading specific files: samagra/factory/run.py, samagra/factory/samadhan.py, samagra/clients/llm_client.py, samagra/factory/dispatch.py, and several test files. [code review, file list]
+- (4) 2026-06-25 codex: Purpose is to assess generation boundary after remediation in Samagra Phase D2. [generation boundary, remediation, Samagra]
+- (4) 2026-06-25 codex: Branch feature/content-factory-phase-d2 is subject to a pre-merge code review for SAMAGRA Phase D2. [code review, branch, SAMAGRA]
+- (4) 2026-06-25 codex: Conducted a pre-merge code review of the SAMAGRA Phase D2 change set on branch feature/content-factory-phase-d2, focusing on DEC-7 requirements. [code review, SAMAGRA, Phase D2]
+- (4) 2026-06-25 claude: User advanced from Phase D to sub-phase D3 with the command 'go for D3'. [D3, task progression]
 - (4) 2026-06-24 claude: User Deepak Bhardwaj explicitly requested proceeding with Phase C3 after completing C1 and C2. [Phase C3, user request]
 - (4) 2026-06-24 claude: Development workflow uses superpower skills: brainstorming, writing-plans, subagent-driven-development, and finishing-a-development-branch. [superpowers, writing-plans, subagent-driven, brainstorming]
 - (4) 2026-06-24 claude: The goal is to cross-link existing lectures and tools to create a catalogued, indexed, categorized content system for physics. [cross-linking, content catalog, physics lectures]
 - (4) 2026-06-24 codex: Missing exception handling in bridge fold: raise on invalid input instead of silent failure. [exception handling, bridge]
-- (4) 2026-06-23 codex: No new critical issues introduced by remediation; code maintains existing test coverage. [regression, test coverage]
-- (4) 2026-06-23 codex: The review inspected the diff from commit bb88bd8 to 69cfd51 on the feature/content-factory-phase1 branch. [git diff, code review]
-- (4) 2026-06-23 claude: Implementation plan recorded to docs/superpowers/plans/2026-06-22-phase3-active-loop.md via cbm record-plan. [implementation plan, record-plan, cbm]
-- (4) 2026-06-23 claude: Subagent-driven development pattern used: each task delegated to a fresh subagent with isolated context. [subagent-driven development, task delegation, isolated context]
-- (4) 2026-06-23 claude: Final step: review then merge branch, serve on localhost for checks. [merge, review, localhost, verification]
-- (4) 2026-06-22 claude: Use 'cbm snap pre' (or full path) before commit to take snapshot and auto-enroll in cbm registry. [cbm, snapshot]
 Deep recall: C:\SandBox\claude_box\memboxes\scribe\bin\scribe.cmd q "<topic>"
 <!-- scribe:end -->
