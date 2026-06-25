@@ -16,7 +16,7 @@ from ..bridge.pointers import resolve_pointers
 from ..bridge.text import item_text
 from . import outbox
 from ..governance import store
-from . import dispatch
+from . import dispatch, samadhan
 from .lines import LINES, classify
 from .seed_payload import build_seed_payload, validate_seed_payload
 
@@ -315,6 +315,11 @@ def build(assignment_id: str) -> dict:
                 raise ValueError(
                     f"no proposed payload recorded for assignment {assignment_id}")
             validate_seed_payload(payload)
+        elif spec.kind == "llm":
+            # anti-wedge: chapter exists + StyleSeed committed + LLM configured,
+            # asserted BEFORE recording build intent (a missing key refuses without
+            # wedging the in-flight state — mirrors the mcd validate-before-intent).
+            samadhan.preflight(seed_ref.split(":", 1)[-1])
         # Record intent BEFORE producing (crash-window safe; mirrors bridge submit).
         store.append_event(conn, actor=_AGENT, verb="product_building",
                            assignment_id=assignment_id, subsystem="factory",
@@ -335,8 +340,13 @@ def build(assignment_id: str) -> dict:
                            subsystem_ref=subsystem_ref,
                            note=json.dumps({"line": line, "artifact": result},
                                            ensure_ascii=False))
-        store.set_assignment_status(conn, assignment_id, "captured")     # guard 5 (single write)
+        # Terminal status (guard 5, single write): an llm brief with an unresolved
+        # reviewer error lands in 'changes' (owner review) — never a silent capture;
+        # every deterministic/mcd lane and a clean brief -> terminal 'captured'.
+        status = "changes" if (spec.kind == "llm" and result.get("errors", 0) > 0) \
+            else "captured"
+        store.set_assignment_status(conn, assignment_id, status)
         return {"assignment_id": assignment_id, "line": line,
-                "artifact_ref": artifact_ref}
+                "artifact_ref": artifact_ref, "status": status}
     finally:
         conn.close()

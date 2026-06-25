@@ -12,7 +12,7 @@ from pathlib import Path
 
 from ..lectures import export as lex
 from ..clients.mcd_client import McdClient
-from . import deck, paper
+from . import deck, paper, samadhan
 from .lines import LINES
 from .seed_payload import validate_seed_payload
 
@@ -52,6 +52,8 @@ def run_line(line: str, slug: str) -> dict:
         raise ValueError(
             f"line {line!r} is an mcd lane — built via the seed path (run_seed), "
             f"not run_line")
+    if spec.kind == "llm":
+        return samadhan.build_samadhan(slug)
     return lex.export_one(slug, spec.variant, upload_gdocs=False)
 
 
@@ -85,6 +87,7 @@ def validate_product(line: str, result: dict) -> None:
         raise ValueError(f"line {line!r} artifact missing or empty: {html}")
     # Answer-leak structural hook (no-op for lecture lanes; enforced for QX in Phase C).
     _assert_no_answer_leak(line, result)
+    _assert_review_clean(line, result)
 
 
 # Structural answer/solution markers QX uses across its THREE answer renderers,
@@ -134,3 +137,23 @@ def _assert_no_answer_leak(line: str, result: dict) -> None:
             raise ValueError(
                 f"line {line!r} artifact carries an answer/solution marker "
                 f"({marker!r}) — refusing to publish a paper that may leak answers")
+
+
+def _assert_review_clean(line: str, result: dict) -> None:
+    """For llm (samadhan) lanes ONLY: assert the adversarial review actually RAN and
+    was persisted before this artifact can be considered for capture. Raises if the
+    result lacks an integer `errors` or a non-empty `verdicts` list (a brief whose
+    reviewer was skipped/corrupted must never reach `captured`). It does NOT raise on
+    errors>0 — an error-flagged brief is a valid artifact that build() routes to
+    `changes` (owner review), never silent capture. This is the llm analog of
+    _assert_no_answer_leak: the artifact records the verdicts; the capture GATE
+    (errors==0) is applied by build()."""
+    spec = LINES.get(line)
+    if spec is None or spec.kind != "llm":
+        return
+    if not isinstance(result.get("errors"), int):
+        raise ValueError(f"line {line!r} produced no reviewer error count — "
+                         f"refusing to capture an unreviewed brief")
+    if not isinstance(result.get("verdicts"), list) or not result["verdicts"]:
+        raise ValueError(f"line {line!r} produced no reviewer verdicts — "
+                         f"refusing to capture an unreviewed brief")
