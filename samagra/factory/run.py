@@ -144,14 +144,28 @@ def scan(dry: bool = True) -> list[dict]:
     return proposals
 
 
-def plan(seed_ref: str, dry: bool = True) -> list[dict]:
+def plan(seed_ref: str, dry: bool = True, lane: str | None = None) -> list[dict]:
     """Classify a seed into product lines; dry=True writes nothing, dry=False
     records ONE in-review child assignment + outbox + 'product_proposed' per line.
 
     A munshi: seed is the mcd `seed` lane — proposed from its LIVE item (payload),
-    not a slug fan-out; routed here to _record_seed_proposal."""
+    not a slug fan-out; routed here to _record_seed_proposal.
+
+    Pass lane=<key> to target a single lane explicitly (the only way to reach an
+    opt-in lane like the llm `samadhan` lane, which classify() excludes from the
+    default fan-out); the lane must accept this seed's prefix or ValueError raises."""
     seed_ref = (seed_ref or "").strip()   # normalize ONCE (review 24 L2)
-    if seed_ref.startswith("munshi:"):
+    # An explicit lane is validated FIRST: a caller targeting one lane must have the
+    # seed prefix that lane accepts, regardless of which branch the seed would
+    # otherwise take (e.g. a munshi: seed with lane='samadhan' is a clean refusal,
+    # not a silent munshi fan-out).
+    if lane is not None:
+        spec = LINES.get(lane)
+        if spec is None:
+            raise ValueError(f"unknown lane {lane!r}")
+        if not any(seed_ref.startswith(p) for p in spec.source_prefixes):
+            raise ValueError(f"lane {lane!r} does not accept seed {seed_ref!r}")
+    if seed_ref.startswith("munshi:") and lane is None:
         conn = None if dry else store.connect()
         try:
             item = _munshi_item_for(seed_ref)
@@ -162,7 +176,10 @@ def plan(seed_ref: str, dry: bool = True) -> list[dict]:
         finally:
             if conn is not None:
                 conn.close()
-    lines = classify(seed_ref)            # what we store + validate == what we classify
+    if lane is not None:
+        lines = [lane]
+    else:
+        lines = classify(seed_ref)        # what we store + validate == what we classify
     pointers = resolve_pointers(seed_ref.split(":", 1)[-1].replace("-", " "), limit=5)
     proposals: list[dict] = []
     conn = None if dry else store.connect()

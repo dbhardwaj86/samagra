@@ -1,4 +1,20 @@
 from samagra.factory import lines
+from samagra.factory.lines import LINES, classify, Line
+
+
+def test_samadhan_registered_as_llm_optin():
+    s = LINES["samadhan"]
+    assert s.kind == "llm" and s.auto_fan is False
+    assert s.source_prefixes == ("textbook:",)
+
+
+def test_classify_excludes_optin_lanes():
+    assert classify("textbook:circular-motion") == ["revision", "lecture", "deck",
+                                                     "paper", "drill"]
+
+
+def test_existing_lanes_default_auto_fan_true():
+    assert LINES["revision"].auto_fan is True and LINES["deck"].auto_fan is True
 
 
 def test_textbook_seed_fans_to_five_content_lanes():
@@ -12,10 +28,10 @@ def test_unknown_source_fans_to_nothing():
 
 
 def test_registry_has_expected_output_labels():
-    for key in ("revision", "lecture", "deck", "paper", "drill", "seed"):
+    for key in ("revision", "lecture", "deck", "paper", "drill", "seed", "samadhan"):
         assert lines.LINES[key].expected_output
     assert set(lines.LINES) == {
-        "revision", "lecture", "deck", "paper", "drill", "seed"}
+        "revision", "lecture", "deck", "paper", "drill", "seed", "samadhan"}
 
 
 def test_munshi_seed_fans_to_the_seed_lane_only():
@@ -35,8 +51,7 @@ def test_seed_line_is_mcd_kind_and_munshi_sourced():
 
 
 def test_registry_now_has_six_lanes_including_seed():
-    assert set(lines.LINES) == {
-        "revision", "lecture", "deck", "paper", "drill", "seed"}
+    assert {"revision", "lecture", "deck", "paper", "drill", "seed"} <= set(lines.LINES)
 
 
 def test_deck_line_is_local_kind_and_textbook_sourced():
