@@ -15,5 +15,8 @@ google-auth-oauthlib>=1.0
 # Phase D (notifications)
 requests>=2.31
 
+# Phase D2 (LLM generation — the samadhan lane)
+anthropic>=0.96
+
 # dev
 pytest>=8.0
