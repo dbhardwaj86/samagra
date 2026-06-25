@@ -432,3 +432,127 @@ def test_approve_seed_skips_non_factory_pipeline_with_same_seed_ref(factory_env)
         assert b9["status"] == "in-review"        # NOT approved by the factory workflow
     finally:
         conn.close()
+
+
+# --- D2 fast-follow: factory reopen (regenerate a 'changes' brief) ----------
+
+def _changes_assignment(conn, aid, *, pipeline="samadhan", seed_ref="textbook:x",
+                        built=True):
+    """Construct a terminal 'changes' factory assignment the way build() leaves an
+    llm brief that the reviewer flagged: in-review -> approved -> (build events) ->
+    changes."""
+    store.add_assignment(conn, id=aid, agent=run._AGENT,
+                         outbox_path=f"board/khanak/outbox/{aid}.md",
+                         pipeline=pipeline, seed_ref=seed_ref)
+    store.set_assignment_status(conn, aid, "in-review")
+    store.set_assignment_status(conn, aid, "approved")
+    if built:
+        store.append_event(conn, actor=run._AGENT, verb="product_building",
+                           assignment_id=aid, subsystem="factory")
+        store.append_event(conn, actor=run._AGENT, verb="product_created",
+                           assignment_id=aid, subsystem="factory", subsystem_ref="x")
+    store.set_assignment_status(conn, aid, "changes")
+
+
+def test_reopen_flips_changes_back_to_in_review_with_audit_event(factory_env):
+    """An owner reopen flips a terminal 'changes' factory assignment -> 'in-review'
+    and records a 'reopened' event — WITHOUT deleting the immutable product_created
+    row (the ledger stays append-only, D6)."""
+    conn = store.connect()
+    try:
+        _changes_assignment(conn, "r1")
+    finally:
+        conn.close()
+    res = run.reopen("r1")
+    assert res["status"] == "in-review"
+    conn = store.connect()
+    try:
+        row = next(r for r in store.list_assignments(conn) if r["id"] == "r1")
+        verbs = [e["verb"] for e in store.list_events_for_assignment(conn, "r1")]
+    finally:
+        conn.close()
+    assert row["status"] == "in-review"
+    assert "reopened" in verbs
+    assert verbs.count("product_created") == 1   # immutable: nothing deleted
+
+
+def test_reopen_refuses_non_changes_status(factory_env):
+    """reopen is ONLY for the owner-review 'changes' terminal — an in-review (or
+    approved/captured) assignment is refused."""
+    conn = store.connect()
+    try:
+        store.add_assignment(conn, id="r2", agent=run._AGENT,
+                             outbox_path="board/khanak/outbox/r2.md",
+                             pipeline="samadhan", seed_ref="textbook:x")
+        store.set_assignment_status(conn, "r2", "in-review")
+    finally:
+        conn.close()
+    with pytest.raises(ValueError):
+        run.reopen("r2")                          # in-review, not changes
+
+
+def test_reopen_refuses_non_factory_pipeline(factory_env):
+    """Workflow firewall: a non-factory (bridge) assignment is not reopenable via
+    the factory workflow, even in 'changes'."""
+    conn = store.connect()
+    try:
+        _changes_assignment(conn, "r3", pipeline="mycontentdev", seed_ref="munshi:1")
+    finally:
+        conn.close()
+    with pytest.raises(ValueError):
+        run.reopen("r3")
+
+
+def test_reopen_refuses_mcd_lane_even_in_changes(factory_env):
+    """Defense in depth: the mcd seed lane's single prod write is terminal and must
+    NEVER be reopened (idempotent-write guarantee) — refused on KIND grounds even if
+    its status were forced to 'changes' (it can't reach 'changes' via the real flow,
+    so the kind guard is what makes this structural)."""
+    conn = store.connect()
+    try:
+        _changes_assignment(conn, "r4", pipeline="seed", seed_ref="munshi:1")
+    finally:
+        conn.close()
+    with pytest.raises(ValueError):
+        run.reopen("r4")                          # mcd lane — never reopenable
+
+
+def test_reopen_refuses_unknown_assignment(factory_env):
+    with pytest.raises(ValueError):
+        run.reopen("does-not-exist")
+
+
+def test_reopen_reconciles_guard2_so_one_rebuild_proceeds(factory_env, monkeypatch):
+    """After a reopen, guard 2 (double-build) is reconciled for EXACTLY ONE rebuild:
+    the prior product_created is forgiven (count-based, not deleted), build() runs,
+    and a SECOND un-reopened rebuild is refused again."""
+    _stub_export(monkeypatch, factory_env)
+    a = run.plan("textbook:circular-motion", dry=False)[0]   # revision (local) lane
+    run.approve(a["assignment_id"])
+    run.build(a["assignment_id"])                            # first build -> captured
+    # Force the owner-review terminal a flagged llm brief reaches (deterministic
+    # lanes don't land here naturally, but reopen's guard-2 reconciliation is
+    # lane-generic; we exercise the build-side reconciliation in isolation here).
+    conn = store.connect()
+    try:
+        store.set_assignment_status(conn, a["assignment_id"], "changes")
+    finally:
+        conn.close()
+    run.reopen(a["assignment_id"])
+    run.approve(a["assignment_id"])
+    res = run.build(a["assignment_id"])                      # guard 2 forgiven once
+    assert res["status"] == "captured"
+    with pytest.raises(ValueError):                          # a second un-reopened build refused
+        run.build(a["assignment_id"])
+
+
+def test_cli_factory_reopen_dispatch(monkeypatch):
+    import sys as _sys
+    import samagra.__main__ as cli
+    seen = {}
+    monkeypatch.setattr("samagra.factory.run.reopen",
+                        lambda aid: seen.update(aid=aid) or
+                        {"assignment_id": aid, "status": "in-review"})
+    monkeypatch.setattr(_sys, "argv", ["samagra", "factory", "reopen", "abc123"])
+    cli.main()
+    assert seen["aid"] == "abc123"

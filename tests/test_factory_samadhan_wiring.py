@@ -172,3 +172,52 @@ def test_empty_brief_lands_in_changes_not_wedge(env, monkeypatch):
     finally:
         c.close()
     assert "product_created" in verbs
+
+
+# --- D2 fast-follow: the changes -> reopen -> re-approve -> rebuild loop ------
+
+def test_changes_brief_can_be_reopened_reapproved_and_rebuilt(env, monkeypatch):
+    """The full owner regenerate loop: a reviewer-flagged brief lands in 'changes';
+    the owner reopens it (-> in-review), re-approves, and rebuilds with a clean
+    reviewer to a FRESH, captured brief (a second product_created)."""
+    # First build: reviewer flags an error -> 'changes'.
+    monkeypatch.setattr(samadhan.llm_client, "LLMClient",
+                        lambda: FakeLLM([{"idx": 0, "verdict": "error", "rationale": "wrong"}]))
+    props = run.plan("textbook:circular-motion", dry=False, lane="samadhan")
+    run.approve_seed("textbook:circular-motion")
+    aid = props[0]["assignment_id"]
+    assert run.build(aid)["status"] == "changes"
+
+    # Owner reopens the brief for regeneration -> back to in-review, audited.
+    assert run.reopen(aid)["status"] == "in-review"
+    c = store.connect()
+    try:
+        a = [x for x in store.list_assignments(c) if x["id"] == aid][0]
+        verbs = [e["verb"] for e in store.list_events_for_assignment(c, aid)]
+    finally:
+        c.close()
+    assert a["status"] == "in-review" and "reopened" in verbs
+
+    # Re-approve, then rebuild with a clean reviewer -> a fresh captured brief.
+    run.approve(aid)
+    monkeypatch.setattr(samadhan.llm_client, "LLMClient",
+                        lambda: FakeLLM([{"idx": 0, "verdict": "ok", "rationale": "r"}]))
+    assert run.build(aid)["status"] == "captured"
+    c = store.connect()
+    try:
+        created = [e for e in store.list_events_for_assignment(c, aid)
+                   if e["verb"] == "product_created"]
+    finally:
+        c.close()
+    assert len(created) == 2          # the rebuild produced a SECOND artifact
+
+
+def test_reopen_refuses_a_captured_brief(env, monkeypatch):
+    """A captured (terminal-success) brief is NOT reopenable — reopen is only for
+    owner-review 'changes' briefs (a clean brief must not be silently regenerated)."""
+    monkeypatch.setattr(samadhan.llm_client, "LLMClient",
+                        lambda: FakeLLM([{"idx": 0, "verdict": "ok", "rationale": "r"}]))
+    res = _approve_and_build("textbook:circular-motion")
+    assert res["status"] == "captured"
+    with pytest.raises(ValueError):
+        run.reopen(res["assignment_id"])

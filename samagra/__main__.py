@@ -157,6 +157,10 @@ def cmd_factory(args) -> None:
     elif args.action == "build":
         res = run.build(args.assignment_id)
         print(f"built {args.assignment_id} -> {res['line']}: {res['artifact_ref']}")
+    elif args.action == "reopen":
+        res = run.reopen(args.assignment_id)
+        print(f"reopened {args.assignment_id} -> {res['status']} "
+              "(re-approve, then build to regenerate)")
     elif args.action == "style-extract":
         from .factory.style import profile as style_profile
 
@@ -344,6 +348,10 @@ def build_parser() -> argparse.ArgumentParser:
     ft_aps.add_argument("seed_ref")
     ft_bld = ft_sub.add_parser("build", help="build an APPROVED child (the guarded write boundary)")
     ft_bld.add_argument("assignment_id")
+    ft_ro = ft_sub.add_parser(
+        "reopen",
+        help="reopen a 'changes' brief for regeneration (-> in-review; re-approve + build)")
+    ft_ro.add_argument("assignment_id")
     ft_sub.add_parser("style-extract",
                       help="(re)build the StyleSeed from the 59 chapters (writes next version)")
     ft_sub.add_parser("style-show", help="print the current StyleSeed version + facets")

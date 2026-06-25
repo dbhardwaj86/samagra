@@ -265,9 +265,66 @@ def approve_seed(seed_ref: str) -> dict:
         conn.close()
 
 
-def _has_event(conn, assignment_id: str, verb: str) -> bool:
-    return any(e.get("verb") == verb
-               for e in store.list_events_for_assignment(conn, assignment_id))
+def reopen(assignment_id: str) -> dict:
+    """Owner regenerate: flip a terminal 'changes' factory assignment back to
+    'in-review' so it can be re-approved and rebuilt to a fresh artifact (the D2
+    capture/changes gate's missing return path).
+
+    Guarded — refuses everything but an owner-reviewable local-write 'changes' brief:
+      - unknown assignment;
+      - not a factory lane (pipeline in LINES) — workflow firewall;
+      - the mcd `seed` lane (kind=='mcd') — its single prod write is terminal and
+        must stay idempotent (DEC-7); refused on KIND grounds so the guarantee is
+        structural, not merely a consequence of mcd never reaching 'changes';
+      - any status other than 'changes' (an in-review/approved/captured assignment
+        is not reopened — a clean capture must never be silently regenerated).
+
+    Appends a 'reopened' event that BOTH audits the owner decision AND reconciles
+    guard 2 (the prior product_created is forgiven for exactly one rebuild — see
+    _already_built). No event is deleted; the ledger stays append-only (D6). The
+    flip is to 'in-review', NOT 'approved', so the board gate is re-crossed
+    explicitly before the rebuild (the never-automated publish gate stays intact)."""
+    conn = store.connect()
+    try:
+        a = _load_assignment(conn, assignment_id)
+        if a is None:
+            raise ValueError(f"unknown assignment: {assignment_id}")
+        if a["pipeline"] not in LINES:                                   # workflow firewall
+            raise ValueError(
+                f"assignment {assignment_id} pipeline {a['pipeline']!r} is not a "
+                f"factory lane — refusing via the factory workflow")
+        if LINES[a["pipeline"]].kind == "mcd":                           # never the prod-write lane
+            raise ValueError(
+                f"assignment {assignment_id} is the mcd seed lane — its single prod "
+                f"write is terminal and must not be reopened (DEC-7)")
+        if a["status"] != "changes":
+            raise ValueError(
+                f"assignment {assignment_id} is {a['status']!r}, not 'changes' — "
+                f"only an owner-review 'changes' brief is reopenable")
+        store.append_event(conn, actor=_AGENT, verb="reopened",
+                           assignment_id=assignment_id, subsystem="factory",
+                           subsystem_ref=a["seed_ref"],
+                           note="owner reopened a 'changes' brief for regeneration")
+        store.set_assignment_status(conn, assignment_id, "in-review")
+        return {"assignment_id": assignment_id, "status": "in-review"}
+    finally:
+        conn.close()
+
+
+def _already_built(conn, assignment_id: str) -> bool:
+    """Guard 2: a completed build ('product_created') refuses a second build —
+    UNLESS a later owner 'reopened' event has forgiven it (an explicit regenerate
+    decision). Count-based, never delete-based: each reopen permits EXACTLY ONE
+    rebuild, so more product_created than reopened means an un-reopened build
+    already exists. The ledger stays append-only (D6) — no event is removed."""
+    created = reopened = 0
+    for e in store.list_events_for_assignment(conn, assignment_id):
+        v = e.get("verb")
+        if v == "product_created":
+            created += 1
+        elif v == "reopened":
+            reopened += 1
+    return created > reopened
 
 
 def _build_in_flight(conn, assignment_id: str) -> bool:
@@ -305,7 +362,7 @@ def build(assignment_id: str) -> dict:
         if a["status"] != "approved":                                    # guard 1
             raise ValueError(
                 f"assignment {assignment_id} is {a['status']!r}, not 'approved'")
-        if _has_event(conn, assignment_id, "product_created"):           # guard 2
+        if _already_built(conn, assignment_id):                          # guard 2
             raise ValueError(
                 f"assignment {assignment_id} already built — refusing a double build")
         if _build_in_flight(conn, assignment_id):                        # guard 3
