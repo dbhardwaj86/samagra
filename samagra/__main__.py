@@ -140,7 +140,8 @@ def cmd_factory(args) -> None:
             print(f"  [{aid}] {p['seed_ref']} -> {p['payload']['type']}  "
                   f"({len(p['pointers'])} pointer(s)){tag}")
     elif args.action == "plan":
-        proposals = run.plan(args.seed_ref, dry=args.dry_run)
+        proposals = run.plan(args.seed_ref, dry=args.dry_run,
+                              lane=getattr(args, "lane", None))
         mode = "dry-run" if args.dry_run else "live"
         print(f"factory plan ({mode}): {len(proposals)} line(s) for {args.seed_ref}")
         for p in proposals:
@@ -260,7 +261,7 @@ def cmd_bridge(args) -> None:
                   f"({seed.get('status')})")
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="samagra",
                                 description="SAMAGRA control plane")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -334,6 +335,9 @@ def main() -> None:
     ft_plan = ft_sub.add_parser("plan", help="fan a seed out to product lines")
     ft_plan.add_argument("seed_ref", help="e.g. textbook:circular-motion")
     ft_plan.add_argument("--dry-run", action="store_true", help="propose only; record nothing")
+    ft_plan.add_argument("--lane", default=None,
+                         help="target a single lane explicitly (required for opt-in "
+                              "lanes like 'samadhan' that the default fan-out omits)")
     ft_ap = ft_sub.add_parser("approve", help="approve one in-review child")
     ft_ap.add_argument("assignment_id")
     ft_aps = ft_sub.add_parser("approve-seed", help="approve ALL in-review children of a seed (batch)")
@@ -354,7 +358,11 @@ def main() -> None:
     ft_reject.add_argument("event_id", type=int)
     ft.set_defaults(func=cmd_factory)
 
-    args = p.parse_args()
+    return p
+
+
+def main() -> None:
+    args = build_parser().parse_args()
     args.func(args)
 
 

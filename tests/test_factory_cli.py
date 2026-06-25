@@ -4,11 +4,12 @@ import samagra.__main__ as cli
 def test_factory_plan_dispatches(monkeypatch, capsys):
     seen = {}
     monkeypatch.setattr("samagra.factory.run.plan",
-                        lambda seed_ref, dry: seen.update(plan=(seed_ref, dry)) or [])
+                        lambda seed_ref, dry, lane=None:
+                        seen.update(plan=(seed_ref, dry, lane)) or [])
     monkeypatch.setattr("sys.argv",
                         ["samagra", "factory", "plan", "textbook:circular-motion", "--dry-run"])
     cli.main()
-    assert seen["plan"] == ("textbook:circular-motion", True)
+    assert seen["plan"] == ("textbook:circular-motion", True, None)
 
 
 def test_factory_approve_seed_dispatches(monkeypatch):
