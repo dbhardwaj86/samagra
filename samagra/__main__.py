@@ -176,6 +176,60 @@ def cmd_factory(args) -> None:
                   f"created {seed.created_at})")
             for facet in style_profile.FACETS:
                 print(f"  {facet}: {seed.facets.get(facet)}")
+    elif args.action == "style-mine":
+        from .governance import store
+        from .factory.style import learn
+
+        c = store.connect()
+        try:
+            store.init_tables(c)
+            new_ids = learn.mine_deltas(c)
+        finally:
+            c.close()
+        print(f"factory style-mine: {len(new_ids)} new candidate event(s) "
+              f"{new_ids if new_ids else ''}".rstrip())
+        if new_ids:
+            print("  review via `factory style-events`, then `factory style-ratify <id>`.")
+    elif args.action == "style-events":
+        from .governance import store
+        from .factory.style import learn
+
+        c = store.connect()
+        try:
+            store.init_tables(c)
+            evs = learn.list_style_events(c)
+        finally:
+            c.close()
+        if not evs:
+            print("factory style-events: no style events yet — run `factory style-mine`.")
+        for e in evs:
+            facet = e["payload"].get("facet", "-")
+            print(f"  [{e['id']}] {e['status']:9} {e['kind']:13} facet={facet} "
+                  f"from_v={e['from_version']}")
+    elif args.action == "style-ratify":
+        from .governance import store
+        from .factory.style import learn
+
+        c = store.connect()
+        try:
+            store.init_tables(c)
+            res = learn.ratify(c, args.event_id)
+        finally:
+            c.close()
+        print(f"factory style-ratify: event {res['event_id']} -> StyleSeed "
+              f"v{res['version']} ({res['path']})")
+        print("  review the new version via `git diff`, then commit to approve.")
+    elif args.action == "style-reject":
+        from .governance import store
+        from .factory.style import learn
+
+        c = store.connect()
+        try:
+            store.init_tables(c)
+            learn.reject(c, args.event_id)
+        finally:
+            c.close()
+        print(f"factory style-reject: event {args.event_id} rejected")
 
 
 def cmd_bridge(args) -> None:
@@ -289,6 +343,15 @@ def main() -> None:
     ft_sub.add_parser("style-extract",
                       help="(re)build the StyleSeed from the 59 chapters (writes next version)")
     ft_sub.add_parser("style-show", help="print the current StyleSeed version + facets")
+    ft_sub.add_parser("style-mine",
+                      help="mine owner reviews -> candidate StyleSeed deltas (D3)")
+    ft_sub.add_parser("style-events",
+                      help="list StyleSeed learning-loop events")
+    ft_ratify = ft_sub.add_parser("style-ratify",
+                                  help="promote a candidate delta to the next StyleSeed version")
+    ft_ratify.add_argument("event_id", type=int)
+    ft_reject = ft_sub.add_parser("style-reject", help="reject a candidate delta")
+    ft_reject.add_argument("event_id", type=int)
     ft.set_defaults(func=cmd_factory)
 
     args = p.parse_args()
