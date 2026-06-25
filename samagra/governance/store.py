@@ -21,7 +21,7 @@ from .. import config
 
 # Baseline schema version. Bump when adding a migration below; never edit a
 # migration that has already shipped.
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 DDL = """
 CREATE TABLE IF NOT EXISTS assignments (id TEXT PRIMARY KEY, agent TEXT NOT NULL, outbox_path TEXT NOT NULL, pipeline TEXT, seed_ref TEXT, artifact_ref TEXT, expected_output TEXT, review_by TEXT, status TEXT NOT NULL DEFAULT 'queued', created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
@@ -30,10 +30,24 @@ CREATE TABLE IF NOT EXISTS review_overlay (id INTEGER PRIMARY KEY AUTOINCREMENT,
 """
 
 # Additive migrations BEYOND the v1 baseline DDL above. Map target_version -> SQL
-# script. Empty today — the hook is ready to grow (e.g. {2: "ALTER TABLE ..."}).
-# `init_tables` applies every migration whose version exceeds the DB's current
-# user_version, then stamps SCHEMA_VERSION.
-_MIGRATIONS: dict[int, str] = {}
+# script. `init_tables` applies every migration whose version exceeds the DB's
+# current user_version, then stamps SCHEMA_VERSION. NEVER edit a shipped migration.
+#   v2 (Phase D3): style_events — the StyleSeed learning-loop ledger. A mined or
+#   owner-authored candidate profile-delta; owner-ratified-only (never auto-applied).
+#   status: proposed | ratified | rejected.
+_MIGRATIONS: dict[int, str] = {
+    2: """
+CREATE TABLE IF NOT EXISTS style_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  subsystem_ref TEXT,
+  from_version INTEGER,
+  payload_json TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'proposed'
+);
+""",
+}
 
 # 'captured' is the terminal state of a bridged assignment AFTER its seed was
 # created (Phase 3 / R3): set_assignment_status accepts it; submit() flips to it
