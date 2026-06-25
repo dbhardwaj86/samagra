@@ -150,17 +150,49 @@
 > --ff-only`'s "leaving N commits behind" warning and recovered to the true tip — **after subagent-driven git work,
 > verify the branch ref is at the true HEAD before merging.**
 >
-> **▶ PHASE D2 (next) = the Samadhan live LLM lane** (gets its own grounded plan): `samagra/clients/llm_client.py` = the
+> **✅ PHASE D3 (the StyleSeed LEARNING-LOOP SCAFFOLD — owner-ratified-only, DEC-8) BUILT subagent-driven TDD (5 tasks,
+> fresh implementer each) + 2-lens adversarial final review (1 MED fixed) + MERGED to `main` + PUSHED to `origin/main`
+> 2026-06-25** (ff `b756cc2..a9ae176`; durable). Driven by the user's **"go for D3"** — built BEFORE D2 (independent: D3
+> is the substrate D2 will later feed). **Additive migration** `_MIGRATIONS[2]` (`samagra/governance/store.py`) → a
+> `style_events` table; `SCHEMA_VERSION` 1→2; verified to upgrade a fresh DB AND an existing `user_version=1` DB, idempotent,
+> never touches `assignments`/`events`/`review_overlay` (**no `assignments` migration**). New PURE `samagra/factory/style/learn.py`:
+> **`mine_deltas`** scans owner `changes`-reviews on samadhan artifacts (`verdict='changes' AND artifact_uid LIKE 'samadhan:%'`)
+> → proposes `style_events`, **deterministic + idempotent** (dedup key `subsystem_ref='review:<id>'`); a frozen `_RULES`
+> keyword→facet-nudge table (transparent **PLACEHOLDER**, Phase-F-replaceable) → a match emits a `facet_delta`, no match a
+> `review_signal` (no candidate lost; no-profile/missing-key falls back safely). **`ratify`** applies the candidate's **signed
+> STEP** to the THEN-current profile facet (clamped) → writes `styleseed-v<N+1>.json` → marks the event `ratified` → stamps a
+> `style_seed_promoted` governance event; all guards (unknown id / non-`proposed` / non-`facet_delta` / no current profile)
+> raise **before any write**; mutation-safe deep-merge. **`reject`** dismisses a candidate. New CLI **`samagra factory
+> style-mine|style-events|style-ratify <id>|style-reject <id>`**. **§11 schema pinned** (the spec left it to the plan):
+> `facet_delta = {facet, step:{key:signed_step}, rationale, source_review_ids}` · `review_signal = {artifact_uid, rationale,
+> source_review_id}`. **2-lens adversarial review** (two independent subagents — the user chose subagent-driven, not a Workflow):
+> **Lens A (correctness/determinism) = GO** (0 HIGH/MED); **Lens B (safety/invariants) = GO-WITH-CAVEATS**, all 5 invariants
+> PASS + **1 real MED** — ratify stored a mine-time ABSOLUTE and OVERWROTE, so two `changes`-reviews both mined against v0
+> (hedge 0.05) collapsed to one value and the recorded `from_version` was ignored → **FIXED** (`a9ae176`: store the **signed
+> step**, re-apply to the then-current profile ⇒ corrections COMPOUND; regression `test_two_corrections_on_same_key_compound`
+> proves 0.05→0.03→0.01); 2 LOWs **accepted** under the single-operator manual-CLI threat model (non-atomic FS+DB write
+> ordering — commented + owner-recoverable via git; timestamp cosmetic, excluded from the hash). **Invariants HELD:**
+> owner-ratified-only — **NOTHING auto-applies** (`mine` only INSERTs `proposed`; only owner-CLI `ratify`/`extract` write a
+> profile) · **NO new prod write path** (local `styleseed/*.json` + additive `style_events` rows only; the 7 subsystems
+> read-only; **no network / no secrets / no API key**) · governance **additive-only, never reset** · the deterministic moat +
+> factory `build()` 5 guards + **publish gate untouched** · the **known re-extraction limitation** (a later `style-extract`
+> re-extracts a pure-corpus candidate that would DROP a ratified delta) is **documented in `learn.py` + git-protected by fork
+> F-D3**. **No dedicated Codex pre-merge review needed** (D3 is deterministic/additive — that gate is D2's network/secrets
+> boundary). Gate **409 pytest** (410 collected; lone red = pre-existing env `test_gdocs`; +25 over D1's 385). **Contract D2
+> must honor:** record samadhan reviews via `store.add_review(..., artifact_uid=f"samadhan:{slug}", ...)` so `mine_deltas`
+> finds them. Plan `docs/superpowers/plans/2026-06-25-samagra-content-factory-phase-d3-learning-loop.md`. **D2 is now the only
+> remaining Phase-D slice.**
+>
+> **▶ PHASE D2 (next, the only remaining Phase-D slice) = the Samadhan live LLM lane** (gets its own grounded plan): `samagra/clients/llm_client.py` = the
 > ONE Anthropic call site (`claude-opus-4-8`, adaptive thinking, structured output, the StyleSeed system block
 > prompt-cached, **API key from gitignored `.env` — never logged; missing-key raises BEFORE build intent = anti-wedge**;
 > dependency-injected/mockable) + `samagra/factory/samadhan.py` (`build_samadhan(slug)`: condition on the StyleSeed →
 > generate → **adversarial reviewer anchored ONLY to the chapter ground-truth, refute-framed** → advisory style-score →
 > local write; clean→`captured`, any unresolved error→`changes` via the new `_assert_review_clean` capture gate) +
 > `Line.kind="llm"`/`auto_fan` wiring. **Needs mocked-LLM tests + an opt-in live smoke + a dedicated DEC-7 Codex
-> pre-merge review of the generation boundary.** Then **PHASE D3 = the `style_events` learning-loop scaffold**
-> (`_MIGRATIONS[2]` table + `learn.py` mining `review_overlay` → candidate deltas + `factory style-ratify`,
-> owner-ratified-only). The heavy async LLM lanes (NotebookLM/image-gen) remain **Phase F**, not D. **DEC-8 invariants
-> unchanged.**
+> pre-merge review of the generation boundary.** **PHASE D3 (the `style_events` learning-loop scaffold) is already SHIPPED
+> (above)** — the substrate D2 will feed. The heavy async LLM lanes (NotebookLM/image-gen) remain **Phase F**, not D.
+> **DEC-8 invariants unchanged.**
 >
 > **✅ Direction-coherence decision (ratified 2026-06-21 by Deepak; amended by DEC-6 on 2026-06-22):** a coherence
 > audit found execution solid but the strategic direction drifting — "SAMAGRA OS" had re-introduced the OS-sized
@@ -200,7 +232,9 @@
 
 <!-- scribe:begin v1 -->
 ## TeachingOS memory — auto-generated by scribe; edit OUTSIDE this block only
-_Updated 2026-06-24T18:42. Source: agent session distillation._
+_Updated 2026-06-24T21:42. Source: agent session distillation._
+- (5) 2026-06-24 claude: User approved the plan for Phase D (StyleSeed) of TeachingOS. [TeachingOS, StyleSeed, Phase D]
+- (5) 2026-06-24 claude: Phase D = StyleSeed (DEC-8) is the durable style moat for the SAMAGRA content factory. [StyleSeed, SAMAGRA]
 - (5) 2026-06-24 claude: SAMAGRA (TeachingOS project) is implementing a content-factory pivot to generate multi-output physics content for JEE/NEET, moving beyond a read-only console. [SAMAGRA, TeachingOS, content factory, JEE/NEET physics]
 - (5) 2026-06-24 codex: Core logic matches design spec docs/superp; no fundamental issues. [design, validation]
 - (5) 2026-06-23 codex: Remediation commit 91baeeb resolves H1 (high severity) and M1 (medium severity) completely. [remediation, severity]
@@ -224,7 +258,6 @@ _Updated 2026-06-24T18:42. Source: agent session distillation._
 - (5) 2026-06-19 claude: Produced 10 concrete suggestions for improving the future vision direction based on the current intent. [suggestions, vision direction]
 - (5) 2026-06-18 claude: The final plan was recorded using `cbm record-plan docs/superpowers/plans/2026-06-19-samagra-evolution.md --title 'SAMAGRA Evolution'`. [cbm, record-plan, plan storage]
 - (5) 2026-06-18 claude: TeachingOS is designed to automate the creation of JEE/NEET physics educational content from handwritten notes to multiple output formats including lectures, booklets, and question banks. [TeachingOS, JEE/NEET, content pipeline]
-- (4) 2026-06-24 claude: The project is TeachingOS and has entered Phase D. [TeachingOS, Phase D]
 - (4) 2026-06-24 claude: User Deepak Bhardwaj explicitly requested proceeding with Phase C3 after completing C1 and C2. [Phase C3, user request]
 - (4) 2026-06-24 claude: Development workflow uses superpower skills: brainstorming, writing-plans, subagent-driven-development, and finishing-a-development-branch. [superpowers, writing-plans, subagent-driven, brainstorming]
 - (4) 2026-06-24 claude: The goal is to cross-link existing lectures and tools to create a catalogued, indexed, categorized content system for physics. [cross-linking, content catalog, physics lectures]
@@ -235,6 +268,5 @@ _Updated 2026-06-24T18:42. Source: agent session distillation._
 - (4) 2026-06-23 claude: Subagent-driven development pattern used: each task delegated to a fresh subagent with isolated context. [subagent-driven development, task delegation, isolated context]
 - (4) 2026-06-23 claude: Final step: review then merge branch, serve on localhost for checks. [merge, review, localhost, verification]
 - (4) 2026-06-22 claude: Use 'cbm snap pre' (or full path) before commit to take snapshot and auto-enroll in cbm registry. [cbm, snapshot]
-- (4) 2026-06-22 claude: Post-audit hardening passed all tests: 229 pytest, 559 vitest. [tests, hardening]
 Deep recall: C:\SandBox\claude_box\memboxes\scribe\bin\scribe.cmd q "<topic>"
 <!-- scribe:end -->
