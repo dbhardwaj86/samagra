@@ -128,3 +128,62 @@ def list_style_events(conn, status: str | None = None) -> list[dict]:
         d["payload"] = json.loads(d["payload_json"])
         out.append(d)
     return out
+
+
+def _get_event(conn, event_id: int) -> dict:
+    row = conn.execute("SELECT * FROM style_events WHERE id=?", (event_id,)).fetchone()
+    if row is None:
+        raise ValueError(f"unknown style_event {event_id!r}")
+    d = dict(row)
+    d["payload"] = json.loads(d["payload_json"])
+    return d
+
+
+def ratify(conn, event_id: int) -> dict:
+    """Promote a proposed `facet_delta` into the next committed StyleSeed version.
+
+    Merges the delta into the current profile's named facet, writes
+    styleseed-v<N+1>.json, marks the event ratified, and stamps a
+    `style_seed_promoted` governance event. Owner-ratified-only: the caller is
+    the owner via `factory style-ratify`. Raises ValueError on any guard:
+    unknown / non-proposed event, a non-`facet_delta` kind, or no current profile.
+    """
+    ev = _get_event(conn, event_id)
+    if ev["status"] != "proposed":
+        raise ValueError(f"style_event {event_id} is {ev['status']!r}, not 'proposed'")
+    if ev["kind"] != "facet_delta":
+        raise ValueError(
+            f"style_event {event_id} ({ev['kind']!r}) carries no concrete delta to ratify")
+
+    cur = profile.load_current()
+    if cur is None:
+        raise ValueError("no current StyleSeed to base a delta on — run "
+                         "`factory style-extract` and commit v0 first")
+
+    facet = ev["payload"]["facet"]
+    delta = ev["payload"]["delta"]
+    merged = {k: dict(v) if isinstance(v, dict) else v for k, v in cur.facets.items()}
+    merged[facet] = {**merged.get(facet, {}), **delta}
+
+    new_seed = profile.StyleSeed(
+        version=cur.version + 1, facets=merged,
+        source_corpus_hash=cur.source_corpus_hash, created_at=profile._now())
+    path = profile.save(new_seed)
+    chash = profile.content_hash(merged)
+
+    conn.execute("UPDATE style_events SET status='ratified' WHERE id=?", (event_id,))
+    conn.commit()
+    store.append_event(conn, actor="owner", verb="style_seed_promoted",
+                       subsystem="styleseed", subsystem_ref=chash,
+                       note=f"v{new_seed.version} from style_event {event_id}")
+    return {"version": new_seed.version, "path": str(path),
+            "content_hash": chash, "event_id": event_id}
+
+
+def reject(conn, event_id: int) -> None:
+    """Mark a proposed style_event rejected (owner dismisses a candidate delta)."""
+    ev = _get_event(conn, event_id)
+    if ev["status"] != "proposed":
+        raise ValueError(f"style_event {event_id} is {ev['status']!r}, not 'proposed'")
+    conn.execute("UPDATE style_events SET status='rejected' WHERE id=?", (event_id,))
+    conn.commit()

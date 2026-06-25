@@ -99,3 +99,63 @@ def test_list_filters_by_status(conn, profile_v0):
     learn.mine_deltas(conn)
     assert len(learn.list_style_events(conn, status="proposed")) == 1
     assert learn.list_style_events(conn, status="ratified") == []
+
+
+def test_ratify_promotes_facet_delta_to_next_version(conn, profile_v0, monkeypatch):
+    monkeypatch.setattr(P, "_now", lambda: "2026-06-25T01:00:00+00:00")
+    _samadhan_change(conn, "x", "too hedgy")
+    (event_id,) = learn.mine_deltas(conn)
+
+    res = learn.ratify(conn, event_id)
+    assert res["version"] == 1
+    assert res["path"].endswith("styleseed-v1.json")
+    assert len(res["content_hash"]) == 64
+
+    v1 = P.load_current()
+    assert v1.version == 1
+    assert v1.facets["voice"]["hedge_rate"] < 0.05
+    assert v1.facets["voice"]["mean_sentence_len"] == 16.0
+    assert v1.source_corpus_hash == "corpushash"
+
+    assert learn.list_style_events(conn, status="ratified")[0]["id"] == event_id
+    verbs = [e["verb"] for e in store.list_events(conn)]
+    assert "style_seed_promoted" in verbs
+
+
+def test_ratify_is_not_repeatable(conn, profile_v0):
+    _samadhan_change(conn, "x", "too hedgy")
+    (event_id,) = learn.mine_deltas(conn)
+    learn.ratify(conn, event_id)
+    with pytest.raises(ValueError):
+        learn.ratify(conn, event_id)
+
+
+def test_ratify_unknown_event_raises(conn, profile_v0):
+    with pytest.raises(ValueError):
+        learn.ratify(conn, 999)
+
+
+def test_ratify_review_signal_raises(conn, profile_v0):
+    _samadhan_change(conn, "x", "factually wrong")
+    (event_id,) = learn.mine_deltas(conn)
+    with pytest.raises(ValueError):
+        learn.ratify(conn, event_id)
+
+
+def test_ratify_without_profile_raises(conn, tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "STYLESEED_DIR", tmp_path / "none")
+    eid = learn._insert_event(
+        conn, kind="facet_delta", subsystem_ref="review:9", from_version=0,
+        payload={"facet": "voice", "delta": {"hedge_rate": 0.01},
+                 "rationale": "x", "source_review_ids": [9]})
+    with pytest.raises(ValueError):
+        learn.ratify(conn, eid)
+
+
+def test_reject_marks_event_and_blocks_ratify(conn, profile_v0):
+    _samadhan_change(conn, "x", "too hedgy")
+    (event_id,) = learn.mine_deltas(conn)
+    learn.reject(conn, event_id)
+    assert learn.list_style_events(conn, status="rejected")[0]["id"] == event_id
+    with pytest.raises(ValueError):
+        learn.ratify(conn, event_id)
