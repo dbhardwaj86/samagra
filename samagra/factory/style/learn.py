@@ -102,8 +102,12 @@ def mine_deltas(conn) -> list[int]:
                 break
         if match and seed is not None and match[1] in seed.facets.get(match[0], {}):
             facet, key, step = match
-            new_val = _clamp_rate(key, seed.facets[facet][key] + step)
-            payload = {"facet": facet, "delta": {key: round(new_val, 4)},
+            # Store the signed STEP, not a mine-time absolute: `ratify` re-applies it
+            # to the THEN-current profile (so repeated corrections on one key COMPOUND,
+            # and a candidate stays meaningful even if the base version moved between
+            # mining and ratification). `from_version` records the base it was suggested
+            # against (provenance), but ratify always nudges from the current value.
+            payload = {"facet": facet, "step": {key: round(step, 4)},
                        "rationale": r["rationale"], "source_review_ids": [rid]}
             new_ids.append(_insert_event(conn, kind="facet_delta", subsystem_ref=ref,
                                          from_version=from_version, payload=payload))
@@ -142,11 +146,14 @@ def _get_event(conn, event_id: int) -> dict:
 def ratify(conn, event_id: int) -> dict:
     """Promote a proposed `facet_delta` into the next committed StyleSeed version.
 
-    Merges the delta into the current profile's named facet, writes
-    styleseed-v<N+1>.json, marks the event ratified, and stamps a
-    `style_seed_promoted` governance event. Owner-ratified-only: the caller is
-    the owner via `factory style-ratify`. Raises ValueError on any guard:
-    unknown / non-proposed event, a non-`facet_delta` kind, or no current profile.
+    Applies the candidate's signed step(s) to the THEN-current profile's named
+    facet (clamped), writes styleseed-v<N+1>.json, marks the event ratified, and
+    stamps a `style_seed_promoted` governance event. Applying a step (not an
+    overwrite) means two corrections on one key compound and a candidate stays
+    valid even if the base version moved since mining. Owner-ratified-only: the
+    caller is the owner via `factory style-ratify`. Raises ValueError on any
+    guard: unknown / non-proposed event, a non-`facet_delta` kind, or no current
+    profile — all BEFORE any write.
     """
     ev = _get_event(conn, event_id)
     if ev["status"] != "proposed":
@@ -161,13 +168,21 @@ def ratify(conn, event_id: int) -> dict:
                          "`factory style-extract` and commit v0 first")
 
     facet = ev["payload"]["facet"]
-    delta = ev["payload"]["delta"]
+    step_map = ev["payload"]["step"]
+    # deep-copy every facet dict so the loaded `cur` is never mutated by reference.
     merged = {k: dict(v) if isinstance(v, dict) else v for k, v in cur.facets.items()}
-    merged[facet] = {**merged.get(facet, {}), **delta}
+    target = dict(merged.get(facet, {}))
+    for key, step in step_map.items():
+        if key in target:                       # apply only keys still present in the facet
+            target[key] = round(_clamp_rate(key, target[key] + step), 4)
+    merged[facet] = target
 
     new_seed = profile.StyleSeed(
         version=cur.version + 1, facets=merged,
         source_corpus_hash=cur.source_corpus_hash, created_at=profile._now())
+    # File-first, then the DB status+event. Under the single-operator manual-CLI
+    # model a crash between the two leaves an unreferenced candidate file the owner
+    # sees (and can discard) via `git diff` before committing — fork F-D3 recovery.
     path = profile.save(new_seed)
     chash = profile.content_hash(merged)
 

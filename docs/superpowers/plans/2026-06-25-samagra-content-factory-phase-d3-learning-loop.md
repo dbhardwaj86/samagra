@@ -16,8 +16,11 @@ The Phase-D design spec (§11) leaves "the `style_events` payload schema for a r
 
 - **Two event kinds.**
   - `kind="facet_delta"` — a **concrete, ratifiable** candidate. `payload_json` =
-    `{"facet": <one of FACETS>, "delta": {<facet-key>: <new_value>, ...}, "rationale": <str>, "source_review_ids": [<int>, ...]}`.
-    Ratify merges `delta` into the named facet of the current profile and bumps the version.
+    `{"facet": <one of FACETS>, "step": {<facet-key>: <signed_step>, ...}, "rationale": <str>, "source_review_ids": [<int>, ...]}`.
+    Ratify applies each signed `step` to the **then-current** profile's named facet (clamped) and bumps the version.
+    **(Refined post-review: a signed *step*, not a mine-time absolute — so repeated corrections on one key compound and a
+    candidate stays valid if the base version moved between mining and ratification. `from_version` records the base it was
+    suggested against as provenance; ratify always nudges from the current value.)**
   - `kind="review_signal"` — an **informational, non-ratifiable** marker for a `changes`-review whose
     rationale matched no mining rule. `payload_json` = `{"artifact_uid": <str>, "rationale": <str>, "source_review_id": <int>}`.
     Captured so no owner feedback is lost; `ratify` refuses it (no concrete delta).

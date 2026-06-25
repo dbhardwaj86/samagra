@@ -56,7 +56,8 @@ def test_mine_matched_rule_proposes_facet_delta(conn, profile_v0):
     assert e["from_version"] == 0
     p = e["payload"]
     assert p["facet"] == "voice"
-    assert p["delta"]["hedge_rate"] < 0.05
+    # the candidate stores a signed STEP (re-applied to the profile at ratify time).
+    assert p["step"]["hedge_rate"] == -0.02
     assert p["source_review_ids"] == [1]
 
 
@@ -146,7 +147,7 @@ def test_ratify_without_profile_raises(conn, tmp_path, monkeypatch):
     monkeypatch.setattr(config, "STYLESEED_DIR", tmp_path / "none")
     eid = learn._insert_event(
         conn, kind="facet_delta", subsystem_ref="review:9", from_version=0,
-        payload={"facet": "voice", "delta": {"hedge_rate": 0.01},
+        payload={"facet": "voice", "step": {"hedge_rate": -0.02},
                  "rationale": "x", "source_review_ids": [9]})
     with pytest.raises(ValueError):
         learn.ratify(conn, eid)
@@ -159,6 +160,20 @@ def test_reject_marks_event_and_blocks_ratify(conn, profile_v0):
     assert learn.list_style_events(conn, status="rejected")[0]["id"] == event_id
     with pytest.raises(ValueError):
         learn.ratify(conn, event_id)
+
+
+def test_two_corrections_on_same_key_compound(conn, profile_v0):
+    """Adversarial-review MED regression: two `changes`-reviews BOTH mined against
+    v0 (hedge_rate 0.05) must COMPOUND when ratified in turn (0.05 -> 0.03 -> 0.01),
+    not overwrite to the same value. Proves the step (not absolute) semantics."""
+    _samadhan_change(conn, "a", "too hedgy")
+    _samadhan_change(conn, "b", "still too hedgy")
+    ids = learn.mine_deltas(conn)                 # both mined against the SAME base v0
+    assert len(ids) == 2
+    learn.ratify(conn, ids[0])
+    assert P.load_current().facets["voice"]["hedge_rate"] == 0.03   # v1: 0.05 - 0.02
+    learn.ratify(conn, ids[1])
+    assert P.load_current().facets["voice"]["hedge_rate"] == 0.01   # v2: 0.03 - 0.02
 
 
 def test_golden_thread_mine_to_ratified_version(conn, tmp_path, monkeypatch):
