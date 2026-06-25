@@ -159,3 +159,24 @@ def test_reject_marks_event_and_blocks_ratify(conn, profile_v0):
     assert learn.list_style_events(conn, status="rejected")[0]["id"] == event_id
     with pytest.raises(ValueError):
         learn.ratify(conn, event_id)
+
+
+def test_golden_thread_mine_to_ratified_version(conn, tmp_path, monkeypatch):
+    """One owner `changes`-review -> mine -> ratify -> a new committed StyleSeed
+    version on disk carrying the nudged facet, governance ledger stamped."""
+    monkeypatch.setattr(config, "STYLESEED_DIR", tmp_path / "styleseed")
+    monkeypatch.setattr(P, "_now", lambda: "2026-06-25T00:00:00+00:00")
+    P.save(P.StyleSeed(0, FACETS, "corpushash", "2026-06-25T00:00:00+00:00"))
+
+    _samadhan_change(conn, "circular-motion", "Reads too hedgy and impersonal.")
+    (eid,) = learn.mine_deltas(conn)          # 'hedgy' wins (first matching rule)
+    res = learn.ratify(conn, eid)
+
+    assert res["version"] == 1
+    on_disk = json.loads((tmp_path / "styleseed" / "styleseed-v1.json")
+                         .read_text(encoding="utf-8"))
+    assert on_disk["version"] == 1
+    assert on_disk["facets"]["voice"]["hedge_rate"] == round(0.05 - 0.02, 4)
+    # the event is terminal-ratified and the promotion is in the durable ledger
+    assert learn.list_style_events(conn, status="proposed") == []
+    assert any(e["verb"] == "style_seed_promoted" for e in store.list_events(conn))
