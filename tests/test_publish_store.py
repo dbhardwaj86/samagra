@@ -45,3 +45,18 @@ def test_write_publication_refuses_overwrite(published_env):
     store.write_publication({"publication_id": "pub_a", "chapter": "cm"}, sequence=1)
     with pytest.raises(FileExistsError):
         store.write_publication({"publication_id": "pub_a", "chapter": "cm"}, sequence=1)
+
+
+def test_write_published_file_rejects_traversal_chapter(published_env):
+    with pytest.raises(ValueError, match="unsafe chapter"):
+        store.write_published_file("../../etc", "f.html", b"x")
+
+
+def test_write_published_file_rejects_traversal_basename(published_env):
+    with pytest.raises(ValueError, match="unsafe basename"):
+        store.write_published_file("cm", "../evil.html", b"x")
+
+
+def test_write_publication_rejects_traversal_id(published_env):
+    with pytest.raises(ValueError, match="unsafe publication_id"):
+        store.write_publication({"publication_id": "../../evil"}, sequence=1)

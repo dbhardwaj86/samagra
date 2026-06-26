@@ -3,7 +3,7 @@
 
 Layout (config.PUBLISHED_DIR, durable + gitignored):
     manifest.json                          # derived CURRENT view (the export contract)
-    _publications/pub_<NNNNN>_<id>.json    # immutable per-action records (append-only)
+    _publications/pub_<NNNNNNNN>_<id>.json # immutable per-action records (append-only)
     <chapter>/<basename>                   # frozen artifact copies (current published bytes)
 
 PUBLISHED_DIR is resolved at call time so tests can repoint it.
@@ -12,10 +12,25 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import time
 from pathlib import Path
 
 from ... import config
+
+_SAFE_SEGMENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+
+
+def _validate_segment(name: str, label: str) -> str:
+    """Reject a path segment that could escape PUBLISHED_DIR (separators, '..',
+    leading dot, drive letters). Returns the validated name. The publish boundary
+    is a write firewall — it enforces its own safety invariant, never trusting the
+    caller."""
+    if not isinstance(name, str) or not _SAFE_SEGMENT.match(name):
+        raise ValueError(
+            f"unsafe {label} {name!r}: must be non-empty, start alphanumeric, "
+            f"and contain only letters, digits, '.', '-', '_'")
+    return name
 
 
 def now() -> str:
@@ -57,7 +72,7 @@ def write_manifest(manifest: dict) -> Path:
 
 def read_publications() -> list[dict]:
     """Every immutable publication record, ordered by sequence (filename sorts
-    lexically because the sequence is zero-padded)."""
+    lexically because the sequence is zero-padded to 8 digits)."""
     d = _pubs_dir()
     if not d.is_dir():
         return []
@@ -65,6 +80,9 @@ def read_publications() -> list[dict]:
 
 
 def next_sequence() -> int:
+    """Next 1-based publication sequence. Count-based (not max+1): assumes records
+    in _publications/ are never manually deleted — a deletion would make this
+    collide with an existing file, caught by write_publication's overwrite guard."""
     d = _pubs_dir()
     return (len(list(d.glob("pub_*.json"))) if d.is_dir() else 0) + 1
 
@@ -72,7 +90,8 @@ def next_sequence() -> int:
 def write_publication(record: dict, *, sequence: int) -> Path:
     """Write ONE immutable record. Refuses to overwrite an existing file —
     publication history is append-only."""
-    p = _pubs_dir() / f"pub_{sequence:05d}_{record['publication_id']}.json"
+    pub_id = _validate_segment(record.get("publication_id") or "", "publication_id")
+    p = _pubs_dir() / f"pub_{sequence:08d}_{pub_id}.json"
     if p.exists():
         raise FileExistsError(f"publication record already exists: {p.name}")
     _atomic_write_text(p, json.dumps(record, ensure_ascii=False, indent=2))
@@ -82,5 +101,7 @@ def write_publication(record: dict, *, sequence: int) -> Path:
 def write_published_file(chapter: str, basename: str, data: bytes) -> str:
     """Copy one artifact file into published/<chapter>/<basename>; returns its
     manifest-relative path. Overwrites only on a deliberate re-publish."""
+    _validate_segment(chapter, "chapter")
+    _validate_segment(basename, "basename")
     _atomic_write_bytes(_root() / chapter / basename, data)
     return f"{chapter}/{basename}"
