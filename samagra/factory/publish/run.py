@@ -131,6 +131,15 @@ def publish(chapter: str, *, lanes=None, actor: str = _ACTOR) -> dict:
         unchanged = manifest.unchanged_lanes(current, chapter, staged)
         changed = [s for s in staged if s["lane"] not in unchanged]
         if not changed:
+            # Self-heal the export contract: in the crash scenario the I1 no-op
+            # guards against (record written, manifest.json absent), the cache is
+            # still missing here. Regenerate it from the crash-authoritative
+            # records before returning so a retry leaves manifest.json on disk —
+            # without writing a duplicate publication record or `published` event.
+            if pub.read_manifest() is None:
+                pub.write_manifest(
+                    manifest.derive_manifest(pub.read_publications(),
+                                             generated_at=pub.now()))
             return {"chapter": chapter, "publication_id": None, "published": [],
                     "skipped_unchanged": sorted(unchanged), "noop": True}
         pub_id = "pub_" + uuid.uuid4().hex[:12]

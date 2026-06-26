@@ -228,6 +228,9 @@ def test_publish_retry_after_lost_manifest_is_noop_no_duplicate_event(publish_en
     finally:
         conn.close()
     assert after == before          # no duplicate published event on retry
+    # the no-op retry also self-heals the lost export contract on disk
+    assert (config.PUBLISHED_DIR / "manifest.json").is_file()
+    assert "circular-motion" in run.list_published()["chapters"]
 
 
 # ---------------------------------------------------------------------------
