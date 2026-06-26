@@ -41,6 +41,25 @@ def test_fts_edges_match_obvious_chapters():
     assert (3, "lom-and-pseudo-force") not in pairs   # 'newton's laws' not in the text
 
 
+def test_or_fallback_when_and_prefix_finds_nothing():
+    # 'centripetal' is only in circular-motion, 'surface' only in gauss-law: the
+    # AND-prefix co-location requirement fails, so the OR-prefix fallback rescues a
+    # best-effort pointer to BOTH chapters (marked 'fts-or', a weaker-confidence edge).
+    concepts = [{"concept_id": 4, "label": "centripetal surface"}]
+    e = edges.build_chapter_concept_edges(CHAPTER_TEXTS, concepts)
+    assert {x["slug"] for x in e} == {"circular-motion", "gauss-law"}
+    assert all(x["source"] == "fts-or" for x in e)
+
+
+def test_and_prefix_is_preferred_over_or_fallback():
+    # both tokens co-locate in circular-motion -> AND wins, source stays 'fts',
+    # the OR fallback never runs (so unrelated chapters are NOT pulled in).
+    concepts = [{"concept_id": 1, "label": "circular motion"}]
+    e = edges.build_chapter_concept_edges(CHAPTER_TEXTS, concepts)
+    assert {x["slug"] for x in e} == {"circular-motion"}
+    assert all(x["source"] == "fts" for x in e)
+
+
 def test_overlay_adds_and_removes_edges():
     base = edges.build_chapter_concept_edges(CHAPTER_TEXTS, CONCEPTS)
     resolved = {

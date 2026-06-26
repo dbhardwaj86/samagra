@@ -65,3 +65,19 @@ def test_connect_ro_missing_db_raises(tmp_path):
     import pytest
     with pytest.raises(FileNotFoundError):
         store.connect_ro(tmp_path / "nope.db")
+
+
+def test_list_gaps_top_zero_returns_no_rows(tmp_path):
+    db = tmp_path / "concept_graph.db"
+    concepts, chapter_edges, cells, gaps = _sample()
+    conn = store.connect(db)
+    try:
+        store.init_schema(conn)
+        store.write_graph(conn, concepts=concepts, chapter_edges=chapter_edges,
+                          cells=cells, gaps=gaps, meta={"concept_count": 1})
+        # top=0 means "zero rows", NOT "all rows" (the falsy-LIMIT footgun)
+        assert store.list_gaps(conn, top=0) == []
+        assert len(store.list_gaps(conn, top=None)) == 1   # None still means "all"
+        assert len(store.list_gaps(conn, top=5)) == 1
+    finally:
+        conn.close()

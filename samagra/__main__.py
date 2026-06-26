@@ -243,6 +243,14 @@ def cmd_factory(args) -> None:
               f"{s['chapter_edges']} chapter edges, {s['cells']} cells, "
               f"{s['gaps']} gap seeds -> {config.CONCEPT_GRAPH_DB} "
               f"({s['skipped_no_pointer']} concept(s) had no chapter pointer)")
+        skipped = s.get("skipped_concepts") or []
+        if skipped:
+            print("  no-pointer concepts (add an entry to concept_aliases.json to "
+                  "seed them), highest demand first:")
+            for c in skipped[:12]:
+                print(f"    - {c['label']} (demand {c['demand_size']})")
+            if len(skipped) > 12:
+                print(f"    ... and {len(skipped) - 12} more")
     elif args.action == "coverage":
         from .factory import coverage
         from collections import Counter

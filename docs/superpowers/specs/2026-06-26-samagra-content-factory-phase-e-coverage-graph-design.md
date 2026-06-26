@@ -294,13 +294,19 @@ add to `.gitignore`); `CONCEPT_ALIASES = REPO_ROOT / "concept_aliases.json"`
   `concept_graph.db` is a separate file.
 - **DEC-1 bounded console.** The Atlas is a read-only operator-console view, not an audience surface.
 - **Acceptance (golden thread):** a full `coverage-build` over the real 86 concepts + 59 chapters
-  produces `concept_graph.db`; the matrix shows ≥1 real `produced` cell (e.g. `circular-motion`
-  has a captured `deck` from C1 / `paper`+`drill` from C2), real `base` cells (source-ready but
-  unproduced), and real `gap` cells (e.g. `samadhan` for a high-demand concept); the queue is
-  ordered by `deficit_score`, so a high-demand concept thin in existing material (e.g. a
-  `samadhan` cell, denominator 0) outranks a `paper` cell for a QX-saturated concept;
-  `GET /api/coverage` returns it; the Atlas renders the heatmap; the durable `governance.db` is
-  byte-unchanged.
+  produces `concept_graph.db`; the matrix shows real `base` cells (source-ready but unproduced)
+  and real `gap` cells (e.g. `samadhan` for a high-demand concept), with the invariant
+  `state == produced` ⟺ `produced_n > 0` holding across every cell; the queue is ordered by
+  `deficit_score`, so a high-demand concept thin in existing material (e.g. a `samadhan` cell,
+  denominator 0) outranks a `paper` cell for a QX-saturated concept; `GET /api/coverage` returns
+  it; the Atlas renders the heatmap; the durable `governance.db` is byte-unchanged.
+  - *On `produced` cells:* a `produced` cell requires a **captured** factory assignment with a
+    `textbook:<slug>` seed_ref. The C1/C2 prod-test seeds were owner-cleaned-up, so the current
+    committed `governance.db` yields **0** `produced` cells in the real build — expected, not a
+    defect. The produced code path is exercised by the synthetic
+    `tests/test_coverage_build.py::test_full_build_writes_a_queryable_graph` (which injects a
+    captured `textbook:` assignment), and real `produced` cells reappear automatically once any
+    `textbook:` lane is captured through the publish gate.
 
 ## 13. Testing strategy (TDD throughout)
 

@@ -104,7 +104,7 @@ def list_gaps(conn, top: int | None = None, lane: str | None = None) -> list[dic
         sql += " WHERE lane=?"
         args.append(lane)
     sql += " ORDER BY rank"
-    if top:
+    if top is not None:        # top=0 means zero rows, not "all" (falsy-LIMIT footgun)
         sql += " LIMIT ?"
         args.append(top)
     return [dict(r) for r in conn.execute(sql, args)]

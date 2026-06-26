@@ -1,4 +1,5 @@
 import sqlite3
+from pathlib import Path
 from samagra.factory.coverage import concepts
 
 
@@ -39,3 +40,12 @@ def test_loads_physics_concepts_with_demand_and_paper_count(tmp_path):
     assert by_id[226]["paper_count"] == 2   # paperA + paperB
     assert by_id[226]["chapter_id"] == "physics.alternating_currents"
     assert by_id[242]["paper_count"] == 1
+
+
+def test_load_physics_concepts_accepts_relative_path(tmp_path, monkeypatch):
+    # a relative path must not crash on path.as_uri() (resolve() first, like store)
+    db = tmp_path / "builder.sqlite"
+    _make_builder(db)
+    monkeypatch.chdir(tmp_path)
+    rows = concepts.load_physics_concepts(Path("builder.sqlite"))
+    assert {r["label"] for r in rows} == {"ac circuits", "kirchhoff's laws"}

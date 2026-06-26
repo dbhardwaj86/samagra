@@ -33,7 +33,13 @@ def _fts_tokens(s: str) -> list[str]:
 
 
 def build_chapter_concept_edges(chapter_texts: dict, concepts: list[dict]) -> list[dict]:
-    """One in-memory FTS5 table of chapters; AND-prefix-match each concept label.
+    """One in-memory FTS5 table of chapters; prefix-match each concept label.
+
+    Primary pass is AND-prefix (all label tokens must co-locate in one chapter) —
+    high precision, marks edges 'fts'. When a MULTI-WORD label co-locates nowhere
+    the AND pass returns nothing, silently dropping that concept from the gap queue
+    (review finding: e.g. "dimensional analysis"). We then fall back to an OR-prefix
+    best-effort match (ANY token), marked 'fts-or' to flag the weaker confidence.
     score = -bm25 (higher = stronger). Deterministic for fixed inputs."""
     con = sqlite3.connect(":memory:")
     con.execute("CREATE VIRTUAL TABLE ch USING fts5(slug UNINDEXED, body)")
@@ -45,15 +51,22 @@ def build_chapter_concept_edges(chapter_texts: dict, concepts: list[dict]) -> li
             toks = _fts_tokens(c["label"])
             if not toks:
                 continue
-            match = " ".join(f'"{t}"*' for t in toks)
-            for slug, bm25 in con.execute(
-                    "SELECT slug, bm25(ch) FROM ch WHERE ch MATCH ? ORDER BY bm25(ch)",
-                    (match,)):
+            rows = _match(con, " ".join(f'"{t}"*' for t in toks))
+            source = "fts"
+            if not rows and len(toks) > 1:
+                rows = _match(con, " OR ".join(f'"{t}"*' for t in toks))
+                source = "fts-or"
+            for slug, bm25 in rows:
                 out.append({"concept_id": c["concept_id"], "slug": slug,
-                            "score": T.round4(-float(bm25)), "source": "fts"})
+                            "score": T.round4(-float(bm25)), "source": source})
     finally:
         con.close()
     return out
+
+
+def _match(con: sqlite3.Connection, match: str) -> list:
+    return list(con.execute(
+        "SELECT slug, bm25(ch) FROM ch WHERE ch MATCH ? ORDER BY bm25(ch)", (match,)))
 
 
 def apply_overlay(base_edges: list[dict], resolved_overlay: dict) -> list[dict]:

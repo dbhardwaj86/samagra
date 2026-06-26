@@ -25,7 +25,9 @@ ORDER BY c.chapter_id, c.label
 
 def load_physics_concepts(db_path: Path | None = None) -> list[dict]:
     path = Path(db_path) if db_path is not None else config.QX_BUILDER_DB
-    con = sqlite3.connect(path.as_uri() + "?mode=ro", uri=True)
+    # resolve() first so a relative path is expressible as a file URI (matches
+    # store.connect_ro hardening; as_uri() raises ValueError on a relative path).
+    con = sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True)
     con.row_factory = sqlite3.Row
     try:
         return [dict(r) for r in con.execute(_SQL)]
