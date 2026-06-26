@@ -97,3 +97,117 @@ def _captured_publishable(conn, chapter: str, want: set[str] | None) -> list[dic
                     "style_seed_version": result.get("style_seed_version"),
                     "source_files": files})
     return out
+
+
+def publish(chapter: str, *, lanes=None, actor: str = _ACTOR) -> dict:
+    """Owner release gate (manual): copy a chapter's captured artifacts into the
+    immutable published/ snapshot. Idempotent — unchanged lanes are a no-op."""
+    chapter = (chapter or "").strip()
+    if not chapter:
+        raise ValueError("chapter is required")
+    want = _norm_lanes(lanes)
+    conn = gov.connect()
+    try:
+        cands = _captured_publishable(conn, chapter, want)
+        if not cands:
+            raise ValueError(
+                f"no captured publishable artifacts for chapter {chapter!r} "
+                f"(build + capture them through the factory first)")
+        # Stage: read each source file's bytes once + hash (no write yet).
+        staged = []
+        for c in cands:
+            files = []
+            for src in c["source_files"]:
+                data = Path(src).read_bytes()
+                files.append({"rel": f"{chapter}/{Path(src).name}",
+                              "sha256": manifest.sha256_bytes(data),
+                              "bytes": len(data), "_data": data})
+            staged.append({**c, "files": files})
+        current = pub.read_manifest()
+        unchanged = manifest.unchanged_lanes(current, chapter, staged)
+        changed = [s for s in staged if s["lane"] not in unchanged]
+        if not changed:
+            return {"chapter": chapter, "publication_id": None, "published": [],
+                    "skipped_unchanged": sorted(unchanged), "noop": True}
+        pub_id = "pub_" + uuid.uuid4().hex[:12]
+        at = pub.now()
+        entries = []
+        for s in changed:
+            out_files = []
+            for f in s["files"]:
+                rel = pub.write_published_file(chapter, Path(f["rel"]).name, f["_data"])
+                out_files.append({"rel": rel, "sha256": f["sha256"], "bytes": f["bytes"]})
+            entries.append({
+                "uid": f"published:{chapter}:{s['lane']}", "lane": s["lane"],
+                "assignment_id": s["assignment_id"], "files": out_files,
+                "source_seed_ref": f"textbook:{chapter}",
+                "style_seed_version": s.get("style_seed_version"),
+                "captured_at": s.get("captured_at"), "published_at": at,
+                "publication_id": pub_id})
+        record = {"publication_id": pub_id, "action": "publish", "actor": actor,
+                  "chapter": chapter, "seed_ref": f"textbook:{chapter}",
+                  "title": _titleize(chapter), "lanes": [e["lane"] for e in entries],
+                  "at": at, "artifacts": entries}
+        pub.write_publication(record, sequence=pub.next_sequence())
+        for e in entries:
+            gov.append_event(
+                conn, actor=actor, verb="published", assignment_id=e["assignment_id"],
+                subsystem="published", subsystem_ref=chapter,
+                note=json.dumps({"publication_id": pub_id, "lane": e["lane"],
+                                 "uid": e["uid"],
+                                 "sha256": [f["sha256"] for f in e["files"]]},
+                                ensure_ascii=False))
+        pub.write_manifest(
+            manifest.derive_manifest(pub.read_publications(), generated_at=pub.now()))
+        return {"chapter": chapter, "publication_id": pub_id,
+                "published": [e["lane"] for e in entries],
+                "skipped_unchanged": sorted(unchanged)}
+    finally:
+        conn.close()
+
+
+def unpublish(chapter: str, *, lanes=None, actor: str = _ACTOR) -> dict:
+    """Owner retract (manual, append-only): drop a chapter (or specific lanes)
+    from the CURRENT manifest. The frozen bytes + publication records + ledger are
+    never deleted — the consumer simply stops seeing the withdrawn artifacts."""
+    chapter = (chapter or "").strip()
+    want = _norm_lanes(lanes)
+    current = pub.read_manifest() or manifest.derive_manifest(
+        pub.read_publications(), generated_at=pub.now())
+    ch = (current.get("chapters") or {}).get(chapter)
+    if not ch:
+        raise ValueError(f"chapter {chapter!r} is not published")
+    present = {e["lane"]: e for e in ch.get("artifacts", [])}
+    targets = sorted(present) if want is None else sorted(set(present) & want)
+    if not targets:
+        raise ValueError(f"no published lane(s) to withdraw for chapter {chapter!r}")
+    conn = gov.connect()
+    try:
+        pub_id = "pub_" + uuid.uuid4().hex[:12]
+        at = pub.now()
+        record = {"publication_id": pub_id, "action": "unpublish", "actor": actor,
+                  "chapter": chapter, "seed_ref": f"textbook:{chapter}",
+                  "title": ch.get("title"), "lanes": targets, "at": at,
+                  "artifacts": [present[l] for l in targets]}
+        pub.write_publication(record, sequence=pub.next_sequence())
+        for l in targets:
+            gov.append_event(
+                conn, actor=actor, verb="unpublished",
+                assignment_id=present[l].get("assignment_id"),
+                subsystem="published", subsystem_ref=chapter,
+                note=json.dumps({"publication_id": pub_id, "lane": l,
+                                 "uid": present[l].get("uid")}, ensure_ascii=False))
+        pub.write_manifest(
+            manifest.derive_manifest(pub.read_publications(), generated_at=pub.now()))
+        return {"chapter": chapter, "publication_id": pub_id, "unpublished": targets}
+    finally:
+        conn.close()
+
+
+def list_published() -> dict:
+    """The current published manifest (the export contract). Re-derives from the
+    immutable records if manifest.json is absent."""
+    m = pub.read_manifest()
+    if m is None:
+        m = manifest.derive_manifest(pub.read_publications(), generated_at=pub.now())
+    return m

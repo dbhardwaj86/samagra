@@ -130,3 +130,109 @@ def test_captured_publishable_refuses_missing_file(publish_env):
             run._captured_publishable(conn, "cm", None)
     finally:
         conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Task 7: run.publish — the owner release gate
+# ---------------------------------------------------------------------------
+
+from samagra.factory import run as factory
+
+
+def _stub_export(monkeypatch, tmp_path):
+    def fake_export_one(slug, variant, **kw):
+        out = tmp_path / f"{slug}-{variant}.html"
+        out.write_text(f"<h1>{slug} {variant}</h1>", encoding="utf-8")
+        return {"variant": variant, "html": str(out), "docx": None, "gdoc": None}
+    monkeypatch.setattr("samagra.lectures.export.export_one", fake_export_one)
+
+
+def _capture_revision(publish_env, monkeypatch, chapter="circular-motion"):
+    """plan -> approve -> build the revision lane => one captured artifact."""
+    _stub_export(monkeypatch, publish_env)
+    proposals = factory.plan(f"textbook:{chapter}", dry=False)
+    rev = next(p for p in proposals if p["line"] == "revision")
+    factory.approve(rev["assignment_id"])
+    factory.build(rev["assignment_id"])
+    return rev["assignment_id"]
+
+
+def test_publish_golden_revision_saar_sheet(publish_env, monkeypatch):
+    aid = _capture_revision(publish_env, monkeypatch)
+    res = run.publish("circular-motion", lanes=["revision"])
+    assert res["published"] == ["revision"]
+    m = run.list_published()
+    art = m["chapters"]["circular-motion"]["artifacts"][0]
+    assert art["uid"] == "published:circular-motion:revision"
+    assert art["assignment_id"] == aid
+    # the frozen copy exists under published/<chapter>/ and matches the manifest sha
+    rel = art["files"][0]["rel"]
+    data = (publish_env / "published" / rel).read_bytes()
+    from samagra.factory.publish import manifest as M
+    assert M.sha256_bytes(data) == art["files"][0]["sha256"]
+    # a `published` audit event was appended, linked to the lane's assignment
+    conn = store.connect()
+    try:
+        ev = [e for e in store.list_events(conn) if e["verb"] == "published"]
+        assert len(ev) == 1 and ev[0]["assignment_id"] == aid
+    finally:
+        conn.close()
+
+
+def test_publish_is_idempotent_noop(publish_env, monkeypatch):
+    _capture_revision(publish_env, monkeypatch)
+    run.publish("circular-motion", lanes=["revision"])
+    res = run.publish("circular-motion", lanes=["revision"])
+    assert res.get("noop") is True and res["published"] == []
+    from samagra.factory.publish import store as pubstore
+    assert len(pubstore.read_publications()) == 1     # second publish wrote no record
+
+
+def test_publish_refuses_chapter_with_no_captured_artifacts(publish_env):
+    with pytest.raises(ValueError):
+        run.publish("circular-motion")
+
+
+def test_publish_refuses_non_publishable_lane_filter(publish_env, monkeypatch):
+    _capture_revision(publish_env, monkeypatch)
+    with pytest.raises(ValueError):
+        run.publish("circular-motion", lanes=["seed"])
+
+
+def test_publish_skips_in_review_artifacts(publish_env, monkeypatch):
+    _stub_export(monkeypatch, publish_env)
+    factory.plan("textbook:circular-motion", dry=False)   # in-review, never built
+    with pytest.raises(ValueError):                        # nothing captured yet
+        run.publish("circular-motion", lanes=["revision"])
+
+
+# ---------------------------------------------------------------------------
+# Task 8: run.unpublish + run.list_published
+# ---------------------------------------------------------------------------
+
+
+def test_list_published_empty_when_nothing_published(publish_env):
+    m = run.list_published()
+    assert m["chapters"] == {} and m["schema"] == "samagra.published.v1"
+
+
+def test_unpublish_drops_from_manifest_but_keeps_history(publish_env, monkeypatch):
+    _capture_revision(publish_env, monkeypatch)
+    run.publish("circular-motion", lanes=["revision"])
+    res = run.unpublish("circular-motion", lanes=["revision"])
+    assert res["unpublished"] == ["revision"]
+    assert run.list_published()["chapters"] == {}          # gone from current view
+    from samagra.factory.publish import store as pubstore
+    recs = pubstore.read_publications()
+    assert [r["action"] for r in recs] == ["publish", "unpublish"]   # history retained
+    conn = store.connect()
+    try:
+        verbs = [e["verb"] for e in store.list_events(conn)]
+        assert "unpublished" in verbs
+    finally:
+        conn.close()
+
+
+def test_unpublish_refuses_unpublished_chapter(publish_env):
+    with pytest.raises(ValueError):
+        run.unpublish("circular-motion")
