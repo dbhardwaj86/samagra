@@ -52,5 +52,8 @@ def build_concept_graph(*, qx_db: Path | None = None, graph_db: Path | None = No
     finally:
         conn.close()
 
+    pointer_concept_ids = {e["concept_id"] for e in chapter_edges}
+    skipped_no_pointer = len(concepts) - len(pointer_concept_ids)
     return {"concepts": len(concepts), "chapter_edges": len(chapter_edges),
-            "cells": len(cells), "gaps": len(gap_seeds)}
+            "cells": len(cells), "gaps": len(gap_seeds),
+            "skipped_no_pointer": skipped_no_pointer}

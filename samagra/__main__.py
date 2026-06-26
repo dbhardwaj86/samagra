@@ -235,6 +235,33 @@ def cmd_factory(args) -> None:
         finally:
             c.close()
         print(f"factory style-reject: event {args.event_id} rejected")
+    elif args.action == "coverage-build":
+        from .factory import coverage
+        from . import config
+        s = coverage.build_concept_graph()
+        print(f"factory coverage-build: {s['concepts']} concepts, "
+              f"{s['chapter_edges']} chapter edges, {s['cells']} cells, "
+              f"{s['gaps']} gap seeds -> {config.CONCEPT_GRAPH_DB} "
+              f"({s['skipped_no_pointer']} concept(s) had no chapter pointer)")
+    elif args.action == "coverage":
+        from .factory import coverage
+        from collections import Counter
+        payload = coverage.coverage_payload()
+        by_state = Counter(c["state"] for c in payload["cells"])
+        print(f"factory coverage: {len(payload['concepts'])} concepts x "
+              f"{len(payload['lanes'])} lanes")
+        for st in ("produced", "base", "gap"):
+            print(f"  {st:9}: {by_state.get(st, 0)} cells")
+        print(f"  gap queue: {len(payload['gaps'])} ranked seeds")
+    elif args.action == "gaps":
+        from .factory import coverage
+        rows = coverage.list_gaps(top=args.top, lane=args.lane)
+        print(f"factory gaps: top {len(rows)} demand-ranked gap seed(s)")
+        for g in rows:
+            print(f"  #{g['rank']:>3} [{g['deficit_score']:>9.2f}] {g['lane']:9} "
+                  f"{g['suggested_seed_ref']:34} "
+                  f"(demand {g['demand_size']}, corpus {g['existing_corpus_n']}, {g['cell_state']})")
+            print(f"        {g['plan_command']}")
 
 
 def cmd_bridge(args) -> None:
@@ -364,6 +391,12 @@ def build_parser() -> argparse.ArgumentParser:
     ft_ratify.add_argument("event_id", type=int)
     ft_reject = ft_sub.add_parser("style-reject", help="reject a candidate delta")
     ft_reject.add_argument("event_id", type=int)
+    ft_sub.add_parser("coverage-build",
+                      help="(re)build concept_graph.db (the read-only coverage graph)")
+    ft_sub.add_parser("coverage", help="print the concept x lane coverage summary")
+    ft_gaps = ft_sub.add_parser("gaps", help="print the ranked gap-seed demand queue")
+    ft_gaps.add_argument("--top", type=int, default=20, help="show the top N gaps")
+    ft_gaps.add_argument("--lane", default=None, help="filter to a single lane")
     ft.set_defaults(func=cmd_factory)
 
     return p
