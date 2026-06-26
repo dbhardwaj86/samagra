@@ -123,7 +123,11 @@ def publish(chapter: str, *, lanes=None, actor: str = _ACTOR) -> dict:
                               "sha256": manifest.sha256_bytes(data),
                               "bytes": len(data), "_data": data})
             staged.append({**c, "files": files})
-        current = pub.read_manifest()
+        # Idempotency source = the immutable records (crash-authoritative), NOT the
+        # manifest.json cache: after a crash that wrote a record but not the manifest,
+        # this still sees the lane as published and the retry is a clean no-op (no
+        # duplicate publication record / no duplicate `published` event).
+        current = manifest.derive_manifest(pub.read_publications(), generated_at=pub.now())
         unchanged = manifest.unchanged_lanes(current, chapter, staged)
         changed = [s for s in staged if s["lane"] not in unchanged]
         if not changed:
@@ -180,6 +184,10 @@ def unpublish(chapter: str, *, lanes=None, actor: str = _ACTOR) -> dict:
     present = {e["lane"]: e for e in ch.get("artifacts", [])}
     targets = sorted(present) if want is None else sorted(set(present) & want)
     if not targets:
+        if want is not None:
+            raise ValueError(
+                f"none of lanes {sorted(want)} are currently published for "
+                f"chapter {chapter!r} (published: {sorted(present)})")
         raise ValueError(f"no published lane(s) to withdraw for chapter {chapter!r}")
     conn = gov.connect()
     try:

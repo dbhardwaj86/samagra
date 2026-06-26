@@ -183,7 +183,9 @@ def test_publish_is_idempotent_noop(publish_env, monkeypatch):
     _capture_revision(publish_env, monkeypatch)
     run.publish("circular-motion", lanes=["revision"])
     res = run.publish("circular-motion", lanes=["revision"])
-    assert res.get("noop") is True and res["published"] == []
+    assert res.get("noop") is True
+    assert res["published"] == []
+    assert res["skipped_unchanged"] == ["revision"]
     from samagra.factory.publish import store as pubstore
     assert len(pubstore.read_publications()) == 1     # second publish wrote no record
 
@@ -204,6 +206,28 @@ def test_publish_skips_in_review_artifacts(publish_env, monkeypatch):
     factory.plan("textbook:circular-motion", dry=False)   # in-review, never built
     with pytest.raises(ValueError):                        # nothing captured yet
         run.publish("circular-motion", lanes=["revision"])
+
+
+def test_publish_retry_after_lost_manifest_is_noop_no_duplicate_event(publish_env, monkeypatch):
+    """I1 regression: if manifest.json is lost but the immutable record persists
+    (a mid-publish crash), a retry derives 'current' from the records, sees the
+    lane unchanged, and is a clean no-op — no duplicate `published` event."""
+    _capture_revision(publish_env, monkeypatch)
+    run.publish("circular-motion", lanes=["revision"])
+    (config.PUBLISHED_DIR / "manifest.json").unlink()      # simulate the lost cache
+    conn = store.connect()
+    try:
+        before = sum(1 for e in store.list_events(conn) if e["verb"] == "published")
+    finally:
+        conn.close()
+    res = run.publish("circular-motion", lanes=["revision"])
+    assert res.get("noop") is True
+    conn = store.connect()
+    try:
+        after = sum(1 for e in store.list_events(conn) if e["verb"] == "published")
+    finally:
+        conn.close()
+    assert after == before          # no duplicate published event on retry
 
 
 # ---------------------------------------------------------------------------
