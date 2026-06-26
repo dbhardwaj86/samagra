@@ -161,6 +161,34 @@ def cmd_factory(args) -> None:
         res = run.reopen(args.assignment_id)
         print(f"reopened {args.assignment_id} -> {res['status']} "
               "(re-approve, then build to regenerate)")
+    elif args.action == "publish":
+        from .factory import publish as pub
+        res = pub.publish(args.chapter, lanes=args.lanes)
+        if res.get("noop"):
+            print(f"factory publish: {args.chapter} already published, unchanged "
+                  f"(skipped {res['skipped_unchanged']})")
+        else:
+            extra = (f"; skipped unchanged {res['skipped_unchanged']}"
+                     if res.get("skipped_unchanged") else "")
+            print(f"factory publish: {args.chapter} -> {res['publication_id']} "
+                  f"published {res['published']}{extra}")
+    elif args.action == "unpublish":
+        from .factory import publish as pub
+        res = pub.unpublish(args.chapter, lanes=args.lanes)
+        print(f"factory unpublish: {args.chapter} -> {res['publication_id']} "
+              f"withdrew {res['unpublished']}")
+    elif args.action == "published":
+        from .factory import publish as pub
+        m = pub.list_published()
+        chapters = m.get("chapters") or {}
+        if not chapters:
+            print("factory published: nothing published yet "
+                  "(`factory publish <chapter>` after build).")
+        else:
+            print(f"published corpus ({len(chapters)} chapter(s), {m['schema']}):")
+            for ch, c in sorted(chapters.items()):
+                lanes = ", ".join(f"{a['lane']}({len(a['files'])}f)" for a in c["artifacts"])
+                print(f"  {ch}: {lanes}")
     elif args.action == "style-extract":
         from .factory.style import profile as style_profile
 
@@ -405,6 +433,17 @@ def build_parser() -> argparse.ArgumentParser:
     ft_gaps = ft_sub.add_parser("gaps", help="print the ranked gap-seed demand queue")
     ft_gaps.add_argument("--top", type=int, default=20, help="show the top N gaps")
     ft_gaps.add_argument("--lane", default=None, help="filter to a single lane")
+    ft_pub = ft_sub.add_parser(
+        "publish", help="publish a chapter's captured artifacts (the owner release gate)")
+    ft_pub.add_argument("chapter", help="chapter slug, e.g. circular-motion")
+    ft_pub.add_argument("--lanes", default=None,
+                        help="comma-separated lane subset (default: all captured), "
+                             "e.g. revision,deck — Saar sheets first")
+    ft_unpub = ft_sub.add_parser(
+        "unpublish", help="withdraw a published chapter / lanes from the current manifest")
+    ft_unpub.add_argument("chapter")
+    ft_unpub.add_argument("--lanes", default=None, help="comma-separated lane subset")
+    ft_sub.add_parser("published", help="print the current published corpus")
     ft.set_defaults(func=cmd_factory)
 
     return p
