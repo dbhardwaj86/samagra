@@ -340,3 +340,68 @@ def test_partial_unpublish_keeps_other_lanes(publish_env, monkeypatch):
     run.unpublish("circular-motion", lanes=["deck"])
     remaining = run.list_published()["chapters"]["circular-motion"]["artifacts"]
     assert [a["lane"] for a in remaining] == ["revision"]      # deck withdrawn, revision stays
+
+
+# ---------------------------------------------------------------------------
+# Adversarial review (2 MED crash-consistency findings) + spec republish path
+# ---------------------------------------------------------------------------
+
+
+def test_publish_event_failure_leaves_no_orphan_record(publish_env, monkeypatch):
+    """MED#1: events are appended BEFORE the record, so if the `published` event
+    append fails (a crash), NO publication record is left behind — clean + retryable,
+    never a record-without-its-event silent audit gap."""
+    _capture_revision(publish_env, monkeypatch)
+    real_append = run.gov.append_event
+    def failing_append(conn, **kw):
+        if kw.get("verb") == "published":
+            raise RuntimeError("simulated crash during published-event append")
+        return real_append(conn, **kw)
+    monkeypatch.setattr("samagra.factory.publish.run.gov.append_event", failing_append)
+    with pytest.raises(RuntimeError):
+        run.publish("circular-motion", lanes=["revision"])
+    from samagra.factory.publish import store as pubstore
+    assert pubstore.read_publications() == []          # no orphan record
+
+
+def test_unpublish_crash_is_idempotent_and_list_reflects_records(publish_env, monkeypatch):
+    """MED#2: a crash mid-unpublish (record written, manifest not re-derived) ->
+    list_published reflects the records (chapter gone, not the stale cache), and a
+    retry cleanly refuses (no duplicate unpublish record)."""
+    _capture_revision(publish_env, monkeypatch)
+    run.publish("circular-motion", lanes=["revision"])
+    real_wm = run.pub.write_manifest
+    def crash_wm(m):
+        raise RuntimeError("simulated crash before unpublish manifest re-derive")
+    monkeypatch.setattr("samagra.factory.publish.run.pub.write_manifest", crash_wm)
+    with pytest.raises(RuntimeError):
+        run.unpublish("circular-motion")
+    monkeypatch.setattr("samagra.factory.publish.run.pub.write_manifest", real_wm)
+    from samagra.factory.publish import store as pubstore
+    assert [r["action"] for r in pubstore.read_publications()] == ["publish", "unpublish"]
+    assert run.list_published()["chapters"] == {}      # derives from records, not stale cache
+    with pytest.raises(ValueError):                    # already withdrawn -> clean refusal
+        run.unpublish("circular-motion")
+    assert [r["action"] for r in pubstore.read_publications()] == ["publish", "unpublish"]  # no dup
+
+
+def test_republish_after_content_change_supersedes(publish_env, monkeypatch):
+    """Spec §6/§11 load-bearing path (review NIT coverage): a captured artifact whose
+    bytes changed (a rebuild) re-publishes to a NEW publication record + event; the
+    manifest shows the new content (last-write-wins); the old record is retained."""
+    _capture_revision(publish_env, monkeypatch)
+    run.publish("circular-motion", lanes=["revision"])
+    html = publish_env / "circular-motion-thin.html"      # the stubbed captured artifact
+    html.write_text("<h1>circular-motion thin v2</h1>", encoding="utf-8")
+    res = run.publish("circular-motion", lanes=["revision"])
+    assert res["published"] == ["revision"] and not res.get("noop")
+    from samagra.factory.publish import store as pubstore
+    assert len([r for r in pubstore.read_publications() if r["action"] == "publish"]) == 2
+    art = run.list_published()["chapters"]["circular-motion"]["artifacts"][0]
+    assert (publish_env / "published" / art["files"][0]["rel"]).read_text(
+        encoding="utf-8") == "<h1>circular-motion thin v2</h1>"
+    conn = store.connect()
+    try:
+        assert sum(1 for e in store.list_events(conn) if e["verb"] == "published") == 2
+    finally:
+        conn.close()

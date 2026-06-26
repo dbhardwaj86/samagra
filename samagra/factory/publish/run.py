@@ -161,7 +161,11 @@ def publish(chapter: str, *, lanes=None, actor: str = _ACTOR) -> dict:
                   "chapter": chapter, "seed_ref": f"textbook:{chapter}",
                   "title": _titleize(chapter), "lanes": [e["lane"] for e in entries],
                   "at": at, "artifacts": entries}
-        pub.write_publication(record, sequence=pub.next_sequence())
+        # Append the governance audit events BEFORE the immutable record. The record
+        # is the crash-authoritative idempotency key (publish derives `current` from
+        # read_publications()), so writing it LAST guarantees record-present =>
+        # events-present: a crash-retry that no-ops on the existing record can never
+        # silently drop the `published` audit event (adversarial review MED#1).
         for e in entries:
             gov.append_event(
                 conn, actor=actor, verb="published", assignment_id=e["assignment_id"],
@@ -170,6 +174,7 @@ def publish(chapter: str, *, lanes=None, actor: str = _ACTOR) -> dict:
                                  "uid": e["uid"],
                                  "sha256": [f["sha256"] for f in e["files"]]},
                                 ensure_ascii=False))
+        pub.write_publication(record, sequence=pub.next_sequence())
         pub.write_manifest(
             manifest.derive_manifest(pub.read_publications(), generated_at=pub.now()))
         return {"chapter": chapter, "publication_id": pub_id,
@@ -185,8 +190,12 @@ def unpublish(chapter: str, *, lanes=None, actor: str = _ACTOR) -> dict:
     never deleted — the consumer simply stops seeing the withdrawn artifacts."""
     chapter = (chapter or "").strip()
     want = _norm_lanes(lanes)
-    current = pub.read_manifest() or manifest.derive_manifest(
-        pub.read_publications(), generated_at=pub.now())
+    # Derive from the immutable records (crash-authoritative), NOT the manifest.json
+    # cache — matches publish()'s idempotency source. A crash mid-unpublish (record
+    # written, manifest not re-derived) is then correctly seen as already-withdrawn,
+    # so a retry cleanly refuses instead of writing a duplicate unpublish record
+    # (adversarial review MED#2).
+    current = manifest.derive_manifest(pub.read_publications(), generated_at=pub.now())
     ch = (current.get("chapters") or {}).get(chapter)
     if not ch:
         raise ValueError(f"chapter {chapter!r} is not published")
@@ -222,9 +231,8 @@ def unpublish(chapter: str, *, lanes=None, actor: str = _ACTOR) -> dict:
 
 
 def list_published() -> dict:
-    """The current published manifest (the export contract). Re-derives from the
-    immutable records if manifest.json is absent."""
-    m = pub.read_manifest()
-    if m is None:
-        m = manifest.derive_manifest(pub.read_publications(), generated_at=pub.now())
-    return m
+    """The current published corpus, DERIVED from the immutable `_publications/`
+    records (the crash-authoritative source of truth). `manifest.json` is the
+    materialized export artifact refreshed on each publish/unpublish — never the
+    source of truth for this owner-facing view (adversarial review MED#2)."""
+    return manifest.derive_manifest(pub.read_publications(), generated_at=pub.now())
