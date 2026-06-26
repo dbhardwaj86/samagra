@@ -54,7 +54,7 @@ def connect_ro(db_path: Path | None = None) -> sqlite3.Connection:
     path = Path(db_path) if db_path is not None else config.CONCEPT_GRAPH_DB
     if not path.exists():
         raise FileNotFoundError(path)
-    con = sqlite3.connect(path.as_uri() + "?mode=ro", uri=True)
+    con = sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True)
     con.row_factory = sqlite3.Row
     return con
 
