@@ -263,3 +263,80 @@ def test_unpublish_drops_from_manifest_but_keeps_history(publish_env, monkeypatc
 def test_unpublish_refuses_unpublished_chapter(publish_env):
     with pytest.raises(ValueError):
         run.unpublish("circular-motion")
+
+
+# ---------------------------------------------------------------------------
+# Task 9: Package re-exports + governance-byte-unchanged invariant + golden e2e
+# ---------------------------------------------------------------------------
+
+
+def test_package_reexports_the_public_api():
+    from samagra.factory import publish as pub_pkg
+    assert callable(pub_pkg.publish)
+    assert callable(pub_pkg.unpublish)
+    assert callable(pub_pkg.list_published)
+
+
+def test_publish_leaves_assignments_table_byte_unchanged(publish_env, monkeypatch):
+    """The publish boundary is additive: it appends `published` events and writes
+    published/ — it must NOT alter the assignment rows (no state-machine change)."""
+    _capture_revision(publish_env, monkeypatch)
+    conn = store.connect()
+    try:
+        before = store.list_assignments(conn)
+    finally:
+        conn.close()
+    run.publish("circular-motion", lanes=["revision"])
+    conn = store.connect()
+    try:
+        after = store.list_assignments(conn)
+        assert after == before                         # assignments untouched
+        verbs = [e["verb"] for e in store.list_events(conn)]
+        assert verbs.count("published") == 1           # only an event was appended
+        # The published assignment must still be 'captured' — no status-machine change
+        assert any(a["status"] == "captured" for a in after)
+    finally:
+        conn.close()
+
+
+def test_golden_thread_publish_then_unpublish_roundtrip(publish_env, monkeypatch):
+    _capture_revision(publish_env, monkeypatch)
+    run.publish("circular-motion", lanes=["revision"])
+    assert "circular-motion" in run.list_published()["chapters"]
+    run.unpublish("circular-motion")
+    assert run.list_published()["chapters"] == {}
+    # the frozen file + both publication records persist on disk (append-only)
+    from samagra.factory.publish import store as pubstore
+    assert len(pubstore.read_publications()) == 2
+    assert (publish_env / "published" / "circular-motion"
+            / "circular-motion-thin.html").is_file()
+
+
+# ---------------------------------------------------------------------------
+# M2 extra test (deferred from Tasks 7–8 review): partial unpublish
+# ---------------------------------------------------------------------------
+
+
+def _stub_deck(monkeypatch, tmp_path):
+    def fake_build_deck(slug):
+        out = tmp_path / f"{slug}-deck.html"
+        out.write_text(f"<h1>{slug} deck</h1>", encoding="utf-8")
+        return {"variant": "deck", "html": str(out),
+                "json": str(tmp_path / f"{slug}-deck.json"), "cards": 4}
+    monkeypatch.setattr("samagra.factory.deck.build_deck", fake_build_deck)
+
+
+def test_partial_unpublish_keeps_other_lanes(publish_env, monkeypatch):
+    _stub_export(monkeypatch, publish_env)
+    _stub_deck(monkeypatch, publish_env)
+    proposals = factory.plan("textbook:circular-motion", dry=False)
+    for lane in ("revision", "deck"):
+        p = next(x for x in proposals if x["line"] == lane)
+        factory.approve(p["assignment_id"])
+        factory.build(p["assignment_id"])
+    run.publish("circular-motion")            # all CAPTURED publishable -> revision + deck
+    pubd = run.list_published()["chapters"]["circular-motion"]["artifacts"]
+    assert sorted(a["lane"] for a in pubd) == ["deck", "revision"]
+    run.unpublish("circular-motion", lanes=["deck"])
+    remaining = run.list_published()["chapters"]["circular-motion"]["artifacts"]
+    assert [a["lane"] for a in remaining] == ["revision"]      # deck withdrawn, revision stays
