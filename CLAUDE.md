@@ -268,8 +268,48 @@
 > curate `concept_aliases.json` for the 3 residual no-pointer concepts (polarisation spelling-split, radioactivity,
 > transistors); (2) `concept_graph.db` is gitignored — run `samagra factory coverage-build` after pulling.
 >
-> **NEXT per the umbrella roadmap: Phase F (the heavy async LLM lanes — NotebookLM audio/slides, image-gen figures).**
-> PRATHAM student twin = **Phase G** (DEC-9, deferred). **DEC-8 invariants unchanged.**
+> **✅ PHASE G OPENED + G1 (the PUBLISH BOUNDARY — the foundation) BUILT subagent-driven TDD (11 tasks, fresh
+> implementer + 2-stage spec+quality review each) + adversarial multi-lens final review (10-agent Workflow
+> `wf_1aabf2a8-843`, 4 lenses × independent refute-verify) + MERGED to `main` + PUSHED to `origin/main`
+> 2026-06-26** (branch `feature/content-factory-phase-g1`, 19 commits, spec `480665a` → `947d62b`; durable).
+> Driven by the Chairman re-scope of DEC-9 ("lets go for phase G before phase F"), un-deferring PRATHAM (the
+> A6 downstream student entity). **G1 = the publish boundary** — `published` becomes a real, durable,
+> owner-gated state via a manual CLI **`samagra factory publish|unpublish|published`**. `publish <chapter>
+> [--lanes ...]` COPIES a chapter's CAPTURED factory artifacts into an immutable, append-only **`published/`**
+> snapshot: a derived `manifest.json` + frozen artifact copies + immutable per-publication records — the
+> export contract a future PRATHAM (G2+) reads INSTEAD of the inward stores. Append-only `unpublish` retract
+> + `published` list. **Proposed DEC-10 pins this invariant set.** New PURE-modules-plus-orchestrator package
+> **`samagra/factory/publish/`**: `manifest.py` (PURE — schema/sha256/`derive_manifest` last-write-wins
+> replay/`unchanged_lanes` idempotency) · `store.py` (atomic writes under `config.PUBLISHED_DIR`, immutable
+> records, path-traversal segment guards) · `run.py` (`publish`/`unpublish`/`list_published` + captured-artifact
+> recovery from `product_created` notes). New config `PUBLISHED_DIR` (durable + gitignored — like `governance.db`,
+> never reset). **Invariants HELD (the safest firewall crossing):** NO public/outward network surface, NO identity
+> (those are G2/G3); NO new write path to the 7 source subsystems; NO governance migration / NO new table / NO
+> assignment-state-machine change (only new append-only event verbs `published`/`unpublished`); the inward
+> `build()` boundary + its 5 crash-safety guards untouched; the never-automated publish gate is manual-CLI only;
+> mcd/`seed` lane excluded (no local artifact). **Adversarial final review (10-agent Workflow `wf_1aabf2a8-843`,
+> 4 lenses × independent verify): 6 raw → 2 MED confirmed+fixed, 4 refuted; the firewall, security, and spec
+> lenses found NOTHING real** (no firewall/write-path breach, no leak, no contract drift). The 2 MEDs (both
+> crash-window consistency): **MED#1** — publish wrote the record before the `published` event, so a crash +
+> records-based no-op retry could SILENTLY lose the audit event → **FIXED** (events-before-record on BOTH publish
+> and unpublish; the record is the crash-authoritative key). **MED#2** — unpublish read the stale `manifest.json`
+> cache, so a crash made `list_published` lie and a retry wrote a duplicate retract → **FIXED** (unpublish +
+> `list_published` derive from the immutable records). Per-task review fixes also landed: strict manifest action
+> state-machine, `_norm_lanes` empty-filter guard, 2 path-traversal guards on the write firewall,
+> crash-safe idempotency-from-records + manifest self-heal. **Golden thread PROVEN:** a real textbook chapter
+> captured via plan→approve→build → `publish` writes the immutable manifest + frozen copy + a `published` event;
+> `unpublish` drops it from the current view while records + bytes persist; the durable `governance.db`
+> assignments table is **byte-unchanged** (only append-only events added). Gate **534 pytest** (1 skipped =
+> opt-in live-LLM smoke; lone red = pre-existing env `test_gdocs`). Spec
+> `docs/superpowers/specs/2026-06-26-samagra-content-factory-phase-g1-publish-boundary-design.md`; plan
+> `docs/superpowers/plans/2026-06-26-samagra-content-factory-phase-g1-publish-boundary.md`. ⚠ **OWNER:**
+> `published/` is gitignored — it's created on first `samagra factory publish`. G2 (outward read surface), G3
+> (multi-tenant identity), and G4 (the student twin) remain deferred.
+>
+> **NEXT: Phase G1 (publish boundary) is COMPLETE. Remaining choices — owner's call: Phase G2 (the outward
+> read-only surface — `GET /api/published` + a student app, Saar sheets first), Phase G3 (multi-tenant
+> identity; PRATHAM identity lives here), or Phase F (the heavy async LLM lanes — NotebookLM audio/slides,
+> image-gen figures).** PRATHAM identity = G3. **DEC-8 invariants unchanged.**
 >
 > **✅ Direction-coherence decision (ratified 2026-06-21 by Deepak; amended by DEC-6 on 2026-06-22):** a coherence
 > audit found execution solid but the strategic direction drifting — "SAMAGRA OS" had re-introduced the OS-sized
@@ -309,7 +349,8 @@
 
 <!-- scribe:begin v1 -->
 ## TeachingOS memory — auto-generated by scribe; edit OUTSIDE this block only
-_Updated 2026-06-25T18:42. Source: agent session distillation._
+_Updated 2026-06-26T15:42. Source: agent session distillation._
+- (5) 2026-06-26 claude: Phase E of the SAMAGRA content-factory project is the Concept Atlas / coverage graph, which serves as the steering layer. [SAMAGRA, Concept Atlas, coverage graph, steering layer]
 - (5) 2026-06-25 claude: Phase D (StyleSeed, DEC-8) is the durable 'style moat' for the SAMAGRA content factory in the TeachingOS project. [StyleSeed, SAMAGRA, Phase D, DEC-8]
 - (5) 2026-06-24 claude: SAMAGRA (TeachingOS project) is implementing a content-factory pivot to generate multi-output physics content for JEE/NEET, moving beyond a read-only console. [SAMAGRA, TeachingOS, content factory, JEE/NEET physics]
 - (5) 2026-06-24 codex: Core logic matches design spec docs/superp; no fundamental issues. [design, validation]
@@ -333,7 +374,9 @@ _Updated 2026-06-25T18:42. Source: agent session distillation._
 - (5) 2026-06-19 claude: Used a subagent team with a judge agent to debate the Samagra vision over two rounds. [subagent team, judge agent, deliberation]
 - (5) 2026-06-19 claude: Produced 10 concrete suggestions for improving the future vision direction based on the current intent. [suggestions, vision direction]
 - (5) 2026-06-18 claude: The final plan was recorded using `cbm record-plan docs/superpowers/plans/2026-06-19-samagra-evolution.md --title 'SAMAGRA Evolution'`. [cbm, record-plan, plan storage]
-- (5) 2026-06-18 claude: TeachingOS is designed to automate the creation of JEE/NEET physics educational content from handwritten notes to multiple output formats including lectures, booklets, and question banks. [TeachingOS, JEE/NEET, content pipeline]
+- (5) 2026-06-18 claude: TeachingOS uses two Claude Max subscriptions: one acts as CEO (claude-deepak) and another as a subordinate agent for task execution. [multi-agent, Claude, CEO]
+- (4) 2026-06-26 claude: The brainstorming design was approved by the user, leading to the writing of an implementation plan. [brainstorming, approval, implementation plan]
+- (4) 2026-06-25 claude: Brief in 'changes' status cannot be re-generated because approve function requires status 'in-review' and dedup in _existing_ass is status-blind. [SAMAGRA, content factory, bug]
 - (4) 2026-06-25 claude: The user explicitly approved the implementation plan before any code was written, adhering to the 'ok approved -write the plan' workflow. [plan approval, writing-plans skill]
 - (4) 2026-06-25 claude: Subagent-driven development was used with two-stage review: spec compliance review first, then code quality review. [subagent-driven development, two-stage review]
 - (4) 2026-06-25 codex: The Samagra factory uses a pattern to decouple content generation from distribution, with run.py as the main orchestrator. [factory pattern, content generation, orchestration]
@@ -342,8 +385,5 @@ _Updated 2026-06-25T18:42. Source: agent session distillation._
 - (4) 2026-06-25 codex: Purpose is to assess generation boundary after remediation in Samagra Phase D2. [generation boundary, remediation, Samagra]
 - (4) 2026-06-25 codex: Branch feature/content-factory-phase-d2 is subject to a pre-merge code review for SAMAGRA Phase D2. [code review, branch, SAMAGRA]
 - (4) 2026-06-25 codex: Conducted a pre-merge code review of the SAMAGRA Phase D2 change set on branch feature/content-factory-phase-d2, focusing on DEC-7 requirements. [code review, SAMAGRA, Phase D2]
-- (4) 2026-06-24 claude: User Deepak Bhardwaj explicitly requested proceeding with Phase C3 after completing C1 and C2. [Phase C3, user request]
-- (4) 2026-06-24 claude: Development workflow uses superpower skills: brainstorming, writing-plans, subagent-driven-development, and finishing-a-development-branch. [superpowers, writing-plans, subagent-driven, brainstorming]
-- (4) 2026-06-24 claude: The goal is to cross-link existing lectures and tools to create a catalogued, indexed, categorized content system for physics. [cross-linking, content catalog, physics lectures]
 Deep recall: C:\SandBox\claude_box\memboxes\scribe\bin\scribe.cmd q "<topic>"
 <!-- scribe:end -->
