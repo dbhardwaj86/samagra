@@ -28,6 +28,6 @@ describe("ICONS data — completeness vs the app registry (A-2 regression guard)
 
   it("covers exactly the registry app set — no glyph gaps, no orphan glyphs", () => {
     expect(new Set(Object.keys(ICONS))).toEqual(new Set(Object.keys(APPS)));
-    expect(Object.keys(ICONS)).toHaveLength(ORDER.length); // 17
+    expect(Object.keys(ICONS)).toHaveLength(ORDER.length); // 18
   });
 });
