@@ -45,3 +45,22 @@ def derive_manifest(publications: list[dict], *, generated_at: str) -> dict:
                    "artifacts": [slot["lanes"][l] for l in sorted(slot["lanes"])]}
     return {"schema": SCHEMA, "generated_at": generated_at,
             "publication_count": len(publications), "chapters": out}
+
+
+def unchanged_lanes(manifest_obj: dict | None, chapter: str,
+                    candidates: list[dict]) -> set[str]:
+    """Lanes whose candidate file-sha set EXACTLY matches the current manifest
+    entry — these are no-ops a re-publish must skip (idempotency)."""
+    if not manifest_obj:
+        return set()
+    ch = (manifest_obj.get("chapters") or {}).get(chapter)
+    if not ch:
+        return set()
+    current = {e["lane"]: {f["sha256"] for f in e.get("files", [])}
+               for e in ch.get("artifacts", [])}
+    out: set[str] = set()
+    for c in candidates:
+        cur = current.get(c["lane"])
+        if cur is not None and cur == {f["sha256"] for f in c["files"]}:
+            out.add(c["lane"])
+    return out

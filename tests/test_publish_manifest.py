@@ -68,3 +68,22 @@ def test_derive_drops_chapter_when_all_lanes_withdrawn():
     pubs = [_pub("cm", "publish", ["revision"]),
             _pub("cm", "unpublish", ["revision"])]
     assert manifest.derive_manifest(pubs, generated_at="T")["chapters"] == {}
+
+
+def test_unchanged_lanes_none_manifest_is_empty():
+    cands = [{"lane": "revision", "files": [{"sha256": "x"}]}]
+    assert manifest.unchanged_lanes(None, "cm", cands) == set()
+
+
+def test_unchanged_lanes_matches_identical_sha_set():
+    m = manifest.derive_manifest([_pub("cm", "publish", ["revision"],
+                                       shas={"revision": "SAME"})], generated_at="T")
+    cands = [{"lane": "revision", "files": [{"sha256": "SAME"}]}]
+    assert manifest.unchanged_lanes(m, "cm", cands) == {"revision"}
+
+
+def test_unchanged_lanes_excludes_changed_sha():
+    m = manifest.derive_manifest([_pub("cm", "publish", ["revision"],
+                                       shas={"revision": "OLD"})], generated_at="T")
+    cands = [{"lane": "revision", "files": [{"sha256": "NEW"}]}]
+    assert manifest.unchanged_lanes(m, "cm", cands) == set()
