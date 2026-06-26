@@ -100,6 +100,12 @@ EXPORT_DIR = BUILD_DIR / "lectures"
 # Unlike state/ (rebuildable) this is version-controlled — git is the review/
 # approval surface (fork F-D3). One file per version: styleseed-v<N>.json.
 STYLESEED_DIR = REPO_ROOT / "styleseed"
+# Coverage graph (Phase E): REBUILDABLE derived DB, a sibling of DATA_DB and
+# gitignored — it may be deleted and rebuilt at will (never a governance reset).
+CONCEPT_GRAPH_DB = REPO_ROOT / "concept_graph.db"
+# The curated chapter<->concept normalization overlay — git-COMMITTED (the human
+# review surface, like styleseed/). Deltas merged onto the deterministic FTS base.
+CONCEPT_ALIASES = REPO_ROOT / "concept_aliases.json"
 
 # --- portal ---
 HOST = os.environ.get("SAMAGRA_HOST", "127.0.0.1")

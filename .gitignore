@@ -9,6 +9,7 @@ client_secret*.json
 
 # --- generated data (content/state stay local, never in git) ---
 samagra.db
+concept_graph.db
 *.db
 state/
 build/
