@@ -102,10 +102,15 @@ CREATE TABLE concept (
   concept_id   INTEGER PRIMARY KEY,         -- QX concept.id (canonical)
   label        TEXT NOT NULL,
   chapter_id   TEXT,                        -- QX 'physics.<unit>' → the Tier-1 "community"
-  demand_size  INTEGER NOT NULL             -- QX concept.size (question count) = demand signal
+  demand_size  INTEGER NOT NULL,            -- QX concept.size (question count) = demand signal
+  paper_count  INTEGER NOT NULL DEFAULT 0   -- # distinct QX papers tagged C (paper/drill base depth)
 );
 
--- Artifact nodes (existing corpus + factory output), by uid
+-- Artifact + concept_artifact full node/edge graph: SCHEMA RESERVED, populated in
+-- Phase F (Tier-2/3 needs per-artifact nodes). Phase E derives the coverage matrix
+-- from aggregates instead — concept.paper_count (QX paper depth), concept_chapter
+-- (chapter edges), and coverage_cell.produced_n (factory output) — so the Tier-1
+-- DB stays small (no 129k QX question→paper edge rows materialised).
 CREATE TABLE artifact (
   uid           TEXT PRIMARY KEY,           -- catalog uid / 'textbook:chapter:<slug>' / factory artifact_ref
   source        TEXT,                       -- qx | textbook | sims | factory | …
@@ -115,8 +120,7 @@ CREATE TABLE artifact (
   chapter_slug  TEXT                        -- resolved chapter slug, when applicable
 );
 
--- Concept ↔ artifact edges (Tier-1 only)
-CREATE TABLE concept_artifact (
+CREATE TABLE concept_artifact (             -- (Phase F)
   concept_id   INTEGER NOT NULL,
   artifact_uid TEXT NOT NULL,
   relation     TEXT NOT NULL,              -- 'question' (qx) | 'chapter' (fts/overlay) | 'seed' (factory inherit)
