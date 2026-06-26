@@ -74,3 +74,23 @@ def best_chapter_by_concept(edges: list[dict]) -> dict:
     for e in sorted(edges, key=lambda x: -x["score"]):
         best.setdefault(e["concept_id"], e["slug"])
     return best
+
+
+def factory_produced_counts(assignments: list[dict], chapter_edges: list[dict]) -> dict:
+    """(concept_id, lane) -> # captured factory artifacts. A captured assignment with
+    seed_ref 'textbook:<slug>' counts toward every concept that <slug> edges to."""
+    slug_concepts: dict[str, set] = {}
+    for e in chapter_edges:
+        slug_concepts.setdefault(e["slug"], set()).add(e["concept_id"])
+    out: dict[tuple, int] = {}
+    for a in assignments:
+        if a.get("status") != "captured":
+            continue
+        seed = a.get("seed_ref") or ""
+        if not seed.startswith("textbook:"):
+            continue
+        slug = seed.split(":", 1)[1]
+        lane = a.get("pipeline")
+        for cid in slug_concepts.get(slug, ()):
+            out[(cid, lane)] = out.get((cid, lane), 0) + 1
+    return out

@@ -60,3 +60,20 @@ def test_best_chapter_picks_highest_score():
         {"concept_id": 1, "slug": "b", "score": 5.0, "source": "fts"},
     ]
     assert edges.best_chapter_by_concept(edges_in) == {1: "b"}
+
+
+def test_factory_produced_counts_from_captured_assignments():
+    chapter_edges = [
+        {"concept_id": 1, "slug": "circular-motion", "score": 1.0, "source": "fts"},
+        {"concept_id": 9, "slug": "circular-motion", "score": 1.0, "source": "fts"},
+    ]
+    assignments = [
+        {"pipeline": "deck", "seed_ref": "textbook:circular-motion", "status": "captured"},
+        {"pipeline": "deck", "seed_ref": "textbook:circular-motion", "status": "in-review"},  # not captured
+        {"pipeline": "paper", "seed_ref": "munshi:52", "status": "captured"},                  # not textbook
+        {"pipeline": "drill", "seed_ref": "textbook:gauss-law", "status": "captured"},         # no edge
+    ]
+    produced = edges.factory_produced_counts(assignments, chapter_edges)
+    assert produced[(1, "deck")] == 1   # concept 1 + concept 9 both inherit the captured deck
+    assert produced[(9, "deck")] == 1
+    assert (1, "paper") not in produced
