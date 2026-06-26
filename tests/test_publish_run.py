@@ -405,3 +405,22 @@ def test_republish_after_content_change_supersedes(publish_env, monkeypatch):
         assert sum(1 for e in store.list_events(conn) if e["verb"] == "published") == 2
     finally:
         conn.close()
+
+
+def test_unpublish_event_failure_leaves_no_orphan_record(publish_env, monkeypatch):
+    """MED#1 class on the retract path: `unpublished` events are appended BEFORE the
+    record, so an event-append crash leaves NO orphan unpublish record — the lane
+    stays published (clean + retryable), never a silent retract."""
+    _capture_revision(publish_env, monkeypatch)
+    run.publish("circular-motion", lanes=["revision"])
+    real_append = run.gov.append_event
+    def failing_append(conn, **kw):
+        if kw.get("verb") == "unpublished":
+            raise RuntimeError("simulated crash during unpublished-event append")
+        return real_append(conn, **kw)
+    monkeypatch.setattr("samagra.factory.publish.run.gov.append_event", failing_append)
+    with pytest.raises(RuntimeError):
+        run.unpublish("circular-motion")
+    from samagra.factory.publish import store as pubstore
+    assert [r["action"] for r in pubstore.read_publications()] == ["publish"]   # no orphan
+    assert "circular-motion" in run.list_published()["chapters"]                # still published

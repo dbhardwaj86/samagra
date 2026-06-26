@@ -215,7 +215,10 @@ def unpublish(chapter: str, *, lanes=None, actor: str = _ACTOR) -> dict:
                   "chapter": chapter, "seed_ref": f"textbook:{chapter}",
                   "title": ch.get("title"), "lanes": targets, "at": at,
                   "artifacts": [present[l] for l in targets]}
-        pub.write_publication(record, sequence=pub.next_sequence())
+        # Events BEFORE the record (same as publish, adversarial review MED#1): the
+        # record is the crash-authoritative key, so record-present => events-present;
+        # a crash-retry that refuses on the existing unpublish record cannot have
+        # silently dropped the `unpublished` audit event.
         for l in targets:
             gov.append_event(
                 conn, actor=actor, verb="unpublished",
@@ -223,6 +226,7 @@ def unpublish(chapter: str, *, lanes=None, actor: str = _ACTOR) -> dict:
                 subsystem="published", subsystem_ref=chapter,
                 note=json.dumps({"publication_id": pub_id, "lane": l,
                                  "uid": present[l].get("uid")}, ensure_ascii=False))
+        pub.write_publication(record, sequence=pub.next_sequence())
         pub.write_manifest(
             manifest.derive_manifest(pub.read_publications(), generated_at=pub.now()))
         return {"chapter": chapter, "publication_id": pub_id, "unpublished": targets}
