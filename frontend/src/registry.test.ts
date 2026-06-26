@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { APPS, ORDER, MOBILE_FAVORITES } from "./registry";
 
 describe("APPS registry", () => {
-  it("has all 17 apps with exact accent + default size", () => {
+  it("has all 18 apps with exact accent + default size", () => {
     expect(APPS.dashboard).toEqual({ id: "dashboard", name: "Dashboard", accent: "#4f46e5", w: 940, h: 610 });
     expect(APPS.pipelines).toEqual({ id: "pipelines", name: "Pipelines", accent: "#db2777", w: 960, h: 600 });
     expect(APPS.assignments).toEqual({ id: "assignments", name: "Assignments", accent: "#0891b2", w: 1000, h: 630 });

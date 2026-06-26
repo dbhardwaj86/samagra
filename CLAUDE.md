@@ -229,9 +229,47 @@
 > pytest tests/test_samadhan_live_smoke.py -v` — to validate the real generation boundary. Plan
 > `docs/superpowers/plans/2026-06-25-samagra-content-factory-phase-d2-samadhan.md` (incl. the review/remediation log).
 >
-> **▶ PHASE D COMPLETE** (D1 deterministic moat · D2 Samadhan LLM lane · D3 learning loop). **NEXT per the umbrella
-> roadmap: Phase E (coverage graph / Concept Atlas) or Phase F (the heavy async LLM lanes — NotebookLM audio/slides,
-> image-gen figures).** PRATHAM student twin = **Phase G** (DEC-9, deferred). **DEC-8 invariants unchanged.**
+> **▶ PHASE D COMPLETE** (D1 deterministic moat · D2 Samadhan LLM lane · D3 learning loop).
+>
+> **✅ PHASE E (the COVERAGE GRAPH / CONCEPT ATLAS — the read-only STEERING layer) BUILT subagent-driven TDD (17 tasks,
+> fresh implementer + spec+quality review each) + adversarial multi-lens final review (11-agent Workflow, 4 lenses ×
+> independent verify; run `wf_2f09d96c-ff5`) + remediation + MERGED to `main` + PUSHED to `origin/main` 2026-06-26**
+> (ff `ab67968..288d458`; durable). Driven by the user's **"lets go for phase E"**. New PURE package
+> `samagra/factory/coverage/`: `concepts.py` (the QX concept spine — `chapter_id LIKE 'physics.%'` over a **read-only**
+> `builder.sqlite`, demand `concept.size` + distinct-paper count via `question_concept→search_index.slug`) ·
+> `aliases.py` (the git-committed `concept_aliases.json` normalization overlay — label→id, **now also slug-validated**) ·
+> `edges.py` (in-memory FTS5 chapter↔concept edges: **AND-prefix primary + OR-prefix fallback** when a multi-word label
+> co-locates nowhere; `apply_overlay` add/remove deltas; `factory_produced_counts`) · `matrix.py` (the **3-state**
+> produced/base/gap cell rule, factory-produced-only) · `gaps.py` (the **deficit-weighted** ranker `demand/(corpus_n+1)`,
+> samadhan-first) · `store.py` (`concept_graph.db` — REBUILDABLE, gitignored, sibling of `samagra.db`; idempotent
+> DELETE-then-insert; `connect_ro`) · `build.py` (the idempotent rebuild orchestrator; stamps provenance hashes). CLI
+> **`samagra factory coverage-build|coverage|gaps`**; read-only **`GET /api/coverage`** + **`/api/coverage/concept/{id}`**
+> (NOT in `_PROTECTED_GETS`); new React **Atlas** app (heatmap + deficit-ranked gap queue with copyable `plan_command`).
+> **Locked decisions:** factory-produced-only coverage · 3-state cells · deficit-weighted ranking · FTS base + committed
+> overlay · QX read read-only · gap emission ONLY via the existing `samagra factory plan` CLI (the owner's deliberate act).
+> Golden thread **PROVEN LIVE** (real QX + 59 chapters + governance → **86 concepts, 727 chapter edges, 516 cells, 498
+> gap seeds**; durable `governance.db` byte-unchanged). **Adversarial final review: 0 HIGH; the invariants + contracts
+> lenses found NOTHING** (no firewall/write-path/publish-gate breach, no cross-stack contract drift, the break-glass
+> incident left no bypass artifact); **7 confirmed (1 MED, 4 LOW, 2 NIT), ALL remediated TDD** (commit `288d458`). The
+> **MED**: the FTS **AND-prefix** silently dropped **11 high-demand concepts** (incl. dimensional analysis 2387) from the
+> gap queue → **FIXED** (OR-prefix fallback marked `fts-or` + `build` returns/CLI prints the residual **by name**: real
+> build **11→3** no-pointer concepts [8 rescued], edges 553→727, gaps 450→498; the residual polarisation/radioactivity/
+> transistors now surfaced for overlay curation). LOWs: overlay slug validation · `list_gaps(top=0)` falsy-LIMIT ·
+> golden produced↔produced_n invariant + spec §12 honesty (real governance.db has 0 captured `textbook:` seeds ⇒ 0
+> produced expected; path covered synthetically) · governance-byte-unchanged regression. NITs: `graph_meta` provenance
+> hashes (`qx_builder_sha`/`aliases_sha`/`builder_version`, **no `built_at`** ⇒ byte-idempotent) · `concepts.py`
+> `path.resolve().as_uri()`. **Invariants HELD:** **NO new prod write path** (web GET read-only; `concept_graph.db`
+> derived/rebuildable; the ONLY gap action reuses `factory plan`→`approve_seed`→`build`) · **publish gate untouched**
+> (Phase E only *proposes* a ranked queue) · **governance read-only / NO migration** · the 7 source subsystems read-only
+> (QX via read-only `builder.sqlite`) · **no secrets / no LLM** (Tier-1 deterministic). Gate **479 pytest** (1 skipped =
+> opt-in live LLM smoke; lone red = pre-existing env `test_gdocs`). Spec
+> `docs/superpowers/specs/2026-06-26-samagra-content-factory-phase-e-coverage-graph-design.md`; plan
+> `docs/superpowers/plans/2026-06-26-samagra-content-factory-phase-e-coverage-graph.md`. ⚠ **OWNER follow-ups:** (1)
+> curate `concept_aliases.json` for the 3 residual no-pointer concepts (polarisation spelling-split, radioactivity,
+> transistors); (2) `concept_graph.db` is gitignored — run `samagra factory coverage-build` after pulling.
+>
+> **NEXT per the umbrella roadmap: Phase F (the heavy async LLM lanes — NotebookLM audio/slides, image-gen figures).**
+> PRATHAM student twin = **Phase G** (DEC-9, deferred). **DEC-8 invariants unchanged.**
 >
 > **✅ Direction-coherence decision (ratified 2026-06-21 by Deepak; amended by DEC-6 on 2026-06-22):** a coherence
 > audit found execution solid but the strategic direction drifting — "SAMAGRA OS" had re-introduced the OS-sized
