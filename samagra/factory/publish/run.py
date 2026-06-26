@@ -25,22 +25,28 @@ PUBLISHABLE = frozenset(k for k, l in LINES.items() if l.kind != "mcd")
 
 
 def _titleize(chapter: str) -> str:
+    # Assumes hyphen-delimited slugs (e.g. circular-motion); underscores are NOT
+    # treated as word boundaries, so an underscore slug won't title-case per word.
     return chapter.replace("-", " ").title()
 
 
 def _norm_lanes(lanes) -> set[str] | None:
     """Normalize a None | str("a,b") | iterable lane filter to a set, validated
-    against PUBLISHABLE. None means 'all captured publishable lanes'."""
+    against PUBLISHABLE. None means 'all captured publishable lanes'; an empty or
+    whitespace-only filter is a mistake, not 'all', and raises."""
     if lanes is None:
         return None
     items = lanes.split(",") if isinstance(lanes, str) else list(lanes)
     want = {x.strip() for x in items if x and x.strip()}
+    if not want:
+        raise ValueError(
+            "empty lane filter — pass lanes=None to publish all captured lanes")
     bad = want - PUBLISHABLE
     if bad:
         raise ValueError(
             f"not publishable lane(s): {sorted(bad)} "
             f"(publishable: {sorted(PUBLISHABLE)})")
-    return want or None
+    return want
 
 
 def _last_product_created(events: list[dict]) -> dict | None:
@@ -62,7 +68,10 @@ def _last_product_created(events: list[dict]) -> dict | None:
 def _captured_publishable(conn, chapter: str, want: set[str] | None) -> list[dict]:
     """Descriptors for the chapter's captured, publishable artifacts. Refuses (no
     phantom publish) if an artifact's product_created note or its html file on
-    disk is missing — the owner must rebuild first."""
+    disk is missing — the owner must rebuild first.
+
+    `conn` is a governance connection (read or write); the full scan over
+    list_assignments is fine for the single-operator console."""
     seed = f"textbook:{chapter}"
     out: list[dict] = []
     for a in gov.list_assignments(conn):
