@@ -20,16 +20,23 @@ describe("APPS registry", () => {
     expect(APPS.clock).toEqual({ id: "clock", name: "Clock", accent: "#0ea5e9", w: 560, h: 640 });
     expect(APPS.notes).toEqual({ id: "notes", name: "Notes", accent: "#f59e0b", w: 840, h: 600 });
     expect(APPS.snake).toEqual({ id: "snake", name: "Snake", accent: "#22c55e", w: 480, h: 680 });
-    expect(Object.keys(APPS)).toHaveLength(17);
+    expect(Object.keys(APPS)).toHaveLength(18);
   });
   it("ORDER is the exact dock/start order (not alpha, not APPS-key order)", () => {
     expect(ORDER).toEqual([
       "dashboard", "pipelines", "assignments", "org", "questions", "lectures", "booklets",
       "insp", "sims", "mycontentdev", "munshi", "notes", "clock", "terminal", "snake",
-      "activity", "settings",
+      "activity", "settings", "atlas",
     ]);
   });
   it("mobile favorites + min-size constant", () => {
     expect(MOBILE_FAVORITES).toEqual(["dashboard", "notes", "clock", "munshi"]);
+  });
+});
+
+describe("Atlas registration", () => {
+  it("registers the atlas app and includes it in ORDER", () => {
+    expect(APPS.atlas).toMatchObject({ id: "atlas", name: "Atlas" });
+    expect(ORDER).toContain("atlas");
   });
 });

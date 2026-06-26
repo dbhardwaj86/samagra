@@ -2,7 +2,7 @@
 export type AppId =
   | "dashboard" | "pipelines" | "assignments" | "org" | "questions" | "lectures"
   | "booklets" | "insp" | "sims" | "mycontentdev" | "munshi" | "activity"
-  | "settings" | "terminal" | "clock" | "notes" | "snake";
+  | "settings" | "terminal" | "clock" | "notes" | "snake" | "atlas";
 
 export interface AppMeta { id: AppId; name: string; accent: string; w: number; h: number; }
 export interface Rect { x: number; y: number; w: number; h: number; }
@@ -121,3 +121,27 @@ export type SeedType =
 export interface SimRow { id: string; title: string; subject: string | null; grade: string | null; url: string; }
 export interface SimsResponse { sims: SimRow[]; total: number; }
 export interface QuestionFacets { subjects: string[]; }
+
+// ── Atlas / coverage graph (GET /api/coverage) — Phase E ─────────────────────
+export type CoverageState = "produced" | "base" | "gap";
+export interface CoverageConcept {
+  concept_id: number; label: string; chapter_id: string | null;
+  demand_size: number; paper_count: number;
+}
+export interface CoverageCell {
+  concept_id: number; lane: string; state: CoverageState;
+  produced_n: number; base_n: number;
+}
+export interface CoverageGap {
+  rank: number; concept_id: number; lane: string; cell_state: "base" | "gap";
+  demand_size: number; existing_corpus_n: number; deficit_score: number;
+  suggested_seed_ref: string; plan_command: string;
+}
+export interface CoverageResponse {
+  lanes: string[];
+  concepts: CoverageConcept[];
+  cells: CoverageCell[];
+  gaps: CoverageGap[];
+  meta: Record<string, unknown>;
+  error?: string;
+}

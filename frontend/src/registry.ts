@@ -19,12 +19,13 @@ export const APPS: Record<AppId, AppMeta> = {
   clock: { id: "clock", name: "Clock", accent: "#0ea5e9", w: 560, h: 640 },
   notes: { id: "notes", name: "Notes", accent: "#f59e0b", w: 840, h: 600 },
   snake: { id: "snake", name: "Snake", accent: "#22c55e", w: 480, h: 680 },
+  atlas: { id: "atlas", name: "Atlas", accent: "#06b6d4", w: 1040, h: 720 },
 };
 
 export const ORDER: AppId[] = [
   "dashboard", "pipelines", "assignments", "org", "questions", "lectures", "booklets",
   "insp", "sims", "mycontentdev", "munshi", "notes", "clock", "terminal", "snake",
-  "activity", "settings",
+  "activity", "settings", "atlas",
 ];
 
 export const MOBILE_FAVORITES: AppId[] = ["dashboard", "notes", "clock", "munshi"];
