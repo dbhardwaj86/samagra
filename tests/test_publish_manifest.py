@@ -1,3 +1,5 @@
+import pytest
+
 from samagra.factory.publish import manifest
 
 
@@ -87,3 +89,36 @@ def test_unchanged_lanes_excludes_changed_sha():
                                        shas={"revision": "OLD"})], generated_at="T")
     cands = [{"lane": "revision", "files": [{"sha256": "NEW"}]}]
     assert manifest.unchanged_lanes(m, "cm", cands) == set()
+
+
+def test_derive_raises_on_unknown_action():
+    bad = _pub("cm", "publish", ["revision"])
+    bad["action"] = "retract"
+    with pytest.raises(ValueError):
+        manifest.derive_manifest([bad], generated_at="T")
+
+
+def test_derive_multi_chapter_isolation():
+    pubs = [_pub("ch-a", "publish", ["revision"]),
+            _pub("ch-b", "publish", ["deck"])]
+    m = manifest.derive_manifest(pubs, generated_at="T")
+    assert sorted(m["chapters"]) == ["ch-a", "ch-b"]
+    assert [a["lane"] for a in m["chapters"]["ch-a"]["artifacts"]] == ["revision"]
+    assert [a["lane"] for a in m["chapters"]["ch-b"]["artifacts"]] == ["deck"]
+
+
+def test_derive_unpublish_then_republish_shows_new_artifact():
+    pubs = [
+        _pub("cm", "publish", ["revision"], shas={"revision": "OLD"}),
+        _pub("cm", "unpublish", ["revision"]),
+        _pub("cm", "publish", ["revision"], shas={"revision": "NEW"}),
+    ]
+    ch = manifest.derive_manifest(pubs, generated_at="T")["chapters"]["cm"]
+    assert ch["artifacts"][0]["files"][0]["sha256"] == "NEW"
+
+
+def test_unchanged_lanes_does_not_match_two_empty_file_sets():
+    m = {"schema": manifest.SCHEMA, "generated_at": "T", "publication_count": 1,
+         "chapters": {"cm": {"chapter": "cm", "title": "Cm", "seed_ref": "x",
+                             "artifacts": [{"lane": "revision", "files": []}]}}}
+    assert manifest.unchanged_lanes(m, "cm", [{"lane": "revision", "files": []}]) == set()

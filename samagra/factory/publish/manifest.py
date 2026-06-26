@@ -19,7 +19,10 @@ def sha256_bytes(data: bytes) -> str:
 def derive_manifest(publications: list[dict], *, generated_at: str) -> dict:
     """Replay an ordered list of immutable publication records into the current
     published manifest. Publish adds/replaces a lane's entry (last-write-wins);
-    unpublish removes a lane; a chapter with no remaining lanes drops out."""
+    unpublish removes a lane; a chapter with no remaining lanes drops out.
+
+    The output `publication_count` is the RAW record count (it includes unpublish
+    records) — it is NOT a count of currently-published artifacts."""
     chapters: dict[str, dict] = {}
     for rec in publications:
         ch = rec["chapter"]
@@ -30,12 +33,17 @@ def derive_manifest(publications: list[dict], *, generated_at: str) -> dict:
             slot["title"] = rec["title"]
         if rec.get("seed_ref"):
             slot["seed_ref"] = rec["seed_ref"]
-        if rec.get("action") == "unpublish":
+        action = rec.get("action")
+        if action == "unpublish":
             for lane in rec.get("lanes", []):
                 slot["lanes"].pop(lane, None)
-        else:
+        elif action == "publish":
             for entry in rec.get("artifacts", []):
                 slot["lanes"][entry["lane"]] = entry
+        else:
+            raise ValueError(
+                f"derive_manifest: unknown action {action!r} in "
+                f"publication {rec.get('publication_id')!r}")
     out: dict[str, dict] = {}
     for ch, slot in chapters.items():
         if not slot["lanes"]:
@@ -51,7 +59,7 @@ def unchanged_lanes(manifest_obj: dict | None, chapter: str,
                     candidates: list[dict]) -> set[str]:
     """Lanes whose candidate file-sha set EXACTLY matches the current manifest
     entry — these are no-ops a re-publish must skip (idempotency)."""
-    if not manifest_obj:
+    if manifest_obj is None:
         return set()
     ch = (manifest_obj.get("chapters") or {}).get(chapter)
     if not ch:
@@ -61,6 +69,6 @@ def unchanged_lanes(manifest_obj: dict | None, chapter: str,
     out: set[str] = set()
     for c in candidates:
         cur = current.get(c["lane"])
-        if cur is not None and cur == {f["sha256"] for f in c["files"]}:
+        if cur and cur == {f["sha256"] for f in c["files"]}:
             out.add(c["lane"])
     return out
