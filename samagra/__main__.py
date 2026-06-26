@@ -438,7 +438,7 @@ def build_parser() -> argparse.ArgumentParser:
     ft_pub.add_argument("chapter", help="chapter slug, e.g. circular-motion")
     ft_pub.add_argument("--lanes", default=None,
                         help="comma-separated lane subset (default: all captured), "
-                             "e.g. revision,deck — Saar sheets first")
+                             "e.g. revision,deck (Saar sheets first)")
     ft_unpub = ft_sub.add_parser(
         "unpublish", help="withdraw a published chapter / lanes from the current manifest")
     ft_unpub.add_argument("chapter")
