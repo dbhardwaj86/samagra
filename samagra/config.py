@@ -106,6 +106,12 @@ CONCEPT_GRAPH_DB = REPO_ROOT / "concept_graph.db"
 # The curated chapter<->concept normalization overlay — git-COMMITTED (the human
 # review surface, like styleseed/). Deltas merged onto the deterministic FTS base.
 CONCEPT_ALIASES = REPO_ROOT / "concept_aliases.json"
+# Published corpus (Phase G1): the owner-gated export snapshot a downstream
+# consumer (PRATHAM) reads INSTEAD of the inward stores. DURABLE — never reset
+# (frozen artifact copies + immutable per-publication records); gitignored like
+# GOVERNANCE_DB (durable != git-committed). The append-only audit ledger lives
+# in governance.db (`published`/`unpublished` events).
+PUBLISHED_DIR = REPO_ROOT / "published"
 
 # --- portal ---
 HOST = os.environ.get("SAMAGRA_HOST", "127.0.0.1")
