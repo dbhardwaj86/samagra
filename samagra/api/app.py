@@ -168,6 +168,31 @@ def api_assignments():
         conn.close()
 
 
+@app.get("/api/coverage")
+def api_coverage():
+    # Read-only over the rebuildable concept_graph.db (Phase E). Not built yet ->
+    # a graceful empty payload + hint, never a 500 (mirrors /api/questions).
+    from ..factory import coverage
+    try:
+        return coverage.coverage_payload()
+    except FileNotFoundError:
+        return {"lanes": [], "concepts": [], "cells": [], "gaps": [],
+                "meta": {"built": False},
+                "error": "coverage graph not built — run `samagra factory coverage-build`"}
+
+
+@app.get("/api/coverage/concept/{concept_id}")
+def api_coverage_concept(concept_id: int):
+    from ..factory import coverage
+    try:
+        dossier = coverage.concept_dossier(concept_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="coverage graph not built")
+    if dossier is None:
+        raise HTTPException(status_code=404, detail=f"unknown concept {concept_id}")
+    return dossier
+
+
 @app.post("/api/refresh")
 def api_refresh():
     totals = catalog.refresh(verbose=False)
