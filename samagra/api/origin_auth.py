@@ -41,11 +41,18 @@ from .. import config
 _PROTECTED_POSTS = frozenset({
     "/api/refresh", "/api/tick", "/api/munshi/capture", "/api/mcd/seeds",
 })
-_PROTECTED_GETS = frozenset({"/api/munshi/library", "/api/mcd/seeds"})
+# review 27 MED-3: /api/search and /api/assignments serve the CACHED equivalents of
+# the admin-keyed live reads (munshi payloads via the catalog; governance proposal
+# notes), so they carry the same sensitive data and must be gated for consistency.
+# Loopback (the cloudflared-origin path) always passes, so legit access is unaffected
+# — this only blocks a direct non-loopback caller (the exposure threat model).
+_PROTECTED_GETS = frozenset({
+    "/api/munshi/library", "/api/mcd/seeds", "/api/search", "/api/assignments",
+})
 
 
 def is_protected(method: str, path: str) -> bool:
-    """True for the five mutating POSTs + the two admin-keyed live reads."""
+    """True for the five mutating POSTs + the admin-keyed live + cached reads."""
     method = (method or "").upper()
     if method == "POST":
         return path in _PROTECTED_POSTS or path.startswith("/api/gate/")

@@ -163,6 +163,7 @@ def test_mcd_build_failure_keeps_failsafe_wedge_no_rollback(factory_env, monkeyp
     import json as _json
 
     class _Boom:
+        def available(self): return True           # CONFIGURED — the write itself fails
         def create_seed(self, body):
             raise RuntimeError("mcd POST failed mid-write")
     monkeypatch.setattr("samagra.factory.dispatch.McdClient", lambda: _Boom())

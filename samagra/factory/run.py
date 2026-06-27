@@ -165,7 +165,12 @@ def plan(seed_ref: str, dry: bool = True, lane: str | None = None) -> list[dict]
             raise ValueError(f"unknown lane {lane!r}")
         if not any(seed_ref.startswith(p) for p in spec.source_prefixes):
             raise ValueError(f"lane {lane!r} does not accept seed {seed_ref!r}")
-    if seed_ref.startswith("munshi:") and lane is None:
+    # review 27 LOW-10: a munshi seed routes to the seed proposal for BOTH the default
+    # (lane is None) and the explicit `--lane seed` invocation — otherwise lane='seed'
+    # fell through to the generic loop, hit `if spec.kind == "mcd": continue`, and
+    # silently returned an empty plan. (The explicit-lane prefix check above already
+    # refused lane='seed' on a non-munshi seed.)
+    if seed_ref.startswith("munshi:") and lane in (None, "seed"):
         conn = None if dry else store.connect()
         try:
             item = _munshi_item_for(seed_ref)
@@ -383,6 +388,17 @@ def build(assignment_id: str) -> dict:
                 raise ValueError(
                     f"no proposed payload recorded for assignment {assignment_id}")
             validate_seed_payload(payload)
+            # anti-wedge (review 27 MED-1): mcd must be CONFIGURED before we record
+            # build intent. An unconfigured client raises inside run_seed AFTER the
+            # intent is recorded, and the mcd lane deliberately never rolls intent
+            # back (it can't tell "never sent" from "may have committed") -> a
+            # permanent wedge. This availability check keeps the validate-before-intent
+            # contract so a config error refuses cleanly + retryably. (A configured-
+            # but-unreachable failure still wedges by design — the correct fail-safe.)
+            if not dispatch.McdClient().available():
+                raise RuntimeError(
+                    "mycontentdev not configured (mcd-cloud.json adminKey / MCD_API_URL)"
+                    " — refusing the seed build before recording intent")
         elif spec.kind == "llm":
             # anti-wedge: chapter exists + StyleSeed committed + LLM configured,
             # asserted BEFORE recording build intent (a missing key refuses without

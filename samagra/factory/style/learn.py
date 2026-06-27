@@ -83,9 +83,13 @@ def mine_deltas(conn) -> list[int]:
     from_version = seed.version if seed is not None else None
     already = _mined_review_ids(conn)
 
+    # review 27 LOW-11: review_overlay is shared across subsystems; scope the mine to
+    # the factory Samadhan lane (subsystem='factory') so a foreign row that merely
+    # collides on the samadhan: artifact_uid prefix can't pollute the style queue.
     rows = conn.execute(
         "SELECT id, artifact_uid, rationale FROM review_overlay "
-        "WHERE verdict='changes' AND artifact_uid LIKE 'samadhan:%' ORDER BY id"
+        "WHERE verdict='changes' AND subsystem='factory' "
+        "AND artifact_uid LIKE 'samadhan:%' ORDER BY id"
     ).fetchall()
 
     new_ids: list[int] = []

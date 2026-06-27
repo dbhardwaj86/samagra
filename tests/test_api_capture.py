@@ -88,6 +88,13 @@ def test_mcd_seed_bad_type(monkeypatch):
     r = _client().post("/api/mcd/seeds", json={"type": "nope", "raw_text": "x"})
     assert r.status_code == 400
 
+def test_mcd_seed_nonstring_type_400(monkeypatch):
+    # review 27 LOW-13: an unhashable `type` (list/dict) must yield a clean 400, not
+    # a TypeError 500 from the set-membership check. Mirrors the munshi `kind` guard.
+    monkeypatch.setattr(api_app, "McdClient", lambda: type("F", (), {"available": lambda s: True})())
+    r = _client().post("/api/mcd/seeds", json={"type": ["rough_idea"], "raw_text": "x"})
+    assert r.status_code == 400
+
 def test_mcd_seed_empty_text(monkeypatch):
     monkeypatch.setattr(api_app, "McdClient", lambda: type("F", (), {"available": lambda s: True})())
     r = _client().post("/api/mcd/seeds", json={"type": "rough_idea", "raw_text": "  "})

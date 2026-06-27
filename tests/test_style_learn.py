@@ -88,6 +88,17 @@ def test_mine_ignores_approved_and_non_samadhan(conn, profile_v0):
     assert learn.list_style_events(conn) == []
 
 
+def test_mine_ignores_foreign_subsystem_with_samadhan_uid(conn, profile_v0):
+    # review 27 LOW-11: review_overlay is shared across subsystems. A NON-factory row
+    # that happens to carry a samadhan: artifact_uid did not originate from the
+    # factory Samadhan lane and must NOT be mined into the StyleSeed queue.
+    store.add_review(conn, subsystem="mycontentdev", subsystem_ref="x",
+                     artifact_uid="samadhan:x", reviewer="owner",
+                     verdict="changes", rationale="too hedgy")
+    assert learn.mine_deltas(conn) == []
+    assert learn.list_style_events(conn) == []
+
+
 def test_mine_without_profile_falls_back_to_review_signal(conn, tmp_path, monkeypatch):
     monkeypatch.setattr(config, "STYLESEED_DIR", tmp_path / "empty")
     _samadhan_change(conn, "x", "too hedgy")

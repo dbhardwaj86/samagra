@@ -51,10 +51,21 @@ if (FRONTEND_DIST / "assets").exists():
     app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")),
               name="assets")
 
+# review 27 MED-2: QX_ROOT is deliberately EXCLUDED. The QX source root holds
+# answer-bearing audit/QC JSON (codex_jobs/*/reports/*.report.json) + raw question
+# data; QX is exposed ONLY through the answer-safe /api/questions proxy, never the
+# raw /open file server. (Catalog QX rows carry relative paths that never resolved
+# under QX_ROOT anyway, so no working open is removed — only the absolute-path
+# answer-audit surface is closed.)
 ALLOWED_ROOTS = [
-    config.QX_ROOT, config.TEXTBOOK_ROOT, config.BOOKLETS_ROOT,
+    config.TEXTBOOK_ROOT, config.BOOKLETS_ROOT,
     config.INSP_ROOT, config.SIMS_ROOT, config.EXPORT_DIR,
 ]
+
+# The frontend's largest page (Booklets/Insp use limit=500). Clamps the
+# network-facing /api/search so a negative limit (SQLite's unbounded) can't dump
+# the whole catalog in one response (review 27 MED-3).
+_MAX_SEARCH_LIMIT = 500
 
 
 def _under_root(p: Path) -> Path | None:
@@ -125,6 +136,10 @@ def api_facets():
 @app.get("/api/search")
 def api_search(q: str = "", source: str | None = None,
                kind: str | None = None, limit: int = 200):
+    # review 27 MED-3: clamp to a positive bound. A negative limit (e.g. -1) is
+    # SQLite's "no limit" and would dump the entire catalog; the CLI calls
+    # catalog.search directly and is unaffected by this network-only clamp.
+    limit = max(1, min(limit, _MAX_SEARCH_LIMIT))
     return {"results": catalog.search(q, source=source, kind=kind, limit=limit)}
 
 
@@ -292,7 +307,10 @@ _SEED_TYPES = {"concept", "question", "snippet", "simulation_idea",
 def api_mcd_create_seed(payload: dict):
     payload = payload or {}
     typ = payload.get("type")
-    if typ not in _SEED_TYPES:
+    # review 27 LOW-13: guard isinstance BEFORE the set-membership test — an
+    # unhashable `type` (list/dict) would otherwise raise TypeError (500) here
+    # instead of a clean 400. Mirrors the munshi `kind` guard above.
+    if not isinstance(typ, str) or typ not in _SEED_TYPES:
         raise HTTPException(400, "type must be one of: " + ", ".join(sorted(_SEED_TYPES)))
     # Symmetric with munshi capture: reject non-string field values rather than
     # silently str()-coercing them into a production write.

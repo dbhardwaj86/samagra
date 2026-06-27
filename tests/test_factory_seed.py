@@ -168,6 +168,24 @@ def test_plan_textbook_is_unchanged_and_never_includes_seed(seed_env):
         "revision", "lecture", "deck", "paper", "drill"]
 
 
+def test_plan_munshi_with_explicit_seed_lane_routes_like_default(seed_env, monkeypatch):
+    """review 27 LOW-10: targeting the seed lane explicitly (--lane seed) on a munshi
+    seed must route to the seed proposal, not silently fall through to an empty plan."""
+    _mock_munshi(monkeypatch, _munshi_items())
+    proposals = run.plan("munshi:1", dry=False, lane="seed")
+    assert len(proposals) == 1
+    assert proposals[0]["line"] == "seed"
+    assert proposals[0]["seed_ref"] == "munshi:1"
+    assert "assignment_id" in proposals[0]
+
+
+def test_plan_textbook_with_seed_lane_is_refused(seed_env):
+    """The seed lane only accepts munshi: seeds — --lane seed on a textbook seed is a
+    clean refusal (unchanged boundary, documented alongside LOW-10)."""
+    with pytest.raises(ValueError, match="does not accept"):
+        run.plan("textbook:circular-motion", dry=True, lane="seed")
+
+
 # --- build() mcd branch — the prod write -------------------------------------
 
 def _approved_seed_assignment(monkeypatch, seed="munshi:1"):
@@ -182,6 +200,7 @@ def test_build_seed_creates_one_mcd_seed_and_captures(seed_env, monkeypatch):
     calls = []
 
     class _Client:
+        def available(self): return True
         def create_seed(self, p):
             calls.append(p); return {"id": "seed-99", "status": "captured"}
     monkeypatch.setattr("samagra.factory.dispatch.McdClient", lambda: _Client())
@@ -203,11 +222,36 @@ def test_build_seed_creates_one_mcd_seed_and_captures(seed_env, monkeypatch):
         conn.close()
 
 
+def test_build_seed_refuses_when_mcd_unconfigured_without_wedging(seed_env, monkeypatch):
+    """review 27 MED-1: an approved seed build must refuse BEFORE recording intent
+    when mcd is unconfigured (no adminKey/URL). Otherwise run_seed would raise AFTER
+    the product_building intent, and the mcd lane deliberately never rolls intent
+    back -> a permanent wedge. The assignment must stay 'approved' + retryable."""
+    aid = _approved_seed_assignment(monkeypatch)
+
+    class _Unconfigured:
+        def available(self): return False
+        def create_seed(self, p):  # pragma: no cover
+            raise AssertionError("must not attempt a write when unconfigured")
+    monkeypatch.setattr("samagra.factory.dispatch.McdClient", lambda: _Unconfigured())
+    with pytest.raises((RuntimeError, ValueError), match="configured"):
+        run.build(aid)
+    conn = store.connect()
+    try:
+        verbs = [e["verb"] for e in store.list_events_for_assignment(conn, aid)]
+        assert "product_building" not in verbs           # anti-wedge: no intent recorded
+        row = next(r for r in store.list_assignments(conn) if r["id"] == aid)
+        assert row["status"] == "approved"               # retryable after configuring mcd
+    finally:
+        conn.close()
+
+
 def test_build_seed_refuses_double_build(seed_env, monkeypatch):
     aid = _approved_seed_assignment(monkeypatch)
     n = {"c": 0}
 
     class _Client:
+        def available(self): return True
         def create_seed(self, p):
             n["c"] += 1; return {"id": "seed-1", "status": "captured"}
     monkeypatch.setattr("samagra.factory.dispatch.McdClient", lambda: _Client())

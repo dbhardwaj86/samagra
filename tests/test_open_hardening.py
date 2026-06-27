@@ -82,3 +82,16 @@ def test_outside_root_still_403(served_root, tmp_path):
     other = tmp_path.parent / "elsewhere.html"
     other.write_text("x", encoding="utf-8")
     assert _get(other).status_code == 403
+
+
+def test_qx_root_not_in_allowed_roots():
+    # review 27 MED-2: the QX source root holds answer-bearing audit/QC JSON
+    # (codex_jobs/*/reports/*.report.json) + raw question data. QX is exposed ONLY
+    # via the answer-safe /api/questions proxy; the raw /open file server must not
+    # advertise the QX root (catalog QX rows carry relative paths that never
+    # resolve there anyway — only absolute-path answer-audit access is removed).
+    from samagra import config
+    assert config.QX_ROOT not in api_app.ALLOWED_ROOTS
+    # the other source roots stay servable
+    assert config.TEXTBOOK_ROOT in api_app.ALLOWED_ROOTS
+    assert config.EXPORT_DIR in api_app.ALLOWED_ROOTS

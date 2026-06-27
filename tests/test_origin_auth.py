@@ -57,6 +57,16 @@ def test_is_protected_covers_five_posts_and_two_admin_reads():
     assert origin_auth.is_protected("GET", "/api/mcd/seeds") is True
 
 
+def test_is_protected_covers_sensitive_cache_reads():
+    # review 27 MED-3: the cached equivalents of the admin-keyed live reads carry the
+    # same sensitive data — munshi payloads via /api/search, governance proposal
+    # notes via /api/assignments — so the origin gate must cover them too. (Legit
+    # traffic arrives via the loopback tunnel and always passes; this only blocks a
+    # direct non-loopback caller.)
+    assert origin_auth.is_protected("GET", "/api/search") is True
+    assert origin_auth.is_protected("GET", "/api/assignments") is True
+
+
 def test_is_protected_leaves_reads_and_spa_open():
     assert origin_auth.is_protected("GET", "/api/overview") is False
     assert origin_auth.is_protected("GET", "/api/questions") is False
