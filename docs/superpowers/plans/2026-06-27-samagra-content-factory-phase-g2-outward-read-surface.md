@@ -31,7 +31,9 @@
 **Frontend (modify):**
 - `frontend/src/main.tsx` — branch on `isLearnPath(...)` to mount `<Pratham/>` vs the existing `<App/>`.
 
-**No changes:** `.gitignore` (G1 already ignores `published/`), `config.py` (`PUBLISHED_DIR` already exists), `origin_auth.py` (the new GETs stay public by being *absent* from `_PROTECTED_GETS`), the governance schema, the inward factory.
+**No changes:** `config.py` (`PUBLISHED_DIR` already exists), `origin_auth.py` (the new GETs stay public by being *absent* from `_PROTECTED_GETS`), the governance schema, the inward factory.
+
+> **Correction (landed during implementation):** `.gitignore` *did* need a one-line fix. G1's rule was the **unanchored** `published/`, which matches a `published` directory at *any* depth — so it also ignored the new spec-§6.2 source dir `frontend/src/lib/published/`, silently dropping those tracked source files. Fixed by anchoring to `/published/` (root runtime corpus only) plus a `!frontend/src/lib/published/` negation. The G1 invariant (the runtime `published/` corpus stays out of git) is preserved.
 
 > **Command note:** run `python -m pytest …` from the repo root. Run `npx vitest run …`, `npm run build`, etc. from the `frontend/` directory (the examples prefix `cd frontend &&` where relevant).
 

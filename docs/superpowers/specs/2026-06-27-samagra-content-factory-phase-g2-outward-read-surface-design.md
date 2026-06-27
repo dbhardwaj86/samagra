@@ -114,8 +114,8 @@ over it and two HTTP handlers.
 | Function | Responsibility |
 |---|---|
 | `published_manifest() -> dict` | thin delegate to `run.list_published()` (the public read of the current corpus). Kept as the single read entry point so the API never imports `run` internals directly. |
-| `resolve_artifact(chapter, lane, kind="html") -> dict \| None` | look the `(chapter, lane)` entry up **in the manifest**; pick the file whose extension matches `kind` (`html`/`json`/`docx`); reject any segment failing G1's `_SAFE_SEGMENT` guard (defense-in-depth — though the path comes from our own manifest, never the client); resolve `PUBLISHED_DIR / rel`, confirm it stays under `PUBLISHED_DIR`, read bytes, **re-verify sha256 against the manifest entry** (a mismatch raises — surfaced, never silent), return `{abs_path, bytes, sha256, media_type, rel}`. Unknown chapter / lane / kind / missing file → `None`. |
-| `_media_type(ext) -> str` | `html → text/html`, `json → application/json`, `docx → application/vnd.openxmlformats-officedocument.wordprocessingml.document`, else `application/octet-stream`. |
+| `resolve_artifact(chapter, lane, kind="html") -> dict \| None` | look the `(chapter, lane)` entry up **in the manifest**; pick the file whose extension matches `kind` (`html`/`json`/`docx`); reject any segment failing G1's `_SAFE_SEGMENT` guard (defense-in-depth — though the path comes from our own manifest, never the client); resolve `PUBLISHED_DIR / rel`, confirm it stays under `PUBLISHED_DIR`, read bytes, **re-verify sha256 against the manifest entry** (a mismatch raises — surfaced, never silent), return `{rel, abs_path, bytes, sha256, media_type}`. Unknown chapter / lane / **kind** / missing file → `None`. |
+| kind→media mapping (two module-level dicts `_KIND_EXT` / `_KIND_MEDIA`, **not** a free `_media_type(ext)` helper) | `html → (.html,.htm) → text/html; charset=utf-8`, `json → (.json,) → application/json`, `docx → (.docx,) → application/vnd.openxmlformats-officedocument.wordprocessingml.document`. An unknown `kind` is **not in `_KIND_EXT`**, so `resolve_artifact` returns `None` → the route 404s — *stricter* than an `application/octet-stream` catch-all (no unknown-type bytes are ever served), so there is no octet-stream fallback. |
 
 `read.py` performs **no writes** and reads only `PUBLISHED_DIR` (via `run`/`store`)
 — it never touches `governance.db`, `EXPORT_DIR`, `_publications/`, or the
@@ -145,10 +145,16 @@ def api_published_artifact(chapter: str, lane: str, kind: str = "html"):
     """One published artifact's bytes, resolved from the manifest + sha-verified.
     `kind` ∈ {html, json, docx}, default html. Public. 404 on unknown."""
     from ..factory.publish import read
-    art = read.resolve_artifact(chapter, lane, kind=kind)
+    try:
+        art = read.resolve_artifact(chapter, lane, kind=kind)
+    except ValueError:
+        raise HTTPException(status_code=500, detail="artifact integrity check failed")
     if art is None:
         raise HTTPException(status_code=404, detail="not published")
-    return Response(content=art["bytes"], media_type=art["media_type"])
+    headers = {"X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer"}
+    if kind == "html":
+        headers["Content-Security-Policy"] = "sandbox allow-scripts"
+    return Response(content=art["bytes"], media_type=art["media_type"], headers=headers)
 ```
 
 Both endpoints are **public** (left out of `_PROTECTED_GETS` in `origin_auth.py`,
@@ -158,6 +164,18 @@ from the manifest entry, so traversal is structurally impossible (and the segmen
 guard is a second layer). The artifact handler is the **only** way G2 yields file
 bytes; there is no static mount of `published/`.
 
+**Defense-in-depth response headers** (adversarial-review hardening — this is a
+*public* byte surface served same-origin as the console). Every artifact response
+carries `X-Content-Type-Options: nosniff` (no MIME-sniffing on the json/docx kinds)
+and `Referrer-Policy: no-referrer` (the `/api/published/<ch>/<lane>` path never
+leaks in the `Referer` when the artifact loads CDN resources). For `kind=html`, a
+`Content-Security-Policy: sandbox allow-scripts` forces the document into an
+**opaque origin even on direct navigation** (a shared deep-link or the reader's docx
+href) — closing the gap the in-reader iframe sandbox leaves open — while still
+letting the artifact's own inline + CDN KaTeX/MathJax run (the `sandbox` directive
+isolates the *origin*, not resource sources, so there is deliberately **no**
+restrictive `script-src`/`default-src` that would break math typesetting).
+
 ## 6. Frontend — the `/learn` reader (PRATHAM)
 
 ### 6.1 Split at the SPA root (no router dependency)
@@ -165,8 +183,12 @@ bytes; there is no static mount of `published/`.
 `frontend/src/main.tsx` branches on the path **before** mounting:
 
 ```tsx
-const isLearn = window.location.pathname.startsWith("/learn");
-createRoot(root).render(isLearn ? <Pratham/> : <App/>);
+import { isLearnPath } from "./lib/published/route";
+// isLearnPath = `pathname === "/learn" || pathname.startsWith("/learn/")` — the
+// exact-or-slash-prefix form, so "/learning" is NOT a match (a bare startsWith
+// "/learn" would misclassify it).
+const Root = isLearnPath(window.location.pathname) ? Pratham : App;
+createRoot(root).render(<React.StrictMode><Root/></React.StrictMode>);
 ```
 
 `<App/>` is the existing operator console (untouched); `<Pratham/>` is the new
