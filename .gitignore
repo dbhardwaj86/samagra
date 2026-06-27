@@ -59,4 +59,6 @@ Web OS GUI design.zip
 cloudflared/*.json
 **/cloudflared/*.json
 mcd-cloud.json
-published/
+/published/
+# frontend source lib is NOT the runtime published/ dir — keep it tracked:
+!frontend/src/lib/published/
