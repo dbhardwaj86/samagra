@@ -77,6 +77,7 @@ describe("Pratham reader", () => {
     const link = screen.getByTestId("pratham-docx");
     expect(link).toBeInTheDocument();
     expect(link.getAttribute("href")).toBe("/api/published/circular-motion/lecture?kind=docx");
+    expect(link).toHaveTextContent("Download original (.docx)");
   });
 
   it("honors a deep-link to a specific chapter/lane at mount", () => {
@@ -85,5 +86,12 @@ describe("Pratham reader", () => {
     render(<Pratham />);
     expect(screen.getByTestId("pratham-frame").getAttribute("src"))
       .toBe("/api/published/circular-motion/lecture");
+  });
+
+  it("shows a distinct error state when /api/published fails", () => {
+    useApiMock.mockReturnValue({ data: null, loading: false, error: "HTTP 500" });
+    render(<Pratham />);
+    expect(screen.getByTestId("pratham-error")).toBeInTheDocument();
+    expect(screen.queryByTestId("pratham-empty")).not.toBeInTheDocument();
   });
 });

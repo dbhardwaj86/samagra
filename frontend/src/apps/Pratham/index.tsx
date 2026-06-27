@@ -17,7 +17,7 @@ const C = {
 };
 
 export default function Pratham() {
-  const { data, loading } = useApi<PublishedManifest>("/api/published");
+  const { data, loading, error } = useApi<PublishedManifest>("/api/published");
   const chapters = chaptersList(data);
   const [sel, setSel] = useState(() => parseLearnPath(window.location.pathname));
 
@@ -50,11 +50,19 @@ export default function Pratham() {
       </header>
 
       {chapters.length === 0 ? (
-        <div data-testid="pratham-empty" aria-busy={loading} style={{
-          margin: "auto", color: C.muted, textAlign: "center", padding: 40,
-        }}>
-          {loading ? "Loading…" : "Nothing published yet."}
-        </div>
+        error && !loading ? (
+          <div data-testid="pratham-error" role="alert" style={{
+            margin: "auto", color: C.muted, textAlign: "center", padding: 40,
+          }}>
+            Couldn't load the published corpus — please try again later.
+          </div>
+        ) : (
+          <div data-testid="pratham-empty" aria-busy={loading} style={{
+            margin: "auto", color: C.muted, textAlign: "center", padding: 40,
+          }}>
+            {loading ? "Loading…" : "Nothing published yet."}
+          </div>
+        )
       ) : (
         <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
           <nav style={{
@@ -99,7 +107,7 @@ export default function Pratham() {
                 <a data-testid="pratham-docx"
                   href={artifactUrl(chapter.chapter, lane, "docx")}
                   style={{ marginLeft: "auto", color: C.accent, fontSize: 13 }}>
-                  Download .docx
+                  Download original (.docx)
                 </a>
               ) : null}
             </div>
