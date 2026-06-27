@@ -42,3 +42,45 @@ def test_api_published_lists_chapters(tmp_path, monkeypatch):
     assert r.status_code == 200
     ch = r.json()["chapters"]["circular-motion"]
     assert ch["artifacts"][0]["lane"] == "revision"
+
+
+def test_api_published_artifact_returns_html(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "PUBLISHED_DIR", tmp_path / "published")
+    _publish("circular-motion", "revision", [("circular-motion-thin.html", b"<h1>Saar</h1>")])
+    from samagra.api.app import app
+    r = TestClient(app).get("/api/published/circular-motion/revision")
+    assert r.status_code == 200
+    assert r.headers["content-type"].startswith("text/html")
+    assert r.content == b"<h1>Saar</h1>"
+
+
+def test_api_published_artifact_docx_kind(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "PUBLISHED_DIR", tmp_path / "published")
+    _publish("cm", "lecture", [("cm-thick.html", b"<h1>h</h1>"), ("cm-thick.docx", b"DOCX")])
+    from samagra.api.app import app
+    r = TestClient(app).get("/api/published/cm/lecture?kind=docx")
+    assert r.status_code == 200
+    assert r.content == b"DOCX"
+    assert "wordprocessingml" in r.headers["content-type"]
+
+
+def test_api_published_artifact_unknown_is_404(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "PUBLISHED_DIR", tmp_path / "published")
+    from samagra.api.app import app
+    assert TestClient(app).get("/api/published/nope/revision").status_code == 404
+
+
+def test_api_published_artifact_integrity_breach_is_500(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "PUBLISHED_DIR", tmp_path / "published")
+    _publish("cm", "revision", [("cm-thin.html", b"<h1>ok</h1>")])
+    (tmp_path / "published" / "cm" / "cm-thin.html").write_bytes(b"TAMPERED")
+    from samagra.api.app import app
+    assert TestClient(app).get("/api/published/cm/revision").status_code == 500
+
+
+def test_published_endpoints_are_public_not_gated():
+    # The G2 read surface is intentionally PUBLIC: it must NOT be in _PROTECTED_GETS
+    # (it serves only owner-released content). Mirrors the /api/coverage precedent.
+    from samagra.api import origin_auth
+    assert origin_auth.is_protected("GET", "/api/published") is False
+    assert origin_auth.is_protected("GET", "/api/published/cm/revision") is False

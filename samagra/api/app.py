@@ -219,6 +219,22 @@ def api_published():
     return read.published_manifest()
 
 
+@app.get("/api/published/{chapter}/{lane}")
+def api_published_artifact(chapter: str, lane: str, kind: str = "html"):
+    # One published artifact's bytes, resolved FROM the manifest (never a
+    # client-supplied path) and sha-verified. Public read. 404 on unknown
+    # chapter/lane/kind; 500 on an integrity breach (a tampered/rebuilt frozen file
+    # whose bytes no longer match the manifest sha — surfaced, never served).
+    from ..factory.publish import read
+    try:
+        art = read.resolve_artifact(chapter, lane, kind=kind)
+    except ValueError:
+        raise HTTPException(status_code=500, detail="artifact integrity check failed")
+    if art is None:
+        raise HTTPException(status_code=404, detail="not published")
+    return Response(content=art["bytes"], media_type=art["media_type"])
+
+
 @app.post("/api/refresh")
 def api_refresh():
     totals = catalog.refresh(verbose=False)
