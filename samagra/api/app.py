@@ -232,7 +232,18 @@ def api_published_artifact(chapter: str, lane: str, kind: str = "html"):
         raise HTTPException(status_code=500, detail="artifact integrity check failed")
     if art is None:
         raise HTTPException(status_code=404, detail="not published")
-    return Response(content=art["bytes"], media_type=art["media_type"])
+    # Defense-in-depth headers on this PUBLIC byte surface (adversarial review LOW):
+    # nosniff stops MIME-confusion on the json/docx kinds; no-referrer keeps the
+    # /api/published/<ch>/<lane> path out of the Referer when the artifact loads CDN
+    # resources. For html, a CSP `sandbox allow-scripts` forces an opaque origin even
+    # on DIRECT navigation (a shared deep-link / the reader's docx href) — closing the
+    # gap the in-reader iframe sandbox leaves open — while still letting the artifact's
+    # own inline + CDN KaTeX/MathJax run (sandbox isolates the ORIGIN, not resource
+    # sources, so no restrictive script-src that would break typesetting).
+    headers = {"X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer"}
+    if kind == "html":
+        headers["Content-Security-Policy"] = "sandbox allow-scripts"
+    return Response(content=art["bytes"], media_type=art["media_type"], headers=headers)
 
 
 @app.post("/api/refresh")

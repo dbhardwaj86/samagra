@@ -86,6 +86,33 @@ def test_published_endpoints_are_public_not_gated():
     assert origin_auth.is_protected("GET", "/api/published/cm/revision") is False
 
 
+def test_api_published_artifact_carries_hardening_headers(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "PUBLISHED_DIR", tmp_path / "published")
+    _publish("cm", "revision", [("cm-thin.html", b"<h1>ok</h1>")])
+    from samagra.api.app import app
+    r = TestClient(app).get("/api/published/cm/revision")
+    assert r.status_code == 200
+    assert r.headers["x-content-type-options"] == "nosniff"
+    assert r.headers["referrer-policy"] == "no-referrer"
+    # an html artifact is forced into an opaque origin even on DIRECT navigation
+    # (closes the gap the iframe sandbox leaves for shared deep-links), while still
+    # allowing the artifact's own CDN-loaded KaTeX/MathJax to run (sandbox allow-scripts
+    # isolates the ORIGIN; it does NOT restrict resource sources).
+    assert "sandbox" in r.headers["content-security-policy"]
+    assert "allow-scripts" in r.headers["content-security-policy"]
+
+
+def test_api_published_artifact_docx_has_nosniff_no_csp(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "PUBLISHED_DIR", tmp_path / "published")
+    _publish("cm", "lecture", [("cm-thick.html", b"<h1>h</h1>"), ("cm-thick.docx", b"DOCX")])
+    from samagra.api.app import app
+    r = TestClient(app).get("/api/published/cm/lecture?kind=docx")
+    assert r.status_code == 200
+    assert r.headers["x-content-type-options"] == "nosniff"
+    # CSP sandbox is only meaningful for html (a docx is a download, not a rendered doc)
+    assert "content-security-policy" not in r.headers
+
+
 def test_golden_api_serves_a_published_saar_sheet(tmp_path, monkeypatch):
     # Full slice: capture a real revision artifact through the factory, publish it
     # (G1), then read it back through the G2 outward endpoints.
