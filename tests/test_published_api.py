@@ -84,3 +84,39 @@ def test_published_endpoints_are_public_not_gated():
     from samagra.api import origin_auth
     assert origin_auth.is_protected("GET", "/api/published") is False
     assert origin_auth.is_protected("GET", "/api/published/cm/revision") is False
+
+
+def test_golden_api_serves_a_published_saar_sheet(tmp_path, monkeypatch):
+    # Full slice: capture a real revision artifact through the factory, publish it
+    # (G1), then read it back through the G2 outward endpoints.
+    monkeypatch.setattr(config, "GOVERNANCE_DB", tmp_path / "governance.db")
+    monkeypatch.setattr(config, "DATA_DB", tmp_path / "samagra.db")
+    monkeypatch.setattr(config, "EXPORT_DIR", tmp_path / "exports")
+    monkeypatch.setattr(config, "PUBLISHED_DIR", tmp_path / "published")
+    from samagra.governance import store as gov
+    gov._INITIALIZED.clear()
+    gov.ensure_tables()
+    monkeypatch.chdir(tmp_path)
+
+    def fake_export_one(slug, variant, **kw):
+        out = tmp_path / f"{slug}-{variant}.html"
+        out.write_text(f"<h1>{slug} {variant}</h1>", encoding="utf-8")
+        return {"variant": variant, "html": str(out), "docx": None, "gdoc": None}
+    monkeypatch.setattr("samagra.lectures.export.export_one", fake_export_one)
+
+    from samagra.factory import run as factory
+    from samagra.factory.publish import run as publish
+    proposals = factory.plan("textbook:circular-motion", dry=False)
+    rev = next(p for p in proposals if p["line"] == "revision")
+    factory.approve(rev["assignment_id"])
+    factory.build(rev["assignment_id"])
+    publish.publish("circular-motion", lanes=["revision"])
+
+    from samagra.api.app import app
+    client = TestClient(app)
+    m = client.get("/api/published").json()
+    assert "circular-motion" in m["chapters"]
+    r = client.get("/api/published/circular-motion/revision")
+    assert r.status_code == 200
+    assert r.content == b"<h1>circular-motion thin</h1>"
+    gov._INITIALIZED.clear()
