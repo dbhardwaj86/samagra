@@ -12,7 +12,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 import samagra
@@ -206,6 +206,17 @@ def api_coverage_concept(concept_id: int):
     if dossier is None:
         raise HTTPException(status_code=404, detail=f"unknown concept {concept_id}")
     return dossier
+
+
+# -- G2 outward read surface (public, read-only) ------------------------
+@app.get("/api/published")
+def api_published():
+    # Phase G2: the outward read surface. Public-by-design (deliberately NOT in
+    # origin_auth._PROTECTED_GETS) — it serves only the corpus the owner already
+    # released through the G1 publish gate. Graceful-empty (chapters == {}) when
+    # nothing is published; never a 500 (mirrors /api/coverage).
+    from ..factory.publish import read
+    return read.published_manifest()
 
 
 @app.post("/api/refresh")
