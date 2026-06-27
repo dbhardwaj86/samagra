@@ -19,6 +19,13 @@ describe("parseLearnPath", () => {
     expect(parseLearnPath("/learn/cm/revision")).toEqual({ chapter: "cm", lane: "revision" });
     expect(parseLearnPath("/")).toEqual({});
   });
+
+  it("round-trips encoded slugs with learnPath", () => {
+    expect(parseLearnPath(learnPath("circular motion", "revision")))
+      .toEqual({ chapter: "circular motion", lane: "revision" });
+    expect(parseLearnPath("/learn/")).toEqual({});   // trailing-slash prefix -> empty selection
+    expect(parseLearnPath("/learn/cm//revision")).toEqual({ chapter: "cm", lane: "revision" });
+  });
 });
 
 describe("learnPath", () => {

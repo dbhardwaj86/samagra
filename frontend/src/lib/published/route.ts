@@ -13,7 +13,7 @@ export function parseLearnPath(pathname: string): LearnSelection {
   if (!isLearnPath(pathname)) return {};
   const rest = pathname.slice("/learn".length).replace(/^\/+/, "");
   if (!rest) return {};
-  const [chapter, lane] = rest.split("/");
+  const [chapter, lane] = rest.split("/").filter(Boolean);
   const out: LearnSelection = {};
   if (chapter) out.chapter = decodeURIComponent(chapter);
   if (lane) out.lane = decodeURIComponent(lane);
