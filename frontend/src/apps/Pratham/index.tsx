@@ -27,6 +27,10 @@ export default function Pratham() {
   const artifact = chapter?.artifacts.find((a) => a.lane === lane);
   const hasDocx = fileExts(artifact).includes("docx");
 
+  // MVP nav: pushState keeps the URL shareable/deep-linkable, but we deliberately
+  // do NOT add a popstate listener (back/forward won't re-sync selection) — a known
+  // G2 scope choice. The palette is a standalone PRATHAM palette (NOT operator theme
+  // tokens) on purpose: /learn is a separate student surface, not the OS console.
   function go(nextChapter?: string, nextLane?: string) {
     setSel({ chapter: nextChapter, lane: nextLane });
     window.history.pushState(null, "", learnPath(nextChapter, nextLane));
@@ -104,6 +108,7 @@ export default function Pratham() {
                 title={`${chapter.title ?? chapter.chapter} — ${laneLabel(lane).name}`}
                 src={artifactUrl(chapter.chapter, lane)}
                 sandbox="allow-scripts"
+                referrerPolicy="no-referrer"
                 style={{ flex: 1, border: 0, width: "100%", background: "#fff" }} />
             ) : null}
           </main>

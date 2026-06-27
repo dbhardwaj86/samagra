@@ -20,7 +20,10 @@ const manifest = {
 };
 
 describe("Pratham reader", () => {
-  beforeEach(() => useApiMock.mockReset());
+  beforeEach(() => {
+    useApiMock.mockReset();
+    window.history.pushState({}, "", "/");
+  });
 
   it("reads /api/published and renders the chapter list", () => {
     useApiMock.mockReturnValue({ data: manifest, loading: false, error: null });
@@ -49,5 +52,38 @@ describe("Pratham reader", () => {
     useApiMock.mockReturnValue({ data: { ...manifest, chapters: {} }, loading: false, error: null });
     render(<Pratham />);
     expect(screen.getByTestId("pratham-empty")).toHaveTextContent("Nothing published yet.");
+  });
+
+  it("shows a docx download link when the artifact has a .docx file", () => {
+    const withDocx = {
+      ...manifest,
+      chapters: {
+        "circular-motion": {
+          ...manifest.chapters["circular-motion"],
+          artifacts: [
+            { uid: "u3", lane: "lecture", assignment_id: "a",
+              files: [
+                { rel: "circular-motion/cm-thick.html", sha256: "s", bytes: 1 },
+                { rel: "circular-motion/cm-thick.docx", sha256: "s2", bytes: 2 },
+              ],
+              source_seed_ref: "", style_seed_version: null, captured_at: null,
+              published_at: null, publication_id: "p" },
+          ],
+        },
+      },
+    };
+    useApiMock.mockReturnValue({ data: withDocx, loading: false, error: null });
+    render(<Pratham />);
+    const link = screen.getByTestId("pratham-docx");
+    expect(link).toBeInTheDocument();
+    expect(link.getAttribute("href")).toBe("/api/published/circular-motion/lecture?kind=docx");
+  });
+
+  it("honors a deep-link to a specific chapter/lane at mount", () => {
+    window.history.pushState({}, "", "/learn/circular-motion/lecture");
+    useApiMock.mockReturnValue({ data: manifest, loading: false, error: null });
+    render(<Pratham />);
+    expect(screen.getByTestId("pratham-frame").getAttribute("src"))
+      .toBe("/api/published/circular-motion/lecture");
   });
 });
