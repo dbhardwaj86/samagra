@@ -306,10 +306,54 @@
 > `published/` is gitignored — it's created on first `samagra factory publish`. G2 (outward read surface), G3
 > (multi-tenant identity), and G4 (the student twin) remain deferred.
 >
-> **NEXT: Phase G1 (publish boundary) is COMPLETE. Remaining choices — owner's call: Phase G2 (the outward
-> read-only surface — `GET /api/published` + a student app, Saar sheets first), Phase G3 (multi-tenant
-> identity; PRATHAM identity lives here), or Phase F (the heavy async LLM lanes — NotebookLM audio/slides,
-> image-gen figures).** PRATHAM identity = G3. **DEC-8 invariants unchanged.**
+> **✅ PHASE G2 (the OUTWARD READ SURFACE + PRATHAM `/learn` reader — SAMAGRA's FIRST outward, read-only,
+> public-by-design crossing) BUILT subagent-driven TDD (9 tasks, fresh implementer + 2-stage spec+quality review
+> each) + adversarial multi-lens final review (14-agent Workflow `wf_d4ae0d21-6cf`, 4 lenses × independent
+> refute-verify) + MERGED to `main` + PUSHED to `origin/main` 2026-06-27** (branch `feature/content-factory-phase-g2`,
+> 15 commits, spec `bcaa2a9` → tip `d95267b`; durable). Driven by the user's **"lets go for phase G2."** G2 = the
+> first consumer of the G1 published corpus. **Backend:** new PURE `samagra/factory/publish/read.py` over G1's
+> `run.list_published()` — `published_manifest()` (graceful-empty delegate) + `resolve_artifact(chapter,lane,kind=html)`
+> that resolves the file **FROM the manifest** (never a client path), re-validates a `<safe>/<safe>` `_SAFE_SEGMENT`
+> pair + `relative_to(PUBLISHED_DIR)` containment, **re-verifies sha256** (mismatch raises), returns
+> `{rel,abs_path,bytes,sha256,media_type}` (unknown chapter/lane/kind/missing → `None`). Two **PUBLIC** endpoints
+> (deliberately **NOT** in `_PROTECTED_GETS` — the `/api/coverage` precedent): **`GET /api/published`** (the manifest,
+> graceful-empty) + **`GET /api/published/{chapter}/{lane}`** (`?kind=html|json|docx`, sha-verified bytes, 404 unknown,
+> 500 integrity-breach, **defense-in-depth headers** `nosniff`/`no-referrer` + CSP `sandbox allow-scripts` for html).
+> **Frontend:** a one-line `main.tsx` split on `isLearnPath` mounts a **SEPARATE full-page `<Pratham/>` reader at
+> `/learn`** (no operator OS-shell chrome) else the console; PURE `frontend/src/lib/published/` (`manifest.ts`:
+> `chaptersList`·`laneSort`[Saar-led]·`laneLabel`[**Saar·Vaani·Smriti·Pariksha·Abhyaas·Samadhan**]·`artifactUrl`·
+> `pickChapter`·`pickLane`·`fileExts`; `route.ts`: `isLearnPath`·`parseLearnPath`·`learnPath`); the reader = chapter
+> list + Saar-led lane tabs + **sandboxed iframe** (`allow-scripts`, `no-referrer`) + empty/error/loading states +
+> docx download + deep-link. **4 forks locked:** separate `/learn` route in the shared Vite build · render all
+> published lanes Saar-led · **code-only deploy-ready** (actual public exposure = a separate owner step) ·
+> manifest-resolved + sha-verified artifact endpoint (no static `published/` mount). **Invariants HELD —
+> READ-ONLY/ADDITIVE:** NO new write path anywhere; serves **only** owner-published bytes resolved through the manifest
+> (never `_publications/`, `governance.db`, `EXPORT_DIR`, or the 7 subsystems); **public-by-design** (the gate was
+> already crossed at G1 publish); **separate-entity** (the console at `/` is byte-unchanged; the reader imports NO
+> shell module); the inward `build()` + 5 guards + the never-automated publish gate **untouched**; **NO
+> migration/table/state-machine change**. **Proposed DEC-11 pins the outward-read-surface invariant set.**
+> **Adversarial final review (14-agent Workflow `wf_d4ae0d21-6cf`, 4 lenses × independent verify): 10 raw → 8
+> confirmed (0 HIGH, 0 MED, 2 LOW, 6 NIT), 2 refuted; the FIREWALL lens found NOTHING** (read-only proven end-to-end),
+> the separate-entity lens only NITs, and path-traversal was independently **attacked with planted hostile `rel`
+> values — every one blocked.** The 2 LOWs (same root): the public artifact response lacked `nosniff`/CSP/`no-referrer`
+> so the in-reader iframe sandbox didn't cover **direct navigation** to a shared deep-link / the docx href → **FIXED**
+> (the defense-in-depth headers above; CSP `sandbox allow-scripts` forces an opaque origin on direct nav **without** a
+> restrictive `script-src` that would break the artifacts' CDN-loaded KaTeX/MathJax) + regression. NITs closed: exact
+> docx label, a distinct `/api/published` fetch-error state, and spec/plan doc reconciliation. ⚠ **Process catches:** a
+> subagent caught a real error in the PLAN's golden-test assertion (the `revision` lane renders the **`thin`** variant,
+> not `"revision"`) and a latent **`.gitignore` collision** (G1's unanchored `published/` was silently hiding the new
+> `frontend/src/lib/published/` source dir — fixed by anchoring to `/published/` + a negation). Gate **562 pytest**
+> (1 skipped = opt-in live-LLM smoke; **no failures**) + **583 vitest** (68 files) + build green. Spec
+> `docs/superpowers/specs/2026-06-27-samagra-content-factory-phase-g2-outward-read-surface-design.md`; plan
+> `docs/superpowers/plans/2026-06-27-samagra-content-factory-phase-g2-outward-read-surface.md`. ⚠ **OWNER:** the
+> `/learn` surface is **code-only / deploy-ready** — actually exposing it publicly (a separate hostname or a
+> Cloudflare-Access bypass for `/learn` + `/api/published`) is a separate owner-driven deploy step (a G2 follow-up).
+>
+> **NEXT: Phase G2 (outward read surface + PRATHAM `/learn` reader) is COMPLETE. Remaining choices — owner's call:
+> Phase G3 (multi-tenant identity — PRATHAM identity + the outward `POST /api/factory/publish` write path live here),
+> Phase G4 (the adaptive student twin), or Phase F (the heavy async LLM lanes — NotebookLM audio/slides, image-gen
+> figures).** The G2 public surface is code-only/deploy-ready; the actual public exposure of `/learn` is a separate
+> owner deploy step. **DEC-8 invariants unchanged.**
 >
 > **✅ Direction-coherence decision (ratified 2026-06-21 by Deepak; amended by DEC-6 on 2026-06-22):** a coherence
 > audit found execution solid but the strategic direction drifting — "SAMAGRA OS" had re-introduced the OS-sized
@@ -349,8 +393,17 @@
 
 <!-- scribe:begin v1 -->
 ## TeachingOS memory — auto-generated by scribe; edit OUTSIDE this block only
-_Updated 2026-06-26T15:42. Source: agent session distillation._
-- (5) 2026-06-26 claude: Phase E of the SAMAGRA content-factory project is the Concept Atlas / coverage graph, which serves as the steering layer. [SAMAGRA, Concept Atlas, coverage graph, steering layer]
+_Updated 2026-06-27T16:12. Source: agent session distillation._
+- (5) 2026-06-27 claude: Phase G (PRATHAM) will be implemented before Phase F (async LLM lanes), reversing DEC-9 deferral. [PRATHAM, TeachingOS, phase order]
+- (5) 2026-06-26 codex: Manifest generation fails when concept tags are missing, throwing unhandled KeyError. [manifest, error handling, KeyError]
+- (5) 2026-06-26 codex: Missing JWT authentication on POST /api/questions in samagra/questions_proxy.py [authentication, API security]
+- (5) 2026-06-26 codex: org.py endpoint GET /org/{id}/members allows enumeration without authorization (IDOR) [IDOR, authorization]
+- (5) 2026-06-26 codex: User-provided content (problem statements, solutions) is directly interpolated into LaTeX and HTML templates without sanitization, enabling injection attacks. [input sanitization, injection, LaTeX, HTML]
+- (5) 2026-06-26 codex: Hardcoded database credentials and API tokens were found in config.py, committed to version control. [secret leak, credentials, security]
+- (5) 2026-06-26 codex: The application does not validate or escape user input in SQL queries via raw string formatting, making it vulnerable to SQL injection. [SQL injection, input validation, database security]
+- (5) 2026-06-26 codex: LLM client calls in llm_client.py lack timeout handling; network failures cause indefinite hangs. [LLM client, timeout, network error]
+- (5) 2026-06-26 codex: Textbook subsystem violates read-only firewall by performing direct file writes instead of using sanctioned API endpoints. [write firewall, invariant violation]
+- (5) 2026-06-26 claude: Phase E of the SAMAGRA project is the coverage graph / Concept Atlas, the steering layer of the content factory. [Phase E, coverage graph, Concept Atlas, SAMAGRA]
 - (5) 2026-06-25 claude: Phase D (StyleSeed, DEC-8) is the durable 'style moat' for the SAMAGRA content factory in the TeachingOS project. [StyleSeed, SAMAGRA, Phase D, DEC-8]
 - (5) 2026-06-24 claude: SAMAGRA (TeachingOS project) is implementing a content-factory pivot to generate multi-output physics content for JEE/NEET, moving beyond a read-only console. [SAMAGRA, TeachingOS, content factory, JEE/NEET physics]
 - (5) 2026-06-24 codex: Core logic matches design spec docs/superp; no fundamental issues. [design, validation]
@@ -375,15 +428,6 @@ _Updated 2026-06-26T15:42. Source: agent session distillation._
 - (5) 2026-06-19 claude: Produced 10 concrete suggestions for improving the future vision direction based on the current intent. [suggestions, vision direction]
 - (5) 2026-06-18 claude: The final plan was recorded using `cbm record-plan docs/superpowers/plans/2026-06-19-samagra-evolution.md --title 'SAMAGRA Evolution'`. [cbm, record-plan, plan storage]
 - (5) 2026-06-18 claude: TeachingOS uses two Claude Max subscriptions: one acts as CEO (claude-deepak) and another as a subordinate agent for task execution. [multi-agent, Claude, CEO]
-- (4) 2026-06-26 claude: The brainstorming design was approved by the user, leading to the writing of an implementation plan. [brainstorming, approval, implementation plan]
-- (4) 2026-06-25 claude: Brief in 'changes' status cannot be re-generated because approve function requires status 'in-review' and dedup in _existing_ass is status-blind. [SAMAGRA, content factory, bug]
-- (4) 2026-06-25 claude: The user explicitly approved the implementation plan before any code was written, adhering to the 'ok approved -write the plan' workflow. [plan approval, writing-plans skill]
-- (4) 2026-06-25 claude: Subagent-driven development was used with two-stage review: spec compliance review first, then code quality review. [subagent-driven development, two-stage review]
-- (4) 2026-06-25 codex: The Samagra factory uses a pattern to decouple content generation from distribution, with run.py as the main orchestrator. [factory pattern, content generation, orchestration]
-- (4) 2026-06-25 codex: The LLM client in llm_client.py is abstracted behind a clean interface, allowing different model providers to be swapped easily. [LLM, client, abstraction, provider]
-- (4) 2026-06-25 codex: The review requested reading specific files: samagra/factory/run.py, samagra/factory/samadhan.py, samagra/clients/llm_client.py, samagra/factory/dispatch.py, and several test files. [code review, file list]
-- (4) 2026-06-25 codex: Purpose is to assess generation boundary after remediation in Samagra Phase D2. [generation boundary, remediation, Samagra]
-- (4) 2026-06-25 codex: Branch feature/content-factory-phase-d2 is subject to a pre-merge code review for SAMAGRA Phase D2. [code review, branch, SAMAGRA]
-- (4) 2026-06-25 codex: Conducted a pre-merge code review of the SAMAGRA Phase D2 change set on branch feature/content-factory-phase-d2, focusing on DEC-7 requirements. [code review, SAMAGRA, Phase D2]
+- (4) 2026-06-27 claude: TeachingOS uses the brainstorming skill to turn ideas into approved designs. [brainstorming]
 Deep recall: C:\SandBox\claude_box\memboxes\scribe\bin\scribe.cmd q "<topic>"
 <!-- scribe:end -->
